@@ -2,11 +2,11 @@
 
 A dynamic tiling extension for KWin 6 only.
 
-Kröhnkite is mainly inspired by [dwm][] from suckless folks, and aims to
-provide rock solid stability while fully integrating into KWin.
+Kröhnkite is mainly inspired by [dwm](https://dwm.suckless.org/) from suckless folks, 
+and aims to provide rock solid stability while fully integrating into KWin.
 
-The name of the script is from mineral [Kröhnkite][wikipedia]; it starts with
-K and looks cool.
+The name of the script is from mineral [Kröhnkite][wikipedia]; 
+it starts with K and looks cool.
 
 [dwm]: https://dwm.suckless.org/
 [wikipedia]: https://en.wikipedia.org/wiki/Kr%C3%B6hnkite
@@ -16,18 +16,18 @@ K and looks cool.
 ## Features
 
 - DWM-like window tiling
-  - Dynamically tile windows, rather than manually placing each.
+  - Dynamically tile windows, rather than manually placing each
   - Floating windows
 - Fully integrates into KWin features, including:
   - **Multi-screen**
   - **Activities & Virtual desktop**
-  - Basic window management (minimize, fullscreen, switching, etc)
+  - Basic window management (minimize, fullscreen, switching, etc.)
 - Multiple Layout Support
   - Tiling layout
   - Monocle layout
   - Desktop-friendly layouts (Spread, Stair)
 
-## Development Requirement
+## Development Requirements
 
 - Typescript (see package.json)
 - [go-task](https://github.com/go-task/task)
@@ -36,13 +36,13 @@ K and looks cool.
 ## Look at me
 
 1. If you change the Krohnkite configuration, you will need to reboot. Do not toggle the script on and off, this will start multiple instances of it.
-2. Delete unused KWin shortcuts you can use any D-Bus program which can invoke D-Bus methods. Service name -`org.kde.kglobalaccel` path - `/component/kwin` method - `org.kde.kglobalaccel.Component.cleanUp`. ArchLinux example:
+2. Delete unused KWin shortcuts. You can use any D-Bus program which can invoke D-Bus methods. Service name -`org.kde.kglobalaccel` path - `/component/kwin` method - `org.kde.kglobalaccel.Component.cleanUp`. Arch Linux example:
 
 ```
 qdbus6 org.kde.kglobalaccel /component/kwin org.kde.kglobalaccel.Component.cleanUp
 ```
 
-3. If you have a gap or vice versa you have gray(white etc) rectangle that means that there is a program with size 1x1 that have to be filtered by title or other ways. Make sure that the following programs, if you have them, have been added to the filter:
+3. If you have a gap or you have gray rectangle (or white, etc.), that means that there is a program with size 1x1 that has to be filtered by title or other ways. Make sure that the following programs, if you have them, have been added to the filter:
 
 ```
 xwaylandvideobridge,plasmashell,ksplashqml
@@ -112,21 +112,26 @@ go-task uninstall
 
 ### Add a class name, a resource name or a window caption to ignore or float
 
-1. to found window's className,resourcename or caption see [readme](https://github.com/anametologin/krohnkite#search-a-window-parameters-to-filter-float-etc)
+1. to find window's className, resourcename, or caption, see [readme](https://github.com/anametologin/krohnkite#search-a-window-parameters-to-filter-float-etc)
 2. you can use the name of class in square brackets: `[myNamE]` will float or ignore all windows with class or resource names such: 'myname1', 'Myname2', 'Notmyname555' etc...
 
 ### Choose layout for screen by default
 
 1. Open Krohnkite options: ![options](img/conf.png)
-2. Tab `Rules->Screen default layout`. Layout configuration has format `OutputName:ActivityId:VirtualDesktopName:layoutName` multi monitor example: `HDMI-A-1:99a12h44-e9a6-1142-55eedaa7-3a922a15ab08::columns,DP-2:spread,DP-3:Desktop 3:tile,:threecolumn` - result will be:
+2. Tab `Rules->Screen default layout`. Layout configuration has format `OutputName:ActivityId:VirtualDesktopName:layoutName`.
 
-- set `columns` layout as default on monitor `HDMI-A-1`, only on activity with id:`99a12h44-e9a6-1142-55eedaa7-3a922a15ab08`, every Virtual Desktops on this activity.(if you specify `activity id` you have to to specify virtual desktop name or leave it blank)
-- set `spreadlayout` layout as default on monitor `DP-2`, every Activities, every Virtual Desktops;
-- set `tilelayout` layout as default on monitor `DP-3`, on every activity, only on virtual desktop with name `Desktop 3`
-- set `threecolumnlayout` layout as default on all monitors,all activities and all Virtual Desktops not covered by the previous rules
+Multi monitor example: 
 
-2. How to find `outputName`, `activityId`, `VirtualDesktopName`, `layoutName`:
-   Right after system boot run KSystemLog
+```HDMI-A-1:99a12h44-e9a6-1142-55eedaa7-3a922a15ab08::columns,DP-2:spread,DP-3:Desktop 3:tile,:threecolumn```
+
+The result will be:
+
+- set `columns` layout as default on monitor `HDMI-A-1`, only on activity with id:`99a12h44-e9a6-1142-55eedaa7-3a922a15ab08`, every virtual desktop on this activity. If you specify `activity id`, you have to specify the virtual desktop name or leave it blank;
+- set `spreadlayout` layout as default on monitor `DP-2`, on every Activity, on every virtual desktop;
+- set `tilelayout` layout as default on monitor `DP-3`, on every activity, only on virtual desktop with name `Desktop 3`;
+- set `threecolumnlayout` layout as default on all monitors, all activities, and all virtual desktops not covered by the previous rules.
+
+2. How to find `outputName`, `activityId`, `VirtualDesktopName`, `layoutName`: Right after system boot, run `KSystemLog`
 
 - Push ignore button
 - Type in filter string: `krohnkite`
@@ -180,8 +185,9 @@ go-task uninstall
 
 ### Setting Up for Multi-Screen
 
-Krohnkite supports multi-screen setup, but KWin has to be configured to unlock
-the full potential of the script.
+Krohnkite supports multi-screen setup, 
+but KWin has to be configured 
+to unlock the full potential of the script.
 
 1. Enable `Separate Screen Focus` feature:
 
@@ -201,8 +207,8 @@ the full potential of the script.
 
 ### Removing Title Bars
 
-Breeze window decoration can be configured to completely remove title bars from
-all windows:
+Breeze window decoration can be configured 
+to completely remove title bars from all windows:
 
 1. `System Setting` > `Application Style` > `Window Decorations`
 2. Click `Configure Breeze` inside the decoration preview.
@@ -213,8 +219,8 @@ all windows:
 
 ### Changing Border Colors
 
-Changing the border color makes it easier to identify current window. This is
-convinient if title bars are removed.
+Changing the border color makes it easier to identify current window. 
+This is convenient if title bars are removed.
 
 1. You can use the Oxygen decoration theme. [Oxygen theme settings][]
 2. You can install third-party decorations, see [Border color conversation][]
@@ -227,8 +233,10 @@ convinient if title bars are removed.
 
 ### Setting Minimum Geometry Size
 
-Some applications like discord and KDE settings dont tile nicely as they have a minimum size requirement.
-This causes the applications to overlap with other applications. To mitigate this we can set minimum size for all windows to be 0.
+Some applications like Discord and KDE settings don't tile nicely 
+as they have a minimum size requirement.
+This causes the applications to overlap with other applications. 
+To mitigate this we can set minimum size for all windows to be 0.
 
 1. `System Setting` > `Window Management` > `Window Rules`
 2. Click on `+ Add New...`
@@ -241,8 +249,10 @@ This causes the applications to overlap with other applications. To mitigate thi
 
 ### Prevent borders and shadows from disappearing.
 
-When a window is marked "maximized" in Breeze theme, its borders are removed to save screen space.
-This behavior may not be preferable depending on your setup. This can be mitigated by disabling maximized windows using Window Rules.
+When a window is marked "maximized" in Breeze theme, 
+its borders are removed to save screen space.
+This behavior may not be preferable depending on your setup. 
+This can be mitigated by disabling maximized windows using Window Rules.
 
 1. `System Setting` > `Window Management` > `Window Rules`
 2. Click on `+ Add New...`
