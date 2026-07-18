@@ -53,9 +53,12 @@ class KWinConfig implements IConfig {
   /*
    * Surfaces
    * */
-  public surfacesDefaultConfig: string[];
-  public surfacesIsMoveWindows: boolean;
-  public surfacesIsMoveOldestWindows: boolean;
+  public srfDefaultConfig: string[];
+  public srfExceededToScreen: boolean;
+  public srfToScreenOrder: Direction[];
+  public srfExceededToVDesktop: boolean;
+  public srfToVDesktopOrder: Direction[];
+  public srfIsMoveOldestWindows: boolean;
   /*
    * Geometry
    * */
@@ -197,13 +200,64 @@ class KWinConfig implements IConfig {
     //***************************
     //****************** Surfaces
     //***************************
-    this.surfacesDefaultConfig = separate(
-      KWIN.readConfig("surfacesDefaultConfig", ""),
+    this.srfDefaultConfig = separate(
+      KWIN.readConfig("srfDefaultConfig", ""),
       "\n",
     );
-    this.surfacesIsMoveWindows = KWIN.readConfig("surfacesIsMoveWindows", true);
-    this.surfacesIsMoveOldestWindows = KWIN.readConfig(
-      "surfacesIsMoveOldestWindows",
+    this.srfExceededToScreen = KWIN.readConfig("srfExceededToScreen", true);
+    // Define the config mapping (cleaner and easier to maintain)
+    const directionConfigs: {
+      direction: Direction;
+      screenKey: string;
+      vDesktopKey: string;
+      defaultOrder: number;
+    }[] = [
+      {
+        direction: "left",
+        screenKey: "srfToScreenOrderLeft",
+        vDesktopKey: "srfToVDesktopOrderLeft",
+        defaultOrder: 1,
+      },
+      {
+        direction: "up",
+        screenKey: "srfToScreenOrderTop",
+        vDesktopKey: "srfToVDesktopOrderTop",
+        defaultOrder: 2,
+      },
+      {
+        direction: "right",
+        screenKey: "srfToScreenOrderRight",
+        vDesktopKey: "srfToVDesktopOrderRight",
+        defaultOrder: 3,
+      },
+      {
+        direction: "down",
+        screenKey: "srfToScreenOrderBottom",
+        vDesktopKey: "srfToVDesktopOrderBottom",
+        defaultOrder: 4,
+      },
+    ];
+    // Build the sorted array of directions
+    this.srfToScreenOrder = directionConfigs
+      .map(({ direction, screenKey: key, defaultOrder }) => ({
+        direction,
+        order: Number(KWIN.readConfig(key, defaultOrder)), // ensure number
+      }))
+      .filter((el) => el.order !== 0) // exclude if order is 0
+      .sort((a, b) => a.order - b.order) // ascending order
+      .map((el) => el.direction); // extract direction strings
+
+    this.srfExceededToVDesktop = KWIN.readConfig("srfExceededToVDesktop", true);
+    this.srfToVDesktopOrder = directionConfigs
+      .map(({ direction, vDesktopKey: key, defaultOrder }) => ({
+        direction,
+        order: Number(KWIN.readConfig(key, defaultOrder)), // ensure number
+      }))
+      .filter((el) => el.order !== 0) // exclude if order is 0
+      .sort((a, b) => a.order - b.order) // ascending order
+      .map((el) => el.direction); // extract direction strings
+    this.srfIsMoveOldestWindows = KWIN.readConfig(
+      "srfIsMoveOldestWindows",
       false,
     );
 

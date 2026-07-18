@@ -2106,7 +2106,7 @@
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_19">
           <item>
-           <widget class="QPlainTextEdit" name="kcfg_surfacesDefaultConfig">
+           <widget class="QPlainTextEdit" name="kcfg_srfDefaultConfig">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
               <horstretch>0</horstretch>
@@ -2133,8 +2133,14 @@
              <bool>true</bool>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_26">
+             <property name="topMargin">
+              <number>6</number>
+             </property>
+             <property name="bottomMargin">
+              <number>0</number>
+             </property>
              <item>
-              <widget class="QCheckBox" name="kcfg_surfacesIsMoveWindows">
+              <widget class="QCheckBox" name="kcfg_srfExceededToScreen">
                <property name="text">
                 <string>move windows to next screen if surface(or layout) capacity is exceeded</string>
                </property>
@@ -2144,28 +2150,449 @@
               </widget>
              </item>
              <item>
-              <widget class="QGroupBox" name="groupBox_34">
+              <widget class="QGroupBox" name="groupBox_27">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Minimum" vsizetype="Maximum">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="toolTip">
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;hv - short name&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
+               <property name="styleSheet">
+                <string notr="true"/>
+               </property>
                <property name="title">
                 <string/>
                </property>
                <property name="flat">
                 <bool>true</bool>
                </property>
-               <layout class="QVBoxLayout" name="verticalLayout_27">
-                <property name="leftMargin">
-                 <number>12</number>
-                </property>
-                <item>
-                 <widget class="QCheckBox" name="kcfg_surfacesIsMoveOldestWindows">
-                  <property name="text">
-                   <string>move the oldest windows</string>
+               <layout class="QGridLayout" name="gridLayout_36">
+                <item row="1" column="0">
+                 <widget class="QComboBox" name="kcfg_srfToScreenOrderLeft">
+                  <property name="focusPolicy">
+                   <enum>Qt::FocusPolicy::ClickFocus</enum>
                   </property>
+                  <property name="currentIndex">
+                   <number>1</number>
+                  </property>
+                  <item>
+                   <property name="text">
+                    <string>Off</string>
+                   </property>
+                  </item>
+                  <item>
+                   <property name="text">
+                    <string>First</string>
+                   </property>
+                  </item>
+                  <item>
+                   <property name="text">
+                    <string>Second</string>
+                   </property>
+                  </item>
+                  <item>
+                   <property name="text">
+                    <string>Third</string>
+                   </property>
+                  </item>
+                  <item>
+                   <property name="text">
+                    <string>Fourth</string>
+                   </property>
+                  </item>
+                 </widget>
+                </item>
+                <item row="1" column="2">
+                 <widget class="QComboBox" name="kcfg_srfToScreenOrderRight">
+                  <property name="focusPolicy">
+                   <enum>Qt::FocusPolicy::ClickFocus</enum>
+                  </property>
+                  <property name="layoutDirection">
+                   <enum>Qt::LayoutDirection::LeftToRight</enum>
+                  </property>
+                  <property name="currentIndex">
+                   <number>3</number>
+                  </property>
+                  <item>
+                   <property name="text">
+                    <string>Off</string>
+                   </property>
+                  </item>
+                  <item>
+                   <property name="text">
+                    <string>First</string>
+                   </property>
+                  </item>
+                  <item>
+                   <property name="text">
+                    <string>Second</string>
+                   </property>
+                  </item>
+                  <item>
+                   <property name="text">
+                    <string>Third</string>
+                   </property>
+                  </item>
+                  <item>
+                   <property name="text">
+                    <string>Fourth</string>
+                   </property>
+                  </item>
+                 </widget>
+                </item>
+                <item row="0" column="1" alignment="Qt::AlignmentFlag::AlignHCenter">
+                 <widget class="QLabel" name="label_66">
+                  <property name="toolTip">
+                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;hv - short name&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                  </property>
+                  <property name="text">
+                   <string>Top</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="3">
+                 <widget class="QComboBox" name="kcfg_srfToScreenOrderBottom">
+                  <property name="focusPolicy">
+                   <enum>Qt::FocusPolicy::ClickFocus</enum>
+                  </property>
+                  <property name="currentIndex">
+                   <number>4</number>
+                  </property>
+                  <item>
+                   <property name="text">
+                    <string>Off</string>
+                   </property>
+                  </item>
+                  <item>
+                   <property name="text">
+                    <string>First</string>
+                   </property>
+                  </item>
+                  <item>
+                   <property name="text">
+                    <string>Second</string>
+                   </property>
+                  </item>
+                  <item>
+                   <property name="text">
+                    <string>Third</string>
+                   </property>
+                  </item>
+                  <item>
+                   <property name="text">
+                    <string>Fourth</string>
+                   </property>
+                  </item>
+                 </widget>
+                </item>
+                <item row="0" column="3" alignment="Qt::AlignmentFlag::AlignHCenter">
+                 <widget class="QLabel" name="label_67">
+                  <property name="toolTip">
+                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;hv - short name&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                  </property>
+                  <property name="text">
+                   <string>Bottom</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="0" alignment="Qt::AlignmentFlag::AlignHCenter">
+                 <widget class="QLabel" name="label_64">
+                  <property name="toolTip">
+                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;hv - short name&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                  </property>
+                  <property name="text">
+                   <string>Left</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="2" alignment="Qt::AlignmentFlag::AlignHCenter">
+                 <widget class="QLabel" name="label_65">
+                  <property name="toolTip">
+                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;hv - short name&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                  </property>
+                  <property name="text">
+                   <string>Right</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="1">
+                 <widget class="QComboBox" name="kcfg_srfToScreenOrderTop">
+                  <property name="focusPolicy">
+                   <enum>Qt::FocusPolicy::ClickFocus</enum>
+                  </property>
+                  <property name="currentIndex">
+                   <number>2</number>
+                  </property>
+                  <item>
+                   <property name="text">
+                    <string>Off</string>
+                   </property>
+                  </item>
+                  <item>
+                   <property name="text">
+                    <string>First</string>
+                   </property>
+                  </item>
+                  <item>
+                   <property name="text">
+                    <string>Second</string>
+                   </property>
+                  </item>
+                  <item>
+                   <property name="text">
+                    <string>Third</string>
+                   </property>
+                  </item>
+                  <item>
+                   <property name="text">
+                    <string>Fourth</string>
+                   </property>
+                  </item>
                  </widget>
                 </item>
                </layout>
               </widget>
              </item>
             </layout>
+           </widget>
+          </item>
+          <item>
+           <widget class="QGroupBox" name="groupBox_12">
+            <property name="title">
+             <string/>
+            </property>
+            <property name="flat">
+             <bool>true</bool>
+            </property>
+            <layout class="QVBoxLayout" name="verticalLayout_21">
+             <item>
+              <widget class="QCheckBox" name="kcfg_srfExceededToVDesktop">
+               <property name="text">
+                <string>move windows to next Virtual Desktop if surface(or layout) capacity is exceeded</string>
+               </property>
+               <property name="checked">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QGroupBox" name="groupBox_28">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Minimum" vsizetype="Maximum">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="toolTip">
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;hv - short name&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
+               <property name="styleSheet">
+                <string notr="true"/>
+               </property>
+               <property name="title">
+                <string/>
+               </property>
+               <property name="flat">
+                <bool>true</bool>
+               </property>
+               <layout class="QGridLayout" name="gridLayout_37">
+                <item row="1" column="0">
+                 <widget class="QComboBox" name="kcfg_srfToVDesktopOrderLeft">
+                  <property name="focusPolicy">
+                   <enum>Qt::FocusPolicy::ClickFocus</enum>
+                  </property>
+                  <property name="currentIndex">
+                   <number>1</number>
+                  </property>
+                  <item>
+                   <property name="text">
+                    <string>Off</string>
+                   </property>
+                  </item>
+                  <item>
+                   <property name="text">
+                    <string>First</string>
+                   </property>
+                  </item>
+                  <item>
+                   <property name="text">
+                    <string>Second</string>
+                   </property>
+                  </item>
+                  <item>
+                   <property name="text">
+                    <string>Third</string>
+                   </property>
+                  </item>
+                  <item>
+                   <property name="text">
+                    <string>Fourth</string>
+                   </property>
+                  </item>
+                 </widget>
+                </item>
+                <item row="1" column="2">
+                 <widget class="QComboBox" name="kcfg_srfToVDesktopOrderRight">
+                  <property name="focusPolicy">
+                   <enum>Qt::FocusPolicy::ClickFocus</enum>
+                  </property>
+                  <property name="layoutDirection">
+                   <enum>Qt::LayoutDirection::LeftToRight</enum>
+                  </property>
+                  <property name="currentIndex">
+                   <number>3</number>
+                  </property>
+                  <item>
+                   <property name="text">
+                    <string>Off</string>
+                   </property>
+                  </item>
+                  <item>
+                   <property name="text">
+                    <string>First</string>
+                   </property>
+                  </item>
+                  <item>
+                   <property name="text">
+                    <string>Second</string>
+                   </property>
+                  </item>
+                  <item>
+                   <property name="text">
+                    <string>Third</string>
+                   </property>
+                  </item>
+                  <item>
+                   <property name="text">
+                    <string>Fourth</string>
+                   </property>
+                  </item>
+                 </widget>
+                </item>
+                <item row="0" column="1" alignment="Qt::AlignmentFlag::AlignHCenter">
+                 <widget class="QLabel" name="label_68">
+                  <property name="toolTip">
+                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;hv - short name&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                  </property>
+                  <property name="text">
+                   <string>Top</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="3">
+                 <widget class="QComboBox" name="kcfg_srfToVDesktopOrderBottom">
+                  <property name="focusPolicy">
+                   <enum>Qt::FocusPolicy::ClickFocus</enum>
+                  </property>
+                  <property name="currentIndex">
+                   <number>4</number>
+                  </property>
+                  <item>
+                   <property name="text">
+                    <string>Off</string>
+                   </property>
+                  </item>
+                  <item>
+                   <property name="text">
+                    <string>First</string>
+                   </property>
+                  </item>
+                  <item>
+                   <property name="text">
+                    <string>Second</string>
+                   </property>
+                  </item>
+                  <item>
+                   <property name="text">
+                    <string>Third</string>
+                   </property>
+                  </item>
+                  <item>
+                   <property name="text">
+                    <string>Fourth</string>
+                   </property>
+                  </item>
+                 </widget>
+                </item>
+                <item row="0" column="3" alignment="Qt::AlignmentFlag::AlignHCenter">
+                 <widget class="QLabel" name="label_69">
+                  <property name="toolTip">
+                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;hv - short name&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                  </property>
+                  <property name="text">
+                   <string>Bottom</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="0" alignment="Qt::AlignmentFlag::AlignHCenter">
+                 <widget class="QLabel" name="label_70">
+                  <property name="toolTip">
+                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;hv - short name&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                  </property>
+                  <property name="text">
+                   <string>Left</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="2" alignment="Qt::AlignmentFlag::AlignHCenter">
+                 <widget class="QLabel" name="label_71">
+                  <property name="toolTip">
+                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;hv - short name&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                  </property>
+                  <property name="text">
+                   <string>Right</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="1" column="1">
+                 <widget class="QComboBox" name="kcfg_srfToVDesktopOrderTop">
+                  <property name="focusPolicy">
+                   <enum>Qt::FocusPolicy::ClickFocus</enum>
+                  </property>
+                  <property name="currentIndex">
+                   <number>2</number>
+                  </property>
+                  <item>
+                   <property name="text">
+                    <string>Off</string>
+                   </property>
+                  </item>
+                  <item>
+                   <property name="text">
+                    <string>First</string>
+                   </property>
+                  </item>
+                  <item>
+                   <property name="text">
+                    <string>Second</string>
+                   </property>
+                  </item>
+                  <item>
+                   <property name="text">
+                    <string>Third</string>
+                   </property>
+                  </item>
+                  <item>
+                   <property name="text">
+                    <string>Fourth</string>
+                   </property>
+                  </item>
+                 </widget>
+                </item>
+               </layout>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="kcfg_srfIsMoveOldestWindows">
+            <property name="text">
+             <string>move the oldest windows</string>
+            </property>
            </widget>
           </item>
           <item>

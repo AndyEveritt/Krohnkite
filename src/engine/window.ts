@@ -5,7 +5,7 @@
     SPDX-License-Identifier: MIT
 */
 
-class WindowClass {
+class WindowClass implements IWindowClass {
   public static isTileableState(state: WindowState): boolean {
     return (
       state === WindowState.Dragging ||
@@ -63,10 +63,10 @@ class WindowClass {
     return RectDelta.fromRects(this.geometry, this.actualGeometry);
   }
 
-  public get minSize() {
+  public get minSize(): ISize {
     return this._minSize;
   }
-  public get maxSize() {
+  public get maxSize(): ISize {
     return this._maxSize;
   }
 
@@ -154,10 +154,17 @@ class WindowClass {
     this._floatGeometry = value;
   }
 
+  public get srfTime() {
+    if (this._srfTime.time === null) this._srfTime.time = getTime();
+    return this._srfTime.time;
+  }
+
   public dock: Dock | null;
   public geometry: Rect;
-  public timestamp: number;
+  public focusTime: number;
+  public isSendingToOutput: boolean;
 
+  private _srfTime: { time: number | null; srfId: string | null };
   private internalState: WindowState;
   private shouldCommitFloat: boolean;
   private weightMap: { [key: string]: number };
@@ -170,8 +177,8 @@ class WindowClass {
     this.window = window;
 
     this.geometry = window.geometry;
-    this.timestamp = 0;
-
+    this.focusTime = 0;
+    this.isSendingToOutput = false;
     this.internalState = WindowState.Unmanaged;
     this.shouldCommitFloat = this.shouldFloat;
     this._floatGeometry =
@@ -183,19 +190,19 @@ class WindowClass {
 
     this._minSize = window.minSize;
     this._maxSize = window.maxSize;
-  }
-  public toString(): string {
-    return `Window: id=${this.id}, state: ${windowStateStr(this.state)}. ${
-      this.window
-    }`;
+    this._srfTime = { time: null, srfId: null };
   }
 
-  public commit(noBorders?: boolean) {
+  public toString(): string {
+    return `Window: id=${this.id}, state: ${this.state}. ${this.window}`;
+  }
+
+  public commit(ctx: IDriverContext, noBorders?: boolean) {
     const state = this.state;
     LOG?.send(
       LogModules.arrangeScreen,
       "commit",
-      `id: ${this.id}, state: ${windowStateStr(state)}, floatGeometry: ${
+      `id: ${this.id}, state: ${state}, floatGeometry: ${
         this.floatGeometry
       }, commitGeometry: ${this.geometry}, noBorders: ${noBorders}`,
     );
@@ -203,16 +210,17 @@ class WindowClass {
       case WindowState.Dragging:
         break;
       case WindowState.NativeMaximized:
-        this.window.commit(undefined, undefined, undefined);
+        this.window.commit(ctx, undefined, undefined, undefined);
         break;
 
       case WindowState.NativeFullscreen:
-        this.window.commit(undefined, undefined, WindowLayer.Normal);
+        this.window.commit(ctx, undefined, undefined, WindowLayer.Normal);
         break;
 
       case WindowState.Floating:
         if (!this.shouldCommitFloat) break;
         this.window.commit(
+          ctx,
           this.floatGeometry,
           false,
           CONFIG.floatedWindowsLayer,
@@ -221,11 +229,12 @@ class WindowClass {
         break;
 
       case WindowState.Maximized:
-        this.window.commit(this.geometry, true, WindowLayer.Normal);
+        this.window.commit(ctx, this.geometry, true, WindowLayer.Normal);
         break;
 
       case WindowState.Tiled:
         this.window.commit(
+          ctx,
           this.geometry,
           CONFIG.noTileBorder || Boolean(noBorders),
           CONFIG.tiledWindowsLayer,
@@ -235,6 +244,7 @@ class WindowClass {
       case WindowState.TiledAfloat:
         if (!this.shouldCommitFloat) break;
         this.window.commit(
+          ctx,
           this.floatGeometry,
           false,
           CONFIG.floatedWindowsLayer,
@@ -243,6 +253,7 @@ class WindowClass {
         break;
       case WindowState.Floating:
         this.window.commit(
+          ctx,
           this.geometry,
           CONFIG.noTileBorder || Boolean(noBorders),
           CONFIG.floatedWindowsLayer,
@@ -250,11 +261,21 @@ class WindowClass {
         break;
       case WindowState.Docked:
         this.window.commit(
+          ctx,
           this.geometry,
           CONFIG.noTileBorder,
           CONFIG.tiledWindowsLayer,
         );
         break;
+    }
+  }
+
+  public updateSrfTime(srfId: string): void {
+    if (this._srfTime.time !== null && srfId === null)
+      this._srfTime.srfId = srfId;
+    else if (srfId !== this._srfTime.srfId) {
+      this._srfTime.srfId = srfId;
+      this._srfTime.time = getTime();
     }
   }
 
@@ -264,8 +285,8 @@ class WindowClass {
    * This method is a quick hack created for engine#resizeFloat, thus should
    * not be used in other places.
    */
-  public forceSetGeometry(geometry: Rect) {
-    this.window.commit(geometry);
+  public forceSetGeometry(ctx: IDriverContext, geometry: Rect) {
+    this.window.commit(ctx, geometry);
   }
 
   public moveMouseToFocus() {

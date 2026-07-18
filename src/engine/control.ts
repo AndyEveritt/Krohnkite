@@ -25,19 +25,25 @@ class TilingController {
     this._metaShortcuts = this._initMetaShortcuts();
   }
 
-  public onSurfaceUpdate(ctx: IDriverContext): void {
-    this.engine.arrange(ctx, getMethodName());
+  public onSurfaceUpdate(
+    ctx: IDriverContext,
+    reason: keyof typeof ArrangeReason,
+  ): void {
+    this.engine.arrange(ctx, reason, getMethodName());
   }
 
-  public onCurrentActivityChanged(ctx: IDriverContext): void {
-    this.engine.arrange(ctx, getMethodName());
+  public onCurrentActivityChanged(
+    ctx: IDriverContext,
+    reason: keyof typeof ArrangeReason,
+  ): void {
+    this.engine.arrange(ctx, reason, getMethodName());
   }
 
-  public onCurrentSurfaceChanged(ctx: IDriverContext): void {
-    this.engine.arrange(ctx, getMethodName());
-  }
-
-  public onWindowAdded(ctx: IDriverContext, window: WindowClass): void {
+  public onWindowAdded(
+    ctx: IDriverContext,
+    window: WindowClass,
+    reason: keyof typeof ArrangeReason,
+  ): void {
     this.engine.manage(window);
 
     /* move window to next surface if the current surface is "full" */
@@ -49,22 +55,27 @@ class TilingController {
       window.state !== WindowState.NativeMaximized &&
       window.state !== WindowState.NativeFullscreen
     )
-      this.engine.arrange(ctx, getMethodName());
+      this.engine.arrange(ctx, reason, getMethodName());
   }
 
   public onWindowSkipPagerChanged(
     ctx: IDriverContext,
     window: WindowClass,
     skipPager: boolean,
+    reason: keyof typeof ArrangeReason,
   ) {
     if (skipPager) window.state = WindowState.Floating;
     else window.state = WindowState.Undecided;
-    this.engine.arrange(ctx, getMethodName());
+    this.engine.arrange(ctx, reason, getMethodName());
   }
 
-  public onWindowRemoved(ctx: IDriverContext, window: WindowClass): void {
+  public onWindowRemoved(
+    ctx: IDriverContext,
+    window: WindowClass,
+    reason: keyof typeof ArrangeReason,
+  ): void {
     this.engine.unmanage(window);
-    this.engine.arrange(ctx, getMethodName());
+    this.engine.arrange(ctx, reason, getMethodName());
   }
 
   public onWindowMoveStart(window: WindowClass): void {
@@ -79,6 +90,7 @@ class TilingController {
     ctx: IDriverContext,
     window: WindowClass,
     windowRect: Rect,
+    reason: keyof typeof ArrangeReason,
   ): void {
     if (this.isDragging) return;
     // 100 milliseconds - min interval between run this function
@@ -104,7 +116,7 @@ class TilingController {
           srf.workingArea as Rect,
         )
       ) {
-        this.engine.arrange(ctx, getMethodName());
+        this.engine.arrange(ctx, reason, getMethodName());
       }
 
       this.dragCompleteTime = Date.now();
@@ -112,11 +124,19 @@ class TilingController {
     this.isDragging = false;
   }
 
-  public onWindowMoveOver(ctx: IDriverContext, window: WindowClass): void {
+  public onWindowMoveOver(
+    ctx: IDriverContext,
+    window: WindowClass,
+    reason: keyof typeof ArrangeReason,
+  ): void {
     /* swap window by dragging */
     if (window.state === WindowState.Dragging) {
       window.setState(WindowState.Tiled);
-      this.engine.arrange(ctx, getMethodName());
+      this.engine.arrange(
+        ctx,
+        reason,
+        `${getMethodName()}:windowState=${window.state}`,
+      );
       return;
     }
 
@@ -131,7 +151,11 @@ class TilingController {
 
       if (targets.length === 1) {
         this.engine.windows.swap(window, targets[0]);
-        this.engine.arrange(ctx, getMethodName());
+        this.engine.arrange(
+          ctx,
+          reason,
+          `${getMethodName()}:windowState=${window.state}`,
+        );
         return;
       }
     }
@@ -144,48 +168,77 @@ class TilingController {
       if (distance > 30) {
         window.floatGeometry = window.actualGeometry;
         window.state = WindowState.Floating;
-        this.engine.arrange(ctx, getMethodName());
+        this.engine.arrange(
+          ctx,
+          reason,
+          `${getMethodName()}:windowState=${window.state}:keepTilingOnDrag=${CONFIG.keepTilingOnDrag}`,
+        );
         return;
       }
     }
 
     /* ... or return to the previous position */
-    window.commit();
+    window.commit(ctx);
   }
 
   public onWindowResizeStart(window: WindowClass): void {
     /* do nothing */
   }
 
-  public onWindowResize(ctx: IDriverContext, window: WindowClass): void {
+  public onWindowResize(
+    ctx: IDriverContext,
+    window: WindowClass,
+    reason: keyof typeof ArrangeReason,
+  ): void {
     if (
       CONFIG.adjustLayout &&
       CONFIG.adjustLayoutLive &&
       window.state === WindowState.Tiled
     ) {
       this.engine.adjustLayout(window);
-      this.engine.arrange(ctx, getMethodName());
+      this.engine.arrange(
+        ctx,
+        reason,
+        `${getMethodName()}:windowState=${window.state}`,
+      );
     } else if (window.state === WindowState.Docked) {
       this.engine.adjustDock(window);
-      this.engine.arrange(ctx, getMethodName());
+      this.engine.arrange(
+        ctx,
+        reason,
+        `${getMethodName()}:windowState=${window.state}`,
+      );
     }
   }
 
-  public onWindowResizeOver(ctx: IDriverContext, window: WindowClass): void {
+  public onWindowResizeOver(
+    ctx: IDriverContext,
+    window: WindowClass,
+    reason: keyof typeof ArrangeReason,
+  ): void {
     if (CONFIG.adjustLayout && window.isTiled) {
       this.engine.adjustLayout(window);
-      this.engine.arrange(ctx, getMethodName());
+      this.engine.arrange(
+        ctx,
+        reason,
+        `${getMethodName()}:windowState=${window.state}`,
+      );
     } else if (window.state === WindowState.Docked) {
       this.engine.adjustDock(window);
-      this.engine.arrange(ctx, getMethodName());
+      this.engine.arrange(
+        ctx,
+        reason,
+        `${getMethodName()}:windowState=${window.state}`,
+      );
     } else if (!CONFIG.adjustLayout) this.engine.enforceSize(ctx, window);
   }
 
   public onWindowMaximizeChanged(
     ctx: IDriverContext,
     window: WindowClass,
+    reason: keyof typeof ArrangeReason,
   ): void {
-    this.engine.arrange(ctx, getMethodName());
+    this.engine.arrange(ctx, reason, getMethodName());
   }
 
   public onWindowGeometryChanged(
@@ -196,7 +249,7 @@ class TilingController {
       LogModules.bufferGeometryChanged,
       "enforceSize",
       `Window: id:${window.id} actualGeometry: ${window.actualGeometry}, commitGeometry:${window.geometry}`,
-      { winClass: [`${(window.window as KWinWindow).window.resourceClass}`] },
+      { winClass: [`${(window.window as DriverWindow).window.resourceClass}`] },
     );
     this.engine.enforceSize(ctx, window);
   }
@@ -206,6 +259,7 @@ class TilingController {
   public onWindowChanged(
     ctx: IDriverContext,
     window: WindowClass | null,
+    reason: keyof typeof ArrangeReason,
     comment?: string,
   ): void {
     if (window) {
@@ -221,12 +275,16 @@ class TilingController {
         workingArea.x + (workingArea.width - window.floatGeometry.width) / 2;
       window.floatGeometry.y =
         workingArea.y + (workingArea.height - window.floatGeometry.height) / 2;
-      this.engine.arrange(ctx, getMethodName());
+      this.engine.arrange(
+        ctx,
+        reason,
+        `${getMethodName()}:windowState=${window.state}`,
+      );
     }
   }
 
   public onWindowFocused(ctx: IDriverContext, window: WindowClass) {
-    window.timestamp = getTime();
+    window.focusTime = getTime();
   }
 
   public onDesktopsChanged(ctx: IDriverContext, window: WindowClass) {
@@ -234,7 +292,12 @@ class TilingController {
       window.state = WindowState.Undecided;
   }
 
-  public onShortcut(ctx: IDriverContext, input: Shortcut, data?: any) {
+  public onShortcut(
+    ctx: IDriverContext,
+    input: Shortcut,
+    reason: keyof typeof ArrangeReason,
+    data?: any,
+  ) {
     if (input === Shortcut.KrohnkiteMeta) {
       ctx.metaPushed();
       return;
@@ -290,13 +353,21 @@ class TilingController {
       if (CONFIG.movePointerOnFocus) {
         window?.moveMouseToFocus();
       }
-      this.engine.arrange(ctx, getMethodName());
+      this.engine.arrange(
+        ctx,
+        reason,
+        `${getMethodName()}:windowState=${window.state}`,
+      );
       return;
     } else if (this.engine.handleLayoutShortcut(ctx, input, data)) {
       if (CONFIG.movePointerOnFocus) {
         window?.moveMouseToFocus();
       }
-      this.engine.arrange(ctx, getMethodName());
+      this.engine.arrange(
+        ctx,
+        reason,
+        `${getMethodName()}:LayoutOverrideShortcut`,
+      );
       return;
     }
 
@@ -343,7 +414,7 @@ class TilingController {
             ) {
               window.dock.cfg.hWide += 1;
             }
-          } else this.engine.resizeWindow(window, "east", 1);
+          } else this.engine.resizeWindow(ctx, window, "east", 1);
         }
         break;
       case Shortcut.ShrinkWidth:
@@ -360,7 +431,7 @@ class TilingController {
             ) {
               window.dock.cfg.hWide -= 1;
             }
-          } else this.engine.resizeWindow(window, "east", -1);
+          } else this.engine.resizeWindow(ctx, window, "east", -1);
         }
         break;
       case Shortcut.GrowHeight:
@@ -377,7 +448,7 @@ class TilingController {
             ) {
               window.dock.cfg.hHeight += 1;
             }
-          } else this.engine.resizeWindow(window, "south", 1);
+          } else this.engine.resizeWindow(ctx, window, "south", 1);
         }
         break;
       case Shortcut.ShrinkHeight:
@@ -394,7 +465,7 @@ class TilingController {
             ) {
               window.dock.cfg.hHeight -= 1;
             }
-          } else this.engine.resizeWindow(window, "south", -1);
+          } else this.engine.resizeWindow(ctx, window, "south", -1);
         }
         break;
 
@@ -464,7 +535,7 @@ class TilingController {
     if (CONFIG.movePointerOnFocus) {
       window?.moveMouseToFocus();
     }
-    this.engine.arrange(ctx, getMethodName());
+    this.engine.arrange(ctx, reason, `${getMethodName()}:shortcut=${input}`);
   }
 
   private _initMetaShortcuts() {

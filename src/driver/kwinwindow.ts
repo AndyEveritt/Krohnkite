@@ -5,8 +5,8 @@
     SPDX-License-Identifier: MIT
 */
 
-class KWinWindow implements IDriverWindow {
-  public static generateID(w: Window) {
+class DriverWindow implements IDriverWindow {
+  public static generateID(w: KwinWindow) {
     return w.internalId.toString();
   }
 
@@ -117,7 +117,7 @@ class KWinWindow implements IDriverWindow {
       height: this.window.maxSize.height,
     };
   }
-  public readonly window: Window;
+  public readonly window: KwinWindow;
   public readonly id: string;
 
   private readonly workspace: Workspace;
@@ -129,7 +129,7 @@ class KWinWindow implements IDriverWindow {
   private noBorderOriginal: boolean;
 
   constructor(
-    window: Window,
+    window: KwinWindow,
     workspace: Workspace,
     surfaceStore: KWinSurfaceStore,
   ) {
@@ -140,20 +140,20 @@ class KWinWindow implements IDriverWindow {
       time: 0,
     };
     this.window = window;
-    this.id = KWinWindow.generateID(window);
+    this.id = DriverWindow.generateID(window);
     this.maximized = false;
     this.noBorderManaged = false;
     this.noBorderOriginal = window.noBorder;
     this.isIgnoredByConfig =
-      KWinWindow.isContain(KWINCONFIG.ignoreClass, window.resourceClass) ||
-      KWinWindow.isContain(KWINCONFIG.ignoreClass, window.resourceName) ||
+      DriverWindow.isContain(KWINCONFIG.ignoreClass, window.resourceClass) ||
+      DriverWindow.isContain(KWINCONFIG.ignoreClass, window.resourceName) ||
       matchWords(this.window.caption, KWINCONFIG.ignoreTitle) >= 0 ||
-      KWinWindow.isContain(KWINCONFIG.ignoreRole, window.windowRole) ||
+      DriverWindow.isContain(KWINCONFIG.ignoreRole, window.windowRole) ||
       (KWINCONFIG.tileNothing &&
-        KWinWindow.isContain(KWINCONFIG.tilingClass, window.resourceClass));
+        DriverWindow.isContain(KWINCONFIG.tilingClass, window.resourceClass));
     this.isFloatByConfig =
-      KWinWindow.isContain(KWINCONFIG.floatingClass, window.resourceClass) ||
-      KWinWindow.isContain(KWINCONFIG.floatingClass, window.resourceName) ||
+      DriverWindow.isContain(KWINCONFIG.floatingClass, window.resourceClass) ||
+      DriverWindow.isContain(KWINCONFIG.floatingClass, window.resourceName) ||
       matchWords(this.window.caption, KWINCONFIG.floatingTitle) >= 0;
   }
 
@@ -164,6 +164,7 @@ class KWinWindow implements IDriverWindow {
   }
 
   public commit(
+    ctx: IDriverContext,
     geometry?: Rect,
     noBorder?: boolean,
     windowLayer?: WindowLayer,
@@ -222,21 +223,19 @@ class KWinWindow implements IDriverWindow {
         );
         if (
           geometry.x < area.x &&
-          KWinDriver.getNeighborOutput(this.workspace, "left", winOutput) ===
-            null
+          ctx.getNeighborOutput("left", winOutput) === null
         ) {
           geometry.x = area.x;
         }
         if (
           geometry.y < area.y &&
-          KWinDriver.getNeighborOutput(this.workspace, "up", winOutput) === null
+          ctx.getNeighborOutput("up", winOutput) === null
         ) {
           geometry.y = area.y;
         }
         if (
           geometry.maxX > area.maxX &&
-          KWinDriver.getNeighborOutput(this.workspace, "right", winOutput) ===
-            null
+          ctx.getNeighborOutput("right", winOutput) === null
         ) {
           if (geometry.width > area.width) {
             geometry.x = area.x;
@@ -247,8 +246,7 @@ class KWinWindow implements IDriverWindow {
         }
         if (
           geometry.maxY > area.maxY &&
-          KWinDriver.getNeighborOutput(this.workspace, "down", winOutput) ===
-            null
+          ctx.getNeighborOutput("down", winOutput) === null
         ) {
           if (geometry.height > area.height) {
             geometry.y = area.y;

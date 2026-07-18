@@ -273,11 +273,11 @@ class ColumnsLayout implements ILayout {
       partId = this.getPartsId(tileable);
 
       if (partId !== null) {
-        if (this.parts[partId].timestamp < tileable.timestamp) {
-          this.parts[partId].timestamp = tileable.timestamp;
+        if (this.parts[partId].timestamp < tileable.focusTime) {
+          this.parts[partId].timestamp = tileable.focusTime;
         }
         if (this.parts[partId].timestamp > latestTimestamp) {
-          latestTimestamp = tileable.timestamp;
+          latestTimestamp = tileable.focusTime;
           currentColumnId = partId;
         }
       } else {

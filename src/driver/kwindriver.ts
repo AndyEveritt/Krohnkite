@@ -13,12 +13,22 @@
  * functions.
  */
 var KWIN: KWin;
+// type SendClientToScreenType = {
+//   isSending: boolean;
+//   startTime: number;
+//   windows: Set<WindowClass>;
+//   calledWindows: Set<WindowClass>;
+// };
 
 class KWinDriver implements IDriverContext {
   public static backendName: string = "kwin";
 
   public get backend(): string {
     return KWinDriver.backendName;
+  }
+
+  public get currentDesktop(): VirtualDesktop {
+    return this.workspace.currentDesktop;
   }
 
   public get currentSurface(): ISurface {
@@ -56,8 +66,8 @@ class KWinDriver implements IDriverContext {
 
   public set currentWindow(window: WindowClass | null) {
     if (window !== null) {
-      window.timestamp = getTime();
-      this.workspace.activeWindow = (window.window as KWinWindow).window;
+      window.focusTime = getTime();
+      this.workspace.activeWindow = (window.window as DriverWindow).window;
     }
   }
 
@@ -93,7 +103,7 @@ class KWinDriver implements IDriverContext {
   private shortcuts: IShortcuts;
   private engine: TilingEngine;
   private control: TilingController;
-  private windowMap: WrapperMap<Window, WindowClass>;
+  private windowMap: WrapperMap<KwinWindow, WindowClass>;
   private entered: boolean;
   private _surfaceStore: KWinSurfaceStore;
   private _isMetaMode: IKrohnkiteMeta;
@@ -107,10 +117,10 @@ class KWinDriver implements IDriverContext {
     this.engine = new TilingEngine();
     this.control = new TilingController(this.engine);
     this.windowMap = new WrapperMap(
-      (client: Window) => KWinWindow.generateID(client),
-      (client: Window) =>
+      (client: KwinWindow) => DriverWindow.generateID(client),
+      (client: KwinWindow) =>
         new WindowClass(
-          new KWinWindow(client, this.workspace, this._surfaceStore),
+          new DriverWindow(client, this.workspace, this._surfaceStore),
         ),
     );
     this.entered = false;
@@ -128,16 +138,16 @@ class KWinDriver implements IDriverContext {
 
   public main() {
     LOG?.send(LogModules.printConfig, undefined, `Config: ${CONFIG}`);
-    this.bindEvents();
-    this.bindShortcut();
+    this._bindEvents();
+    this._bindShortcut();
 
-    const clients: Window[] = this.workspace.stackingOrder;
+    const clients: KwinWindow[] = this.workspace.stackingOrder;
     for (let i = 0; i < clients.length; i++) {
       this.addWindow(clients[i]);
     }
   }
 
-  private addWindow(client: Window): WindowClass | null {
+  private addWindow(client: KwinWindow): WindowClass | null {
     if (client.dock) {
       // Docks reserve screen space but aren't tiled. Handle that reservation
       // separately and skip the normal window management path.
@@ -154,13 +164,13 @@ class KWinDriver implements IDriverContext {
     ) {
       const window = this.windowMap.add(client);
       if (client.maximizeMode > 0) {
-        (window.window as KWinWindow).maximized = true;
+        (window.window as DriverWindow).maximized = true;
         // it can set maximized to false when window start already with maximized flag
         // client.setMaximize(false, false);
       }
-      this.control.onWindowAdded(this, window);
+      this.control.onWindowAdded(this, window, "windowAdded");
       if (window.state !== WindowState.Unmanaged) {
-        this.bindWindowEvents(window, client);
+        this._bindWindowEvents(window, client);
         LOG?.send(LogModules.newWindowAdded, "", debugWin(client), {
           winClass: [`${client.resourceClass}`],
         });
@@ -179,7 +189,7 @@ class KWinDriver implements IDriverContext {
     return null;
   }
 
-  private manageDock(client: Window): void {
+  private manageDock(client: KwinWindow): void {
     const placementArea = () =>
       toRect(
         this.workspace.clientArea(
@@ -193,10 +203,10 @@ class KWinDriver implements IDriverContext {
       area: placementArea(),
     };
     // Re-tile now to account for a dock whose area reservation already exists.
-    this.control.onSurfaceUpdate(this);
+    this.control.onSurfaceUpdate(this, "manageDock");
     // Subscribe to future area changes of each dock to make sure tiled
     // windows aren't overlapped by the dock or have an excessive gap.
-    this.connect(client.frameGeometryChanged, () => {
+    this._connect(client.frameGeometryChanged, () => {
       if (!client || client.deleted) {
         return;
       }
@@ -211,14 +221,14 @@ class KWinDriver implements IDriverContext {
         return;
       }
       prevPlacement = { desktop, area };
-      this.control.onSurfaceUpdate(this);
+      this.control.onSurfaceUpdate(this, "manageDock");
     });
   }
 
   public focusNeighborWindow(
     direction: Direction,
     winTypes: WinTypes,
-  ): Window | null | boolean {
+  ): KwinWindow | null | boolean {
     let window = this.workspace.activeWindow;
     if (!window) return null;
     let windows = this._getWindowsByDirection(
@@ -250,12 +260,11 @@ class KWinDriver implements IDriverContext {
   }
 
   public focusOutput(
-    window: Window | null,
+    window: KwinWindow | null,
     direction: Direction,
     winTypes: WinTypes,
   ): boolean {
-    let neighbor = KWinDriver.getNeighborOutput(
-      this.workspace,
+    let neighbor = this.getNeighborOutput(
       direction,
       this.workspace.activeScreen,
     );
@@ -345,11 +354,11 @@ class KWinDriver implements IDriverContext {
   }
 
   public focusVDesktop(
-    window: Window | null,
+    window: KwinWindow | null,
     direction: Direction,
     winTypes: WinTypes,
   ): boolean {
-    let neighbor = this._getNeighborVirtualDesktop(direction);
+    let neighbor = this.getNeighborVDesktop(direction);
     if (neighbor === null) return false;
     // Keep the same monitor when change virtual desktop.
     // TODO: delete next two strings
@@ -379,8 +388,7 @@ class KWinDriver implements IDriverContext {
     return result;
   }
 
-  public static getNeighborOutput(
-    workspace: Workspace,
+  public getNeighborOutput(
     direction: Direction,
     source: Output,
   ): Output | null {
@@ -398,7 +406,7 @@ class KWinDriver implements IDriverContext {
       }
       return false;
     }
-    for (let target of workspace.screens) {
+    for (let target of this.workspace.screens) {
       if (target === source) continue;
       let targetRect = toRect(target.geometry);
       switch (direction) {
@@ -434,8 +442,77 @@ class KWinDriver implements IDriverContext {
     return retOutput;
   }
 
+  public getNeighborVDesktop(
+    direction: Direction,
+    sourceVDesktop?: VirtualDesktop,
+  ): VirtualDesktop | null {
+    const currentVDesktop =
+      sourceVDesktop != null ? sourceVDesktop : this.workspace.currentDesktop;
+    const vDesktops = this.workspace.desktops;
+    const netSize = this.workspace.desktopGridSize;
+
+    if (!currentVDesktop) return null;
+
+    const total = vDesktops.length;
+    const width = netSize.width;
+    const height = netSize.height;
+
+    // Find index of current desktop (0-based)
+    const idx = vDesktops.indexOf(currentVDesktop);
+    if (idx < 0) return null;
+
+    // If width or height is 1, that axis has no neighbors.
+    if ((direction === "left" || direction === "right") && width === 1)
+      return null;
+    if ((direction === "up" || direction === "down") && height === 1)
+      return null;
+
+    if (direction === "left" || direction === "right") {
+      // column: 1..width
+      const col = (idx % width) + 1;
+      if (direction === "left") {
+        // already at leftmost column?
+        if (col === 1) return null;
+        // neighbor is previous desktop in array
+        return vDesktops[idx - 1] ?? null;
+      } else {
+        // right
+        if (col === width) return null;
+        // neighbor is next desktop in array (ensure within total)
+        return idx + 1 < total ? vDesktops[idx + 1] : null;
+      }
+    } else {
+      // up / down: compute row (1..height)
+      const row = Math.ceil((idx + 1) / width);
+      if (direction === "up") {
+        if (row === 1) return null;
+        const neighborIdx = idx - width;
+        return neighborIdx >= 0 ? vDesktops[neighborIdx] : null;
+      } else {
+        // down
+        if (row === height) return null;
+        const neighborIdx = idx + width;
+        return neighborIdx < total ? vDesktops[neighborIdx] : null;
+      }
+    }
+  }
+
+  public getSurface(
+    output: Output,
+    vDesktop?: VirtualDesktop,
+  ): ISurface | null {
+    if (!vDesktop) {
+      vDesktop = this._outputCurrentDesktop(output);
+    }
+    return this._surfaceStore.getSurface(
+      output,
+      this.workspace.currentActivity,
+      vDesktop,
+    );
+  }
+
   public setTimeout(func: () => void, timeout: number) {
-    KWinSetTimeout(() => this.enter(func), timeout);
+    KWinSetTimeout(() => this._enter(func), timeout);
   }
 
   public showNotification(text: string) {
@@ -480,81 +557,138 @@ class KWinDriver implements IDriverContext {
     }
   }
 
-  public moveWindowsToScreen(
-    windowsToScreen: [output: Output, windows: WindowClass[]][],
-  ): void {
-    const clients: KWinWindow["window"][] = [];
-
-    for (const [output, windows] of windowsToScreen) {
+  public positioningOverCapacityWindows(): void {
+    const overCapacityWindows = this.engine.overCapacityWindows;
+    if (overCapacityWindows.totalNumWinsPrepareToOutput === 0) {
+      this._transferWindowsToVDesktops();
+      return;
+    }
+    let totalWindowsSentToOutput = 0;
+    for (const [output, windows] of overCapacityWindows.toOutputs.entries()) {
       for (const window of windows) {
-        const client = (window.window as KWinWindow).window;
-        try {
-          this.workspace.sendClientToScreen(client, output);
-        } catch (e) {
-          // continue on error
+        if (this._moveWindowToOutputNew(window, output!)) {
+          if (overCapacityWindows.isSending === false)
+            overCapacityWindows.isSending = true;
+          totalWindowsSentToOutput++;
         }
-        clients.push(client);
       }
     }
 
-    if (clients.length === 0) return;
+    if (totalWindowsSentToOutput === 0) {
+      overCapacityWindows.isSending = false;
+      return;
+    }
+    const time = getTime();
+    overCapacityWindows.startTime = time;
 
-    const lastClient = clients[clients.length - 1];
-    const interval = 20;
-    const maxWait = 100;
-    let elapsed = 0;
-
-    const verifyClientOnOutput = (): boolean => {
-      try {
-        const out = lastClient.output;
-        if (out) return true;
-
-        return false;
-      } catch (e) {
-        return false;
+    const forcedArrangeScreen = () => {
+      if (
+        overCapacityWindows.isSending &&
+        overCapacityWindows.startTime <= time
+      ) {
+        warning(
+          `${getMethodName()}. Forced Arrange. Start time: ${time}, Number of prepared Windows: ${overCapacityWindows.totalNumWinsPrepareToOutput}, sent:${totalWindowsSentToOutput}, sending to Output: ${overCapacityWindows.getWinsSendingToOutput}, prepare to transfer to VDesktop: ${overCapacityWindows.totalNumWinsPrepareToVDesktop}`,
+        );
+        overCapacityWindows.isSending = false;
+        overCapacityWindows.clear();
+        try {
+          this.control.engine.arrange(this, "forcedArrangeScreen");
+        } catch (e) {
+          warning(`${getMethodName()}: ${e}`);
+        }
       }
     };
 
-    const finishActivation = () => {
-      try {
-        this.workspace.activeWindow = lastClient;
-      } catch (e) {
-        // ignore
-      }
-
-      try {
-        this.control.engine.arrange(this, "moveWindowsToScreen");
-      } catch (e) {
-        // ignore
-      }
-    };
-
-    const poll = () => {
-      if (verifyClientOnOutput()) {
-        finishActivation();
-        return;
-      }
-
-      elapsed += interval;
-      if (elapsed >= maxWait) {
-        finishActivation();
-        return;
-      }
-
-      this.setTimeout(poll, interval);
-    };
-
-    // Start polling after issuing the sends
-    this.setTimeout(poll, interval);
+    this.setTimeout(
+      forcedArrangeScreen,
+      this.engine.SENDING_WINDOWS_MAX_WAIT_TIME,
+    );
   }
 
-  public moveToScreen(
+  public moveWindowToOutputDirection(
     window: WindowClass,
     direction: Direction,
-    targetOutput: Output | null = null,
-    retargetDesktop: boolean = true,
+    retargetDesktop = true,
+    arrangeScreens = true,
   ): boolean {
-    const client = (window.window as KWinWindow).window;
+    return this._moveWindowToOutput(
+      window,
+      undefined,
+      direction,
+      retargetDesktop,
+      arrangeScreens,
+    );
+  }
+
+  private _moveWindowToOutputNew(
+    window: WindowClass,
+    targetOutput: Output,
+  ): boolean {
+    const client = (window.window as DriverWindow).window;
+    if (client == null) return false;
+
+    window.isSendingToOutput = true;
+    try {
+      this.workspace.sendClientToScreen(client, targetOutput);
+    } catch (e) {
+      window.isSendingToOutput = false;
+      warning(`${getMethodName()}: sendClientToScreen() failed. ${e}`);
+      return false;
+    }
+    return true;
+  }
+
+  private _transferWindowsToVDesktops() {
+    const overCapacityWindows = this.engine.overCapacityWindows;
+    if (overCapacityWindows.totalNumWinsPrepareToVDesktop <= 0) return;
+    let totalWindowsTransferToVDesktop = 0;
+    for (const [
+      vDesktop,
+      windows,
+    ] of overCapacityWindows.toVDesktops.entries()) {
+      for (const window of windows) {
+        this._moveWinToVDesktop(window, vDesktop!);
+        totalWindowsTransferToVDesktop++;
+      }
+    }
+    this._overCapacityWindowsSendProcessFinish("transferWindowToVDesktop");
+  }
+
+  private _overCapacityWindowsSendProcessFinish(
+    reason: keyof typeof ArrangeReason,
+  ) {
+    if (this.engine.overCapacityWindows.activeWindow !== null)
+      this.currentWindow = this.engine.overCapacityWindows.activeWindow;
+    this.engine.overCapacityWindows.clear();
+    try {
+      this.control.engine.arrange(this, reason);
+    } catch (e) {
+      warning(`${getMethodName()}: ${e}`);
+    }
+  }
+
+  private _sendingWindowsProcessCall() {
+    if (
+      this.engine.overCapacityWindows.isSending &&
+      !this.engine.overCapacityWindows.isExistSendingWindowsToOutput
+    ) {
+      if (this.engine.overCapacityWindows.isExistTransferWindowsToVDesktop) {
+        this._transferWindowsToVDesktops();
+        return;
+      }
+
+      this._overCapacityWindowsSendProcessFinish("sendToOutputProcessFinish");
+    }
+  }
+
+  private _moveWindowToOutput(
+    window: WindowClass,
+    targetOutput?: Output | null | undefined,
+    direction?: Direction,
+    retargetDesktop: boolean = true,
+    arrangeScreens: boolean = true,
+  ): boolean {
+    const client = (window.window as DriverWindow).window;
 
     // Try the client's output property and match by name
     let sourceOutput: Output | null = null;
@@ -576,15 +710,11 @@ class KWinDriver implements IDriverContext {
     if (!sourceOutput) return false;
 
     // Find the adjacent output.
-    if (!targetOutput) {
+    if (!targetOutput && direction != null) {
       try {
-        targetOutput = KWinDriver.getNeighborOutput(
-          this.workspace,
-          direction,
-          sourceOutput,
-        );
+        targetOutput = this.getNeighborOutput(direction, sourceOutput);
       } catch (e) {
-        targetOutput = null;
+        targetOutput = undefined;
       }
     }
 
@@ -653,7 +783,8 @@ class KWinDriver implements IDriverContext {
       }
 
       try {
-        this.control.engine.arrange(this, "moveToScreen");
+        if (arrangeScreens)
+          this.control.engine.arrange(this, "moveWindowToOutput");
       } catch (e) {
         /* ignore */
       }
@@ -678,10 +809,13 @@ class KWinDriver implements IDriverContext {
     return true;
   }
 
-  public moveToVDesktop(window: WindowClass, direction: Direction): boolean {
-    let targetVDesktop = this._getNeighborVirtualDesktop(direction);
+  public moveWinToVDesktopByDirection(
+    window: WindowClass,
+    direction: Direction,
+  ): boolean {
+    let targetVDesktop = this.getNeighborVDesktop(direction);
     if (targetVDesktop === null) return false;
-    let client = (window.window as KWinWindow).window;
+    let client = (window.window as DriverWindow).window;
     this.workspace.currentDesktop = targetVDesktop;
     client.desktops = [targetVDesktop];
     this.workspace.activeWindow = client;
@@ -694,6 +828,17 @@ class KWinDriver implements IDriverContext {
     return true;
   }
 
+  private _moveWinToVDesktop(
+    window: WindowClass,
+    virtualDesktop: VirtualDesktop,
+  ): void {
+    let client = (window.window as DriverWindow).window;
+    const desktops = client.desktops;
+    if (desktops.length !== 0 && !desktops.find((d) => d === virtualDesktop)) {
+      client.desktops = [virtualDesktop];
+    }
+  }
+
   private _getOutputByDirection(direction: Direction): Output | null {
     let oppositeDirection = getOppositeDirection(direction);
     let currentOutput = this.workspace.activeScreen;
@@ -701,8 +846,7 @@ class KWinDriver implements IDriverContext {
     let targetOutput: Output | null;
 
     while (
-      (targetOutput = KWinDriver.getNeighborOutput(
-        this.workspace,
+      (targetOutput = this.getNeighborOutput(
         oppositeDirection,
         sourceOutput,
       )) !== null
@@ -712,157 +856,19 @@ class KWinDriver implements IDriverContext {
     return sourceOutput !== currentOutput ? sourceOutput : null;
   }
 
-  private _setFocusOnSurface(
-    window: Window | null,
-    surface: ISurface,
-    direction: Direction,
-    winTypes: WinTypes,
-    localWindows: Window[] | null = null,
-  ): boolean {
-    let sourceRect: Rect;
-    if (localWindows !== null && window !== null) {
-      sourceRect = toRect(window.frameGeometry);
-    } else if (window !== null) {
-      let tG = toRect(surface.output.geometry);
-      let sG = window.output.geometry;
-      let winRect = toRect(window.frameGeometry);
-
-      switch (direction) {
-        case "left": {
-          let y_ratio = (winRect.y - sG.y) / sG.height;
-          let y = tG.y + tG.height * y_ratio;
-          sourceRect = new Rect(
-            tG.maxX - 5,
-            y,
-            5,
-            y + winRect.height < tG.y + tG.height
-              ? winRect.height
-              : tG.height - (y - tG.y),
-          );
-          break;
-        }
-        case "right": {
-          let y_ratio = (winRect.y - sG.y) / sG.height;
-          let y = tG.y + tG.height * y_ratio;
-          sourceRect = new Rect(
-            tG.x,
-            y,
-            5,
-            y + winRect.height < tG.y + tG.height
-              ? winRect.height
-              : tG.height - (y - tG.y),
-          );
-          break;
-        }
-        case "up": {
-          let x_ratio = (winRect.x - sG.x) / sG.width;
-          let x = tG.x + tG.width * x_ratio;
-          sourceRect = new Rect(
-            x,
-            tG.maxY - 5,
-            x + winRect.width < tG.x + tG.width
-              ? winRect.width
-              : tG.width - (x - tG.x),
-            5,
-          );
-          break;
-        }
-        case "down": {
-          let x_ratio = (winRect.x - sG.x) / sG.width;
-          let x = tG.x + tG.width * x_ratio;
-          sourceRect = new Rect(
-            x,
-            tG.y,
-            x + winRect.width < tG.x + tG.width
-              ? winRect.width
-              : tG.width - (x - tG.x),
-            5,
-          );
-          break;
-        }
-      }
-    } else {
-      let nG = toRect(surface.output.geometry);
-      switch (direction) {
-        case "left": {
-          sourceRect = new Rect(nG.maxX - 5, nG.y, 5, nG.height);
-          break;
-        }
-        case "right": {
-          sourceRect = new Rect(nG.x, nG.y, 5, nG.height);
-          break;
-        }
-        case "up": {
-          sourceRect = new Rect(nG.x, nG.maxY - 5, nG.width, 5);
-          break;
-        }
-        case "down": {
-          sourceRect = new Rect(nG.x, nG.y, nG.width, 5);
-          break;
-        }
-      }
-    }
-    let windows: Window[];
-    if (localWindows !== null) {
-      windows = localWindows;
-    } else {
-      windows = this._getWindowsByDirection(
-        winTypes,
-        surface,
-        sourceRect,
-        direction,
-      );
-    }
-    let focusCandidate: Window | null = null;
-    let fCTimeStamp: number | null | undefined = null;
-    let distance = null;
-    let d;
-    for (let win of windows) {
-      if (window !== null && win === window) continue;
-      let winRect = toRect(win.bufferGeometry);
-      d =
-        sourceRect.distance(winRect) +
-        sourceRect.overallDimension(winRect, direction);
-      if (focusCandidate === null || distance === null || d < distance) {
-        distance = d;
-        focusCandidate = win;
-      } else if (focusCandidate !== null && d === distance) {
-        if (fCTimeStamp === null) {
-          fCTimeStamp = this.engine.windows.getWindowById(
-            String(focusCandidate.internalId),
-          )?.timestamp;
-        }
-        let timestamp = this.engine.windows.getWindowById(
-          String(win.internalId),
-        )?.timestamp;
-        if (
-          (timestamp && fCTimeStamp && timestamp < fCTimeStamp) ||
-          (timestamp && !fCTimeStamp)
-        ) {
-          fCTimeStamp = timestamp;
-          focusCandidate = win;
-        }
-      }
-    }
-    if (focusCandidate !== null) {
-      this.workspace.activeWindow = focusCandidate;
-      return true;
-    } else {
-      return false;
-    }
-  }
-
   private _getWindowsByDirection(
     wType: WinTypes,
     surface: ISurface,
     rect: Rect,
     direction: Direction,
-    window?: Window,
-  ): Window[] {
-    let windows: Window[] = [];
-    function mapWinClassToKWinWindow(winClassWindows: WindowClass[]): Window[] {
+    window?: KwinWindow,
+  ): KwinWindow[] {
+    let windows: KwinWindow[] = [];
+    function mapWinClassToKWinWindow(
+      winClassWindows: WindowClass[],
+    ): KwinWindow[] {
       return winClassWindows.map(
-        (winClassWin) => (winClassWin.window as KWinWindow).window,
+        (winClassWin) => (winClassWin.window as DriverWindow).window,
       );
     }
     switch (wType) {
@@ -957,56 +963,129 @@ class KWinDriver implements IDriverContext {
     return windows;
   }
 
-  private _getNeighborVirtualDesktop(
+  private _makeActiveScreen(output: Output, notify: boolean = true) {
+    for (let win of this.workspace.stackingOrder) {
+      if (win.resourceClass === "plasmashell" && win.output === output) {
+        this.workspace.activeWindow = win;
+        if (notify) this.showNotification("Active screen");
+        break;
+      }
+    }
+  }
+
+  private _computeCrossScreenSourceRect(
+    window: KwinWindow,
+    surface: ISurface,
     direction: Direction,
-  ): VirtualDesktop | null {
-    const currentVDesktop = this.workspace.currentDesktop;
-    const vDesktops = this.workspace.desktops;
-    const netSize = this.workspace.desktopGridSize;
-
-    if (!currentVDesktop) return null;
-
-    const total = vDesktops.length;
-    const width = netSize.width;
-    const height = netSize.height;
-
-    // Find index of current desktop (0-based)
-    const idx = vDesktops.indexOf(currentVDesktop);
-    if (idx < 0) return null;
-
-    // If width or height is 1, that axis has no neighbors.
-    if ((direction === "left" || direction === "right") && width === 1)
-      return null;
-    if ((direction === "up" || direction === "down") && height === 1)
-      return null;
+  ): Rect {
+    const tG = toRect(surface.output.geometry);
+    const sG = window.output.geometry;
+    const winRect = toRect(window.frameGeometry);
 
     if (direction === "left" || direction === "right") {
-      // column: 1..width
-      const col = (idx % width) + 1;
+      const y_ratio = (winRect.y - sG.y) / sG.height;
+      const y = tG.y + tG.height * y_ratio;
+      const h = Math.min(winRect.height, tG.height - (y - tG.y));
       if (direction === "left") {
-        // already at leftmost column?
-        if (col === 1) return null;
-        // neighbor is previous desktop in array
-        return vDesktops[idx - 1] ?? null;
+        return new Rect(tG.maxX - 5, y, 5, h);
       } else {
-        // right
-        if (col === width) return null;
-        // neighbor is next desktop in array (ensure within total)
-        return idx + 1 < total ? vDesktops[idx + 1] : null;
+        return new Rect(tG.x, y, 5, h);
       }
     } else {
-      // up / down: compute row (1..height)
-      const row = Math.ceil((idx + 1) / width);
+      const x_ratio = (winRect.x - sG.x) / sG.width;
+      const x = tG.x + tG.width * x_ratio;
+      const w = Math.min(winRect.width, tG.width - (x - tG.x));
       if (direction === "up") {
-        if (row === 1) return null;
-        const neighborIdx = idx - width;
-        return neighborIdx >= 0 ? vDesktops[neighborIdx] : null;
+        return new Rect(x, tG.maxY - 5, w, 5);
       } else {
-        // down
-        if (row === height) return null;
-        const neighborIdx = idx + width;
-        return neighborIdx < total ? vDesktops[neighborIdx] : null;
+        return new Rect(x, tG.y, w, 5);
       }
+    }
+  }
+
+  private _computeSurfaceEdgeSourceRect(
+    surface: ISurface,
+    direction: Direction,
+  ): Rect {
+    const g = toRect(surface.output.geometry);
+    switch (direction) {
+      case "left":
+        return new Rect(g.maxX - 5, g.y, 5, g.height);
+      case "right":
+        return new Rect(g.x, g.y, 5, g.height);
+      case "up":
+        return new Rect(g.x, g.maxY - 5, g.width, 5);
+      case "down":
+        return new Rect(g.x, g.y, g.width, 5);
+    }
+  }
+
+  private _setFocusOnSurface(
+    window: KwinWindow | null,
+    surface: ISurface,
+    direction: Direction,
+    winTypes: WinTypes,
+    localWindows: KwinWindow[] | null = null,
+  ): boolean {
+    let sourceRect: Rect;
+    if (localWindows !== null && window !== null) {
+      sourceRect = toRect(window.frameGeometry);
+    } else if (window !== null) {
+      sourceRect = this._computeCrossScreenSourceRect(
+        window,
+        surface,
+        direction,
+      );
+    } else {
+      sourceRect = this._computeSurfaceEdgeSourceRect(surface, direction);
+    }
+    let windows: KwinWindow[];
+    if (localWindows !== null) {
+      windows = localWindows;
+    } else {
+      windows = this._getWindowsByDirection(
+        winTypes,
+        surface,
+        sourceRect,
+        direction,
+      );
+    }
+    let focusCandidate: KwinWindow | null = null;
+    let fCTimeStamp: number | null | undefined = null;
+    let distance = null;
+    let d;
+    for (let win of windows) {
+      if (window !== null && win === window) continue;
+      let winRect = toRect(win.bufferGeometry);
+      d =
+        sourceRect.distance(winRect) +
+        sourceRect.overallDimension(winRect, direction);
+      if (focusCandidate === null || distance === null || d < distance) {
+        distance = d;
+        focusCandidate = win;
+      } else if (focusCandidate !== null && d === distance) {
+        if (fCTimeStamp === null) {
+          fCTimeStamp = this.engine.windows.getWindowById(
+            String(focusCandidate.internalId),
+          )?.focusTime;
+        }
+        let timestamp = this.engine.windows.getWindowById(
+          String(win.internalId),
+        )?.focusTime;
+        if (
+          (timestamp && fCTimeStamp && timestamp < fCTimeStamp) ||
+          (timestamp && !fCTimeStamp)
+        ) {
+          fCTimeStamp = timestamp;
+          focusCandidate = win;
+        }
+      }
+    }
+    if (focusCandidate !== null) {
+      this.workspace.activeWindow = focusCandidate;
+      return true;
+    } else {
+      return false;
     }
   }
 
@@ -1043,172 +1122,102 @@ class KWinDriver implements IDriverContext {
     this.workspace.currentDesktop = desktop;
   }
 
-  private _makeActiveScreen(output: Output, notify: boolean = true) {
-    for (let win of this.workspace.stackingOrder) {
-      if (win.resourceClass === "plasmashell" && win.output === output) {
-        this.workspace.activeWindow = win;
-        if (notify) this.showNotification("Active screen");
-        break;
-      }
-    }
-  }
-
-  private bindShortcut() {
-    const callbackShortcut = (shortcut: Shortcut) => {
+  private _bindShortcut() {
+    const cb = (shortcut: Shortcut) => {
       return () => {
         LOG?.send(LogModules.shortcut, `Shortcut pressed:`, `${shortcut}`);
-        this.enter(() => this.control.onShortcut(this, shortcut));
-      };
-    };
-    this.shortcuts
-      .getToggleDock()
-      .activated.connect(callbackShortcut(Shortcut.ToggleDock));
-    this.shortcuts
-      .getFocusNext()
-      .activated.connect(callbackShortcut(Shortcut.FocusNext));
-    this.shortcuts
-      .getFocusPrev()
-      .activated.connect(callbackShortcut(Shortcut.FocusPrev));
-    this.shortcuts
-      .getFocusDown()
-      .activated.connect(callbackShortcut(Shortcut.FocusDown));
-    this.shortcuts
-      .getFocusUp()
-      .activated.connect(callbackShortcut(Shortcut.FocusUp));
-    this.shortcuts
-      .getFocusLeft()
-      .activated.connect(callbackShortcut(Shortcut.FocusLeft));
-    this.shortcuts
-      .getFocusRight()
-      .activated.connect(callbackShortcut(Shortcut.FocusRight));
-
-    this.shortcuts
-      .getShiftDown()
-      .activated.connect(callbackShortcut(Shortcut.ShiftDown));
-    this.shortcuts
-      .getShiftUp()
-      .activated.connect(callbackShortcut(Shortcut.ShiftUp));
-    this.shortcuts
-      .getShiftLeft()
-      .activated.connect(callbackShortcut(Shortcut.ShiftLeft));
-    this.shortcuts
-      .getShiftRight()
-      .activated.connect(callbackShortcut(Shortcut.ShiftRight));
-
-    this.shortcuts
-      .getGrowHeight()
-      .activated.connect(callbackShortcut(Shortcut.GrowHeight));
-    this.shortcuts
-      .getShrinkHeight()
-      .activated.connect(callbackShortcut(Shortcut.ShrinkHeight));
-    this.shortcuts
-      .getShrinkWidth()
-      .activated.connect(callbackShortcut(Shortcut.ShrinkWidth));
-    this.shortcuts
-      .getGrowWidth()
-      .activated.connect(callbackShortcut(Shortcut.GrowWidth));
-
-    this.shortcuts
-      .getIncrease()
-      .activated.connect(callbackShortcut(Shortcut.Increase));
-    this.shortcuts
-      .getDecrease()
-      .activated.connect(callbackShortcut(Shortcut.Decrease));
-
-    this.shortcuts
-      .getToggleFloat()
-      .activated.connect(callbackShortcut(Shortcut.ToggleFloat));
-    this.shortcuts
-      .getFloatAll()
-      .activated.connect(callbackShortcut(Shortcut.ToggleFloatAll));
-    this.shortcuts
-      .getNextLayout()
-      .activated.connect(callbackShortcut(Shortcut.NextLayout));
-    this.shortcuts
-      .getPreviousLayout()
-      .activated.connect(callbackShortcut(Shortcut.PreviousLayout));
-
-    this.shortcuts
-      .getRotate()
-      .activated.connect(callbackShortcut(Shortcut.Rotate));
-    this.shortcuts
-      .getRotatePart()
-      .activated.connect(callbackShortcut(Shortcut.RotatePart));
-
-    this.shortcuts
-      .getSetMaster()
-      .activated.connect(callbackShortcut(Shortcut.SetMaster));
-
-    this.shortcuts
-      .getRaiseSurfaceCapacity()
-      .activated.connect(callbackShortcut(Shortcut.RaiseSurfaceCapacity));
-    this.shortcuts
-      .getLowerSurfaceCapacity()
-      .activated.connect(callbackShortcut(Shortcut.LowerSurfaceCapacity));
-
-    this.shortcuts
-      .getKrohnkiteMeta()
-      .activated.connect(callbackShortcut(Shortcut.KrohnkiteMeta));
-
-    const callbackShortcutLayout = (layoutClass: ILayoutClass) => {
-      return () => {
-        LOG?.send(LogModules.shortcut, "shortcut layout", `${layoutClass.id}`);
-        this.enter(() =>
-          this.control.onShortcut(this, Shortcut.SetLayout, layoutClass.id),
+        this._enter(() =>
+          this.control.onShortcut(this, shortcut, "shortcutCB"),
         );
       };
     };
 
-    this.shortcuts
-      .getTileLayout()
-      .activated.connect(callbackShortcutLayout(TileLayout));
-    this.shortcuts
-      .getMonocleLayout()
-      .activated.connect(callbackShortcutLayout(MonocleLayout));
-    this.shortcuts
-      .getThreeColumnLayout()
-      .activated.connect(callbackShortcutLayout(ThreeColumnLayout));
-    this.shortcuts
-      .getSpreadLayout()
-      .activated.connect(callbackShortcutLayout(SpreadLayout));
-    this.shortcuts
-      .getStairLayout()
-      .activated.connect(callbackShortcutLayout(StairLayout));
-    this.shortcuts
-      .getFloatingLayout()
-      .activated.connect(callbackShortcutLayout(FloatingLayout));
-    this.shortcuts
-      .getQuarterLayout()
-      .activated.connect(callbackShortcutLayout(QuarterLayout));
-    this.shortcuts
-      .getStackedLayout()
-      .activated.connect(callbackShortcutLayout(StackedLayout));
-    this.shortcuts
-      .getColumnsLayout()
-      .activated.connect(callbackShortcutLayout(ColumnsLayout));
-    this.shortcuts
-      .getSpiralLayout()
-      .activated.connect(callbackShortcutLayout(SpiralLayout));
-    this.shortcuts
-      .getBTreeLayout()
-      .activated.connect(callbackShortcutLayout(BinaryTreeLayout));
-    this.shortcuts
-      .getCascadeLayout()
-      .activated.connect(callbackShortcutLayout(CascadeLayout));
+    const shortcutPairs: Array<[() => ShortcutHandler, Shortcut]> = [
+      [() => this.shortcuts.getToggleDock(), Shortcut.ToggleDock],
+      [() => this.shortcuts.getFocusNext(), Shortcut.FocusNext],
+      [() => this.shortcuts.getFocusPrev(), Shortcut.FocusPrev],
+      [() => this.shortcuts.getFocusDown(), Shortcut.FocusDown],
+      [() => this.shortcuts.getFocusUp(), Shortcut.FocusUp],
+      [() => this.shortcuts.getFocusLeft(), Shortcut.FocusLeft],
+      [() => this.shortcuts.getFocusRight(), Shortcut.FocusRight],
+      [() => this.shortcuts.getShiftDown(), Shortcut.ShiftDown],
+      [() => this.shortcuts.getShiftUp(), Shortcut.ShiftUp],
+      [() => this.shortcuts.getShiftLeft(), Shortcut.ShiftLeft],
+      [() => this.shortcuts.getShiftRight(), Shortcut.ShiftRight],
+      [() => this.shortcuts.getGrowHeight(), Shortcut.GrowHeight],
+      [() => this.shortcuts.getShrinkHeight(), Shortcut.ShrinkHeight],
+      [() => this.shortcuts.getShrinkWidth(), Shortcut.ShrinkWidth],
+      [() => this.shortcuts.getGrowWidth(), Shortcut.GrowWidth],
+      [() => this.shortcuts.getIncrease(), Shortcut.Increase],
+      [() => this.shortcuts.getDecrease(), Shortcut.Decrease],
+      [() => this.shortcuts.getToggleFloat(), Shortcut.ToggleFloat],
+      [() => this.shortcuts.getFloatAll(), Shortcut.ToggleFloatAll],
+      [() => this.shortcuts.getNextLayout(), Shortcut.NextLayout],
+      [() => this.shortcuts.getPreviousLayout(), Shortcut.PreviousLayout],
+      [() => this.shortcuts.getRotate(), Shortcut.Rotate],
+      [() => this.shortcuts.getRotatePart(), Shortcut.RotatePart],
+      [() => this.shortcuts.getSetMaster(), Shortcut.SetMaster],
+      [
+        () => this.shortcuts.getRaiseSurfaceCapacity(),
+        Shortcut.RaiseSurfaceCapacity,
+      ],
+      [
+        () => this.shortcuts.getLowerSurfaceCapacity(),
+        Shortcut.LowerSurfaceCapacity,
+      ],
+      [() => this.shortcuts.getKrohnkiteMeta(), Shortcut.KrohnkiteMeta],
+    ];
+
+    for (const [getHandler, shortcut] of shortcutPairs) {
+      getHandler().activated.connect(cb(shortcut));
+    }
+
+    const layoutCb = (layoutClass: ILayoutClass) => {
+      return () => {
+        LOG?.send(LogModules.shortcut, "shortcut layout", `${layoutClass.id}`);
+        this._enter(() =>
+          this.control.onShortcut(
+            this,
+            Shortcut.SetLayout,
+            "shortcutLayoutCB",
+            layoutClass.id,
+          ),
+        );
+      };
+    };
+
+    const layoutPairs: Array<[() => ShortcutHandler, ILayoutClass]> = [
+      [() => this.shortcuts.getTileLayout(), TileLayout],
+      [() => this.shortcuts.getMonocleLayout(), MonocleLayout],
+      [() => this.shortcuts.getThreeColumnLayout(), ThreeColumnLayout],
+      [() => this.shortcuts.getSpreadLayout(), SpreadLayout],
+      [() => this.shortcuts.getStairLayout(), StairLayout],
+      [() => this.shortcuts.getFloatingLayout(), FloatingLayout],
+      [() => this.shortcuts.getQuarterLayout(), QuarterLayout],
+      [() => this.shortcuts.getStackedLayout(), StackedLayout],
+      [() => this.shortcuts.getColumnsLayout(), ColumnsLayout],
+      [() => this.shortcuts.getSpiralLayout(), SpiralLayout],
+      [() => this.shortcuts.getBTreeLayout(), BinaryTreeLayout],
+      [() => this.shortcuts.getCascadeLayout(), CascadeLayout],
+    ];
+
+    for (const [getHandler, layoutClass] of layoutPairs) {
+      getHandler().activated.connect(layoutCb(layoutClass));
+    }
   }
 
   /**
    * Binds callback to the signal w/ extra fail-safe measures, like re-entry
    * prevention and auto-disconnect on termination.
    */
-  private connect(
+  private _connect(
     signal: Signal<(...args: any[]) => void>,
     handler: (..._: any[]) => void,
   ): () => void {
     const wrapper = (...args: any[]) => {
       /* HACK: `workspace` become undefined when the script is disabled. */
       if (typeof this.workspace === "undefined") signal.disconnect(wrapper);
-      else this.enter(() => handler.apply(this, args));
+      else this._enter(() => handler.apply(this, args));
     };
     signal.connect(wrapper);
 
@@ -1224,7 +1233,7 @@ class KWinDriver implements IDriverContext {
    * during event handling, resulting in performance degradation and harder
    * debugging.
    */
-  private enter(callback: () => void) {
+  private _enter(callback: () => void) {
     if (this.entered) return;
 
     this.entered = true;
@@ -1239,22 +1248,22 @@ class KWinDriver implements IDriverContext {
   }
   //TODO: add signal Vdesktop.aboutToBeDestroyed
   //add signal workspace.activity.removed
-  private bindEvents() {
-    this.connect(this.workspace.screensChanged, () => {
+  private _bindEvents() {
+    this._connect(this.workspace.screensChanged, () => {
       LOG?.send(LogModules.screensChanged, "eventFired");
       /* Outputs may have been destroyed (unplug, resume from sleep):
        * drop surfaces that reference them before arranging, so nothing
        * downstream feeds a dangling Output back into KWin. */
       this._surfaceStore.removeOutdatedSurfaces();
-      this.control.onSurfaceUpdate(this);
+      this.control.onSurfaceUpdate(this, "screensChangedCB");
     });
 
-    this.connect(this.workspace.virtualScreenGeometryChanged, () => {
+    this._connect(this.workspace.virtualScreenGeometryChanged, () => {
       LOG?.send(LogModules.virtualScreenGeometryChanged, "eventFired");
-      this.control.onSurfaceUpdate(this);
+      this.control.onSurfaceUpdate(this, "virtualScreenGeometryChangedCB");
     });
 
-    this.connect(
+    this._connect(
       this.workspace.currentActivityChanged,
       (activityId: string) => {
         LOG?.send(
@@ -1262,11 +1271,11 @@ class KWinDriver implements IDriverContext {
           "eventFired",
           `Activity ID:${activityId}`,
         );
-        this.control.onCurrentActivityChanged(this);
+        this.control.onCurrentActivityChanged(this, "currentActivityChangedCB");
       },
     );
 
-    this.connect(
+    this._connect(
       this.workspace.currentDesktopChanged,
       (virtualDesktop: VirtualDesktop) => {
         LOG?.send(
@@ -1274,11 +1283,11 @@ class KWinDriver implements IDriverContext {
           "eventFired",
           `Virtual Desktop. name:${virtualDesktop.name}, id:${virtualDesktop.id}`,
         );
-        this.control.onSurfaceUpdate(this);
+        this.control.onSurfaceUpdate(this, "currentDesktopChangedCB");
       },
     );
 
-    this.connect(this.workspace.windowAdded, (client: Window) => {
+    this._connect(this.workspace.windowAdded, (client: KwinWindow) => {
       if (!client) return;
       LOG?.send(
         LogModules.windowAdded,
@@ -1295,7 +1304,7 @@ class KWinDriver implements IDriverContext {
       }
     });
 
-    this.connect(this.workspace.windowActivated, (client: Window) => {
+    this._connect(this.workspace.windowActivated, (client: KwinWindow) => {
       if (!client || client.deleted) return;
       LOG?.send(
         LogModules.windowActivated,
@@ -1309,7 +1318,7 @@ class KWinDriver implements IDriverContext {
       }
     });
 
-    this.connect(this.workspace.windowRemoved, (client: Window) => {
+    this._connect(this.workspace.windowRemoved, (client: KwinWindow) => {
       if (!client) return;
       LOG?.send(
         LogModules.windowRemoved,
@@ -1321,16 +1330,16 @@ class KWinDriver implements IDriverContext {
         // A dock is never added to windowMap, so the removal handling below
         // ignores it. Re-tile here instead so that windows expand into the area
         // previously reserved for the dock.
-        this.control.onSurfaceUpdate(this);
+        this.control.onSurfaceUpdate(this, "windowRemovedCB");
         return;
       }
       const window = this.windowMap.get(client);
       if (window) {
-        this.control.onWindowRemoved(this, window);
+        this.control.onWindowRemoved(this, window, "windowRemovedCB");
         this.windowMap.remove(client);
       }
     });
-    this.connect(this.workspace.activityRemoved, (id: string) => {
+    this._connect(this.workspace.activityRemoved, (id: string) => {
       LOG?.send(
         LogModules.surfaceChanged,
         "eventFired",
@@ -1338,7 +1347,7 @@ class KWinDriver implements IDriverContext {
       );
       this._surfaceStore.removeByActivity(id);
     });
-    this.connect(this.workspace.desktopsChanged, () => {
+    this._connect(this.workspace.desktopsChanged, () => {
       LOG?.send(
         LogModules.surfaceChanged,
         "eventFired",
@@ -1352,10 +1361,10 @@ class KWinDriver implements IDriverContext {
      *       https://github.com/KDE/kwin/blob/master/scripts/minimizeall/contents/code/main.js */
   }
 
-  private bindWindowEvents(window: WindowClass, client: Window) {
+  private _bindWindowEvents(window: WindowClass, client: KwinWindow) {
     let moving = false;
     let resizing = false;
-    this.connect(client.activitiesChanged, () => {
+    this._connect(client.activitiesChanged, () => {
       if (!client || client.deleted) return;
       LOG?.send(
         LogModules.activitiesChanged,
@@ -1368,11 +1377,12 @@ class KWinDriver implements IDriverContext {
       this.control.onWindowChanged(
         this,
         window,
+        "activitiesChangedCB",
         "activity=" + client.activities.join(","),
       );
     });
 
-    this.connect(client.bufferGeometryChanged, () => {
+    this._connect(client.bufferGeometryChanged, () => {
       if (!client || client.deleted) return;
       LOG?.send(
         LogModules.bufferGeometryChanged,
@@ -1381,7 +1391,12 @@ class KWinDriver implements IDriverContext {
         { winClass: [`${client.resourceClass}`] },
       );
       if (moving) this.control.onWindowMove(window);
-      else if (resizing) this.control.onWindowResize(this, window);
+      else if (resizing)
+        this.control.onWindowResize(
+          this,
+          window,
+          "windowBufferGeometryChangedCB",
+        );
       else {
         if (!window.actualGeometry.equals(window.geometry))
           if (CONFIG.optVKeyboardSupport) {
@@ -1398,7 +1413,7 @@ class KWinDriver implements IDriverContext {
       }
     });
 
-    this.connect(client.desktopsChanged, () => {
+    this._connect(client.desktopsChanged, () => {
       if (!client || client.deleted) return;
       LOG?.send(
         LogModules.desktopsChanged,
@@ -1406,10 +1421,18 @@ class KWinDriver implements IDriverContext {
         `window: caption:${client.caption} internalID:${client.internalId}, desktops: ${client.desktops}`,
         { winClass: [`${client.resourceClass}`] },
       );
-      this.control.onWindowChanged(this, window, "Window's desktop changed.");
+      if (window.isSendingToOutput) {
+        return;
+      }
+      this.control.onWindowChanged(
+        this,
+        window,
+        "windowDesktopsChangedCB",
+        "Window's desktop changed.",
+      );
     });
 
-    this.connect(client.fullScreenChanged, () => {
+    this._connect(client.fullScreenChanged, () => {
       if (!client || client.deleted) return;
       LOG?.send(
         LogModules.fullScreenChanged,
@@ -1420,11 +1443,12 @@ class KWinDriver implements IDriverContext {
       this.control.onWindowChanged(
         this,
         window,
+        "windowFullScreenChangedCB",
         "fullscreen=" + client.fullScreen,
       );
     });
 
-    this.connect(client.interactiveMoveResizeStepped, (geometry) => {
+    this._connect(client.interactiveMoveResizeStepped, (geometry) => {
       if (!client || client.deleted) return;
       LOG?.send(
         LogModules.interactiveMoveResizeStepped,
@@ -1433,10 +1457,15 @@ class KWinDriver implements IDriverContext {
         { winClass: [`${client.resourceClass}`] },
       );
       if (client.resize) return;
-      this.control.onWindowDragging(this, window, geometry);
+      this.control.onWindowDragging(
+        this,
+        window,
+        geometry,
+        "windowInteractiveMoveResizeSteppedCB",
+      );
     });
 
-    this.connect(client.maximizedAboutToChange, (mode: MaximizeMode) => {
+    this._connect(client.maximizedAboutToChange, (mode: MaximizeMode) => {
       if (!client || client.deleted) return;
       LOG?.send(
         LogModules.maximizedAboutToChange,
@@ -1445,11 +1474,15 @@ class KWinDriver implements IDriverContext {
         { winClass: [`${client.resourceClass}`] },
       );
       // const maximized = mode === MaximizeMode.MaximizeFull;
-      (window.window as KWinWindow).maximized = (mode as number) > 0;
-      this.control.onWindowMaximizeChanged(this, window);
+      (window.window as DriverWindow).maximized = (mode as number) > 0;
+      this.control.onWindowMaximizeChanged(
+        this,
+        window,
+        "windowMaximizeAboutChangeCB",
+      );
     });
 
-    this.connect(client.minimizedChanged, () => {
+    this._connect(client.minimizedChanged, () => {
       if (!client || client.deleted) return;
       LOG?.send(
         LogModules.minimizedChanged,
@@ -1461,12 +1494,17 @@ class KWinDriver implements IDriverContext {
         client.minimized = false;
         this.workspace.activeWindow = client;
       } else {
-        var comment = client.minimized ? "minimized" : "unminimized";
-        this.control.onWindowChanged(this, window, comment);
+        let comment = client.minimized ? "minimized" : "unminimized";
+        this.control.onWindowChanged(
+          this,
+          window,
+          "windowMinimizedChangedCB",
+          comment,
+        );
       }
     });
 
-    this.connect(client.moveResizedChanged, () => {
+    this._connect(client.moveResizedChanged, () => {
       if (!client || client.deleted) return;
       LOG?.send(
         LogModules.moveResizedChanged,
@@ -1479,17 +1517,26 @@ class KWinDriver implements IDriverContext {
         if (moving) {
           this.control.onWindowMoveStart(window);
         } else {
-          this.control.onWindowMoveOver(this, window);
+          this.control.onWindowMoveOver(
+            this,
+            window,
+            "windowMoveResizedChangedCB",
+          );
         }
       }
       if (resizing !== client.resize) {
         resizing = client.resize;
         if (resizing) this.control.onWindowResizeStart(window);
-        else this.control.onWindowResizeOver(this, window);
+        else
+          this.control.onWindowResizeOver(
+            this,
+            window,
+            "windowMoveResizedChangedCB",
+          );
       }
     });
 
-    this.connect(client.outputChanged, () => {
+    this._connect(client.outputChanged, () => {
       if (!client || client.deleted) return;
       LOG?.send(
         LogModules.outputChanged,
@@ -1497,15 +1544,26 @@ class KWinDriver implements IDriverContext {
         `window: caption:${client.caption} internalID:${client.internalId} output: ${client.output.name}`,
         { winClass: [`${client.resourceClass}`] },
       );
+      if (window.isSendingToOutput) {
+        window.isSendingToOutput = false;
+        this._sendingWindowsProcessCall();
+        return;
+      }
       this.control.onWindowChanged(
         this,
         window,
+        "outputChangedCB",
         "screen=" + client.output.name,
       );
     });
     if (CONFIG.floatSkipPager) {
-      this.connect(client.skipPagerChanged, () => {
-        this.control.onWindowSkipPagerChanged(this, window, client.skipPager);
+      this._connect(client.skipPagerChanged, () => {
+        this.control.onWindowSkipPagerChanged(
+          this,
+          window,
+          client.skipPager,
+          "windowSkipPagerCB",
+        );
       });
     }
   }

@@ -4,7 +4,6 @@
 
     SPDX-License-Identifier: MIT
 */
-
 type ScreenData = {
   visibles: WindowClass[];
   tileables: WindowClass[];
@@ -15,23 +14,115 @@ type ScreenData = {
   overCapacity: WindowClass[];
   awaitToMove: WindowClass[];
 };
+interface IOverCapacityWindows {
+  readonly totalNumWinsPrepareToOutput: number;
+  readonly totalNumWinsPrepareToVDesktop: number;
+  isSending: boolean;
+  startTime: number;
+  toOutputs: WrapperMap<Output, WindowClass[]>;
+  toVDesktops: WrapperMap<VirtualDesktop, WindowClass[]>;
+  activeWindow: WindowClass | null;
 
+  clear(): void;
+}
+class OverCapacityWindows implements IOverCapacityWindows {
+  public get totalNumWinsPrepareToOutput() {
+    let total = 0;
+    for (const windows of this.toOutputs) {
+      total += windows.length;
+    }
+    return total;
+  }
+  public get totalNumWinsPrepareToVDesktop() {
+    let total = 0;
+    for (const windows of this.toVDesktops) {
+      total += windows.length;
+    }
+    return total;
+  }
+  public get getWinsSendingToOutput() {
+    let total = 0;
+    for (const windows of this.toOutputs) {
+      for (const w of windows) {
+        if (w.isSendingToOutput) total++;
+      }
+    }
+    return total;
+  }
+  public get isExistSendingWindowsToOutput(): boolean {
+    for (const windows of this.toOutputs) {
+      for (const w of windows) {
+        if (w.isSendingToOutput) return true;
+      }
+    }
+    return false;
+  }
+  public get isExistTransferWindowsToVDesktop(): boolean {
+    for (const windows of this.toVDesktops) {
+      for (const w of windows) {
+        if (w instanceof WindowClass) return true;
+      }
+    }
+    return false;
+  }
+  public isSending: boolean;
+  public startTime: number;
+  public toOutputs: WrapperMap<Output, WindowClass[]>;
+  public toVDesktops: WrapperMap<VirtualDesktop, WindowClass[]>;
+  public activeWindow: WindowClass | null;
+  constructor() {
+    this.isSending = false;
+    this.startTime = 0;
+    this.toOutputs = new WrapperMap(
+      (client: Output) => client.name,
+      (_: Output) => new Array(),
+    );
+    this.toVDesktops = new WrapperMap(
+      (client: VirtualDesktop) => client.id,
+      (_: VirtualDesktop) => new Array(),
+    );
+
+    this.activeWindow = null;
+  }
+  public clear() {
+    for (const windows of this.toOutputs) {
+      windows.forEach((w) => (w.isSendingToOutput = false));
+    }
+    this.isSending = false;
+    this.startTime = 0;
+    this.toOutputs.clear();
+    this.toVDesktops.clear();
+    this.activeWindow = null;
+  }
+}
 /**
  * Maintains tiling context and performs various tiling actions.
  */
 class TilingEngine {
+  // max time for waiting KWin to move overcapacity windows to outputs: sendClientToScreen() and
+  // transfer overcapacity windows to other Virtual Desktops.
+  SENDING_WINDOWS_MAX_WAIT_TIME = 500;
+
   public layouts: LayoutStore;
   public windows: WindowStore;
   public docks: DockStore;
+  public overCapacityWindows: OverCapacityWindows;
+  public makeWinActive: WindowClass | null;
+  public arrangeProcessId: number | null;
   private _defaultGaps: DefaultGapsCfg | null;
   private _gapsSurfacesCfg: gapsSurfaceCfg[];
+  private _screenDataStore: Map<string, ScreenData>;
 
   constructor() {
     this.layouts = new LayoutStore();
     this.windows = new WindowStore();
     this.docks = new DockStore();
+    this.overCapacityWindows = new OverCapacityWindows();
+    this.arrangeProcessId = null;
+    this.makeWinActive = null;
     this._defaultGaps = null;
     this._gapsSurfacesCfg = [];
+    this._screenDataStore = new Map();
   }
 
   /**
@@ -88,7 +179,8 @@ class TilingEngine {
    *
    * @param window a floating window
    */
-  public resizeFloat(
+  private _resizeFloat(
+    ctx: IDriverContext,
     window: WindowClass,
     dir: "east" | "west" | "south" | "north",
     step: -1 | 1,
@@ -119,7 +211,10 @@ class TilingEngine {
     const width = geometry.width + hStepSize * hStep;
     const height = geometry.height + vStepSize * vStep;
 
-    window.forceSetGeometry(new Rect(geometry.x, geometry.y, width, height));
+    window.forceSetGeometry(
+      ctx,
+      new Rect(geometry.x, geometry.y, width, height),
+    );
   }
 
   /**
@@ -192,7 +287,6 @@ class TilingEngine {
       );
     }
   }
-
   /**
    * Resize the given window, by moving border inward or outward.
    *
@@ -202,12 +296,14 @@ class TilingEngine {
    * @param step which direction. 1 means outward, -1 means inward.
    */
   public resizeWindow(
+    ctx: IDriverContext,
     window: WindowClass,
     dir: "east" | "west" | "south" | "north",
     step: -1 | 1,
   ) {
     const state = window.state;
-    if (WindowClass.isFloatingState(state)) this.resizeFloat(window, dir, step);
+    if (WindowClass.isFloatingState(state))
+      this._resizeFloat(ctx, window, dir, step);
     else if (WindowClass.isTiledState(state))
       this.resizeTile(window, dir, step);
   }
@@ -215,61 +311,199 @@ class TilingEngine {
   /**
    * Arrange tiles on all screens.
    */
-  public arrange(ctx: IDriverContext, reason: string) {
-    LOG?.send(
-      LogModules.arrangeScreen,
-      "ArrangeScreens",
-      `###################################################Reason: ${reason}####################################`,
-    );
+  public arrange(
+    ctx: IDriverContext,
+    reason: keyof typeof ArrangeReason,
+    message?: string,
+  ) {
+    this.arrangeProcessId = getRandomInt(1000000);
+    if (LOG?.isModuleOn(LogModules.arrangeScreen)) {
+      LOG.send(
+        LogModules.arrangeScreen,
+        "ArrangeScreens",
+        `#######Reason: ${reason}:${message} arrangeProcessID:${this.arrangeProcessId}########`,
+      );
+    }
     const surfaces = ctx.currentSurfaces;
     let screensData: ScreenData[] = [];
     surfaces.forEach((srf) => {
       screensData.push(this.getTileables(srf));
     });
-    if (CONFIG.surfacesIsMoveWindows && reason !== "moveWindowsToScreen") {
-      let isMoving = false;
+    if (
+      this._isCheckCapacity(reason) &&
+      (CONFIG.srfExceededToScreen || CONFIG.srfExceededToVDesktop)
+    ) {
+      if (this.overCapacityWindows.isSending) {
+        const time = getTime();
+        if (
+          time - this.overCapacityWindows.startTime <
+          this.SENDING_WINDOWS_MAX_WAIT_TIME
+        ) {
+          warning(
+            `Method: ${getMethodName()}.Attempt to Check OverCapacityWindows during sending Process.`,
+          );
+          return;
+        }
+        warning(
+          `Method: ${getMethodName()}. OverCapacityWindows sending process is: enabled but SENDING_WINDOWS_MAX_WAIT_TIME is up.`,
+        );
+      }
+      this.overCapacityWindows.clear();
       screensData.forEach((screenData: ScreenData) => {
         if (screenData.overCapacity.length > 0) {
-          for (let i = 0; i < screensData.length; i++) {
-            let sd = screensData[i];
-            if (sd.capacity === null) {
-              sd.awaitToMove.push(
-                ...screenData.overCapacity.splice(
-                  0,
-                  screenData.overCapacity.length,
-                ),
-              );
-              isMoving = true;
-            } else if (sd.capacity - sd.awaitToMove.length > 0) {
-              const availableSlots = Math.min(
-                sd.capacity - sd.awaitToMove.length,
-                screenData.overCapacity.length,
-              );
-              sd.awaitToMove.push(
-                ...screenData.overCapacity.splice(0, availableSlots),
-              );
-              isMoving = true;
-            }
-            if (screenData.overCapacity.length === 0) {
-              break;
-            }
-          }
+          this._screenDataStore.clear();
+          CONFIG.srfExceededToScreen &&
+            this._prepareOverCapacityWindowsMoveToOutput(ctx, screenData);
+          CONFIG.srfExceededToVDesktop &&
+            this._prepareOverCapacityWindowsTranferToVDesktop(ctx, screenData);
         }
       });
-      if (isMoving) {
-        let moveTiles: [Output, WindowClass[]][] = [];
-        screensData.forEach((screenData: ScreenData) => {
-          if (screenData.awaitToMove.length > 0)
-            moveTiles.push([screenData.srf.output, screenData.awaitToMove]);
-        });
-        ctx.moveWindowsToScreen(moveTiles);
+      if (
+        this.overCapacityWindows.totalNumWinsPrepareToOutput > 0 ||
+        this.overCapacityWindows.totalNumWinsPrepareToVDesktop > 0
+      ) {
+        this.overCapacityWindows.activeWindow = ctx.currentWindow;
+        ctx.positioningOverCapacityWindows();
+        this.arrangeProcessId = null;
         return;
       }
     }
 
     screensData.forEach((screenData: ScreenData) => {
-      this.arrangeScreen(ctx, screenData, reason);
+      this.arrangeScreen(ctx, screenData, reason, this.arrangeProcessId!);
     });
+    this.arrangeProcessId = null;
+  }
+
+  private _isCheckCapacity(reason: keyof typeof ArrangeReason) {
+    const reasons = [
+      "forcedArrangeScreen",
+      "moveWindowToOutput",
+      "transferWindowToVDesktop",
+      "sendToOutputProcessFinish",
+    ];
+    return !(reason in [reasons]);
+  }
+
+  private _prepareWindowsToAvailableSlots(
+    ctx: IDriverContext,
+    sourceScreenData: ScreenData,
+    output: Output,
+    vDesktop?: VirtualDesktop,
+  ): WindowClass[] {
+    const overCapacity = sourceScreenData.overCapacity.length;
+    if (overCapacity <= 0) return [];
+    let targetSrf = ctx.getSurface(output, vDesktop);
+    if (targetSrf == null) return [];
+    if (!this._screenDataStore.has(targetSrf.id)) {
+      this._screenDataStore.set(targetSrf.id, this.getTileables(targetSrf));
+    }
+    const sd = this._screenDataStore.get(targetSrf.id)!;
+    if (sd.capacity === null || sd.capacity - sd.awaitToMove.length > 0) {
+      const availableSlots =
+        sd.capacity === null
+          ? overCapacity
+          : Math.min(sd.capacity - sd.awaitToMove.length, overCapacity);
+      const windowsToAvailableSlots = sourceScreenData.overCapacity.splice(
+        0,
+        availableSlots,
+      );
+      sd.awaitToMove.push(...windowsToAvailableSlots);
+      return windowsToAvailableSlots;
+    } else return [];
+  }
+
+  private _prepareOverCapacityWindowsMoveToOutput(
+    ctx: IDriverContext,
+    sourceScreenData: ScreenData,
+  ) {
+    let alreadyDone = new Set<Output>();
+    const sourceOutput = sourceScreenData.srf.output;
+    alreadyDone.add(sourceOutput);
+    let outputQueue = new UniqueLifoFifo<Output>();
+    this._getPossibleOutputs(ctx, sourceOutput, outputQueue, alreadyDone);
+
+    while (sourceScreenData.overCapacity.length > 0 && outputQueue.size !== 0) {
+      let neighborOutput = outputQueue.shift();
+      if (!neighborOutput) return;
+      const windowsToMove = this._prepareWindowsToAvailableSlots(
+        ctx,
+        sourceScreenData,
+        neighborOutput,
+      );
+      const windowsArr = this.overCapacityWindows.toOutputs.add(neighborOutput);
+      windowsArr.push(...windowsToMove);
+      if (sourceScreenData.overCapacity.length === 0) break;
+      alreadyDone.add(neighborOutput);
+      this._getPossibleOutputs(ctx, neighborOutput, outputQueue, alreadyDone);
+    }
+  }
+
+  private _getPossibleOutputs(
+    ctx: IDriverContext,
+    sourceOutput: Output,
+    outputQueue: UniqueLifoFifo<Output>,
+    alreadyDone: Set<Output>,
+  ) {
+    for (let i = 0; i < CONFIG.srfToScreenOrder.length; i++) {
+      const direction = CONFIG.srfToScreenOrder[i];
+      const output = ctx.getNeighborOutput(direction, sourceOutput);
+      if (output && !alreadyDone.has(output)) outputQueue.push(output);
+    }
+  }
+
+  private _getPossibleVDesktops(
+    ctx: IDriverContext,
+    sourceVDesktop: VirtualDesktop,
+    vDesktopsQueue: UniqueLifoFifo<VirtualDesktop>,
+    alreadyDone: Set<VirtualDesktop>,
+  ) {
+    for (let i = 0; i < CONFIG.srfToVDesktopOrder.length; i++) {
+      const direction = CONFIG.srfToScreenOrder[i];
+      const vDesktop = ctx.getNeighborVDesktop(direction, sourceVDesktop);
+      if (vDesktop && !alreadyDone.has(vDesktop)) vDesktopsQueue.push(vDesktop);
+    }
+  }
+
+  private _prepareOverCapacityWindowsTranferToVDesktop(
+    ctx: IDriverContext,
+    sourceScreenData: ScreenData,
+  ) {
+    let alreadyDone = new Set<VirtualDesktop>();
+    alreadyDone.add(ctx.currentDesktop);
+    let vDesktopsQueue = new UniqueLifoFifo<VirtualDesktop>();
+    this._getPossibleVDesktops(
+      ctx,
+      ctx.currentDesktop,
+      vDesktopsQueue,
+      alreadyDone,
+    );
+    while (
+      sourceScreenData.overCapacity.length > 0 &&
+      vDesktopsQueue.size !== 0
+    ) {
+      let neighborVDesktop = vDesktopsQueue.shift();
+      if (!neighborVDesktop) return;
+      const windowsToTransfer = this._prepareWindowsToAvailableSlots(
+        ctx,
+        sourceScreenData,
+        sourceScreenData.srf.output,
+        neighborVDesktop,
+      );
+      if (windowsToTransfer.length !== 0) {
+        const windowsArr =
+          this.overCapacityWindows.toVDesktops.add(neighborVDesktop);
+        windowsArr.push(...windowsToTransfer);
+      }
+      if (sourceScreenData.overCapacity.length === 0) break;
+      alreadyDone.add(neighborVDesktop);
+      this._getPossibleVDesktops(
+        ctx,
+        neighborVDesktop,
+        vDesktopsQueue,
+        alreadyDone,
+      );
+    }
   }
 
   private getTileables(srf: ISurface): ScreenData {
@@ -290,6 +524,7 @@ class TilingEngine {
       LOG.print(LogModules.arrangeScreen, "visibles", mes);
     }
     let tileables = this.windows.getVisibleTileables(srf);
+    tileables.forEach((tile) => tile.updateSrfTime(srf.id));
     let layout = this.layouts.getCurrentLayout(srf);
 
     let capacity: number | null;
@@ -303,10 +538,20 @@ class TilingEngine {
     }
     let overCapacity: WindowClass[];
     if (capacity !== null && tileables.length > capacity) {
-      if (!CONFIG.surfacesIsMoveOldestWindows) {
-        overCapacity = tileables.splice(capacity - tileables.length);
+      const excess = tileables.length - capacity;
+      const sorted = [...tileables].sort((a, b) => a.srfTime - b.srfTime);
+
+      if (!CONFIG.srfIsMoveOldestWindows) {
+        // Move newest: last `excess` from sorted copy
+        overCapacity = sorted.slice(-excess);
       } else {
-        overCapacity = tileables.splice(0, tileables.length - capacity);
+        // Move oldest: first `excess` from sorted copy
+        overCapacity = sorted.slice(0, excess);
+      }
+      // Remove overCapacity from original tileables in-place
+      const toRemove = new Set(overCapacity);
+      for (let i = tileables.length - 1; i >= 0; i--) {
+        if (toRemove.has(tileables[i])) tileables.splice(i, 1);
       }
       capacity = 0;
     } else {
@@ -347,12 +592,13 @@ class TilingEngine {
     ctx: IDriverContext,
     screenData: ScreenData,
     reason: string,
+    processID?: number,
   ) {
     const outputName = screenData.srf.output.name;
     LOG?.send(
       LogModules.arrangeScreen,
       "arrangeScreen",
-      `output: ${outputName}`,
+      `output:processID: ${outputName}:${processID}`,
     );
     screenData.overCapacity.forEach((win) => {
       win.state = WindowState.Floating;
@@ -402,9 +648,7 @@ class TilingEngine {
         if (LOG?.isModuleOn(LogModules.arrangeScreen)) {
           let mes = "";
           screenData.tileables.forEach((tile) => {
-            mes += `${tile.id}, state:${windowStateStr(
-              tile.state,
-            )}, commitGeometry:${tile.geometry}\n`;
+            mes += `${tile.id}, state:${tile.state}, commitGeometry:${tile.geometry}\n`;
           });
           LOG?.send(LogModules.arrangeScreen, "LayoutApply", mes);
         }
@@ -512,11 +756,11 @@ class TilingEngine {
     if (soleWindowProps.noBorders && tileablesLen === 1) {
       screenData.visibles.forEach((window) => {
         if (window.state === WindowState.Tiled)
-          window.commit(soleWindowProps.noBorders);
-        else window.commit();
+          window.commit(ctx, soleWindowProps.noBorders);
+        else window.commit(ctx);
       });
     } else {
-      screenData.visibles.forEach((window) => window.commit());
+      screenData.visibles.forEach((window) => window.commit(ctx));
     }
     LOG?.send(
       LogModules.arrangeScreen,
@@ -535,7 +779,7 @@ class TilingEngine {
   public enforceSize(ctx: IDriverContext, window: WindowClass) {
     if (window.isTiled && !window.actualGeometry.equals(window.geometry))
       ctx.setTimeout(() => {
-        if (window.isTiled) window.commit();
+        if (window.isTiled) window.commit(ctx);
       }, 10);
   }
 
@@ -672,7 +916,8 @@ class TilingEngine {
     if (
       ctx.isMetaMode
         ? CONFIG.focusMoveScreensMeta
-        : CONFIG.focusMoveScreensNormal && ctx.moveToScreen(window, direction)
+        : CONFIG.focusMoveScreensNormal &&
+          ctx.moveWindowToOutputDirection(window, direction)
     ) {
       return false; // the screens already arranged
     }
@@ -681,7 +926,7 @@ class TilingEngine {
         ? CONFIG.focusMoveVDesktopsMeta
         : CONFIG.focusMoveVDesktopsNormal
     )
-      return ctx.moveToVDesktop(window, direction);
+      return ctx.moveWinToVDesktopByDirection(window, direction);
     return false;
   }
 
@@ -690,7 +935,7 @@ class TilingEngine {
    * @param window a floating window
    * @param dir which direction
    */
-  public moveFloat(window: WindowClass, dir: Direction) {
+  private _moveFloat(ctx: IDriverContext, window: WindowClass, dir: Direction) {
     const srf = window.surface;
 
     // TODO: configurable step size?
@@ -720,7 +965,10 @@ class TilingEngine {
     if (CONFIG.movePointerOnFocus) {
       window.moveMouseToFocus();
     }
-    window.forceSetGeometry(new Rect(x, y, geometry.width, geometry.height));
+    window.forceSetGeometry(
+      ctx,
+      new Rect(x, y, geometry.width, geometry.height),
+    );
   }
 
   public swapDirOrMoveFloat(ctx: IDriverContext, dir: Direction): boolean {
@@ -737,7 +985,7 @@ class TilingEngine {
 
     const state = window.state;
     if (WindowClass.isFloatingState(state)) {
-      this.moveFloat(window, dir);
+      this._moveFloat(ctx, window, dir);
       return false;
     } else if (WindowClass.isTiledState(state)) {
       return this.swapDirection(ctx, dir, window);
@@ -764,6 +1012,7 @@ class TilingEngine {
     }
     return currentSurface.capacity;
   }
+
   public lowerSurfaceCapacity(ctx: IDriverContext): number | null {
     const currentSurface = ctx.currentSurface;
     if (currentSurface.capacity !== null) {
@@ -775,6 +1024,7 @@ class TilingEngine {
     }
     return currentSurface.capacity;
   }
+
   public ResetSurfaceCapacity(ctx: IDriverContext): number | null {
     return (ctx.currentSurface.capacity = null);
   }
@@ -939,7 +1189,7 @@ class TilingEngine {
         : (tile) => tile.geometry.x === min,
     );
 
-    return closest.sort((a, b) => b.timestamp - a.timestamp)[0];
+    return closest.sort((a, b) => b.focusTime - a.focusTime)[0];
   }
 
   private getGaps(srf: ISurface): IGaps {

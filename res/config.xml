@@ -145,15 +145,54 @@
       <!-- **********Surfaces*********** -->
       <!-- ***************************** -->
 
-    <entry name="surfacesDefaultConfig" type="String">
+    <entry name="srfDefaultConfig" type="String">
 	    <label>Surfaces settings change the default parameters for the surface</label>
         <default></default>
     </entry>
-    <entry name="surfacesIsMoveWindows" type="Bool">
+
+    <entry name="srfExceededToScreen" type="Bool">
 	    <label>Move windows to next screen if surface(or layout) capacity is exceeded</label>
         <default>true</default>
     </entry>
-    <entry name="surfacesIsMoveOldestWindows" type="Bool">
+    <entry name="srfToScreenOrderLeft" type="Int">
+	    <label>The order of the left screen to move exceeded windows</label>
+        <default>1</default>
+    </entry>
+    <entry name="srfToScreenOrderTop" type="Int">
+	    <label>The order of the Top screen to move exceeded windows</label>
+        <default>2</default>
+    </entry>
+    <entry name="srfToScreenOrderRight" type="Int">
+	    <label>The order of the Right screen to move exceeded windows</label>
+        <default>3</default>
+    </entry>
+    <entry name="srfToScreenOrderBottom" type="Int">
+	    <label>The order of the Bottom screen to move exceeded windows</label>
+        <default>4</default>
+    </entry>
+
+    <entry name="srfExceededToVDesktop" type="Bool">
+	    <label>Move windows to next screen if surface(or layout) capacity is exceeded</label>
+        <default>true</default>
+    </entry>
+    <entry name="srfToVDesktopOrderLeft" type="Int">
+	    <label>The order of the left Virtual Desktop to move exceeded windows</label>
+        <default>1</default>
+    </entry>
+    <entry name="srfToVDesktopOrderTop" type="Int">
+	    <label>The order of the Top Virtual Desktop to move exceeded windows</label>
+        <default>2</default>
+    </entry>
+    <entry name="srfToVDesktopOrderRight" type="Int">
+	    <label>The order of the Right Virtual Desktop to move exceeded windows</label>
+        <default>3</default>
+    </entry>
+    <entry name="srfToVDesktopOrderBottom" type="Int">
+	    <label>The order of the Bottom Virtual Desktop to move exceeded windows</label>
+        <default>4</default>
+    </entry>
+
+    <entry name="srfIsMoveOldestWindows" type="Bool">
 	    <label>Move the oldest windows</label>
         <default>false</default>
     </entry>

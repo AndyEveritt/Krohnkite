@@ -43,7 +43,7 @@ function findOutputByName(workspace: Workspace, name: string): Output | null {
  * back to a known-live output instead. */
 function resolveWindowOutput(
   workspace: Workspace,
-  window: Window | null | undefined,
+  window: KwinWindow | null | undefined,
 ): Output {
   return window && !window.deleted && outputIsAlive(window.output)
     ? window.output

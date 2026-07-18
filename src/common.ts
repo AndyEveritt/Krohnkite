@@ -5,101 +5,6 @@
     SPDX-License-Identifier: MIT
 */
 
-type percentType = number;
-type Direction = "up" | "down" | "left" | "right";
-type Position = "left" | "middle" | "right" | "upper" | "bottom" | "single";
-function getOppositeDirection(direction: Direction): Direction {
-  switch (direction) {
-    case "right":
-      return "left";
-    case "left":
-      return "right";
-    case "up":
-      return "down";
-    case "down":
-      return "up";
-  }
-}
-
-const WindowState = {
-  /* initial value */
-  Unmanaged: 1,
-
-  /* script-external state - overrides internal state */
-  NativeFullscreen: 2,
-  NativeMaximized: 3,
-
-  /* script-internal state */
-  Floating: 4,
-  Maximized: 5,
-  Tiled: 6,
-  TiledAfloat: 7,
-  Undecided: 8,
-  Dragging: 9,
-  Docked: 10,
-};
-type WindowState = (typeof WindowState)[keyof typeof WindowState];
-const WindowStateKeys = Object.keys(WindowState);
-let windowStateStr = (state: WindowState) => {
-  return WindowStateKeys[state - 1];
-};
-
-const Shortcut = {
-  FocusNext: "FocusNext",
-  FocusPrev: "FocusPrev",
-  DWMLeft: "DWMLeft",
-  DWMRight: "DWMRight",
-
-  FocusUp: "FocusUp",
-  FocusDown: "FocusDown",
-  FocusLeft: "FocusLeft",
-  FocusRight: "FocusRight",
-
-  ShiftLeft: "ShiftLeft",
-  ShiftRight: "ShiftRight",
-  ShiftUp: "ShiftUp",
-  ShiftDown: "ShiftDown",
-
-  SwapUp: "SwapUp",
-  SwapDown: "SwapDown",
-  SwapLeft: "SwapLeft",
-  SwapRight: "SwapRight",
-
-  GrowWidth: "GrowWidth",
-  GrowHeight: "GrowHeight",
-  ShrinkWidth: "ShrinkWidth",
-  ShrinkHeight: "ShrinkHeight",
-
-  Increase: "Increase",
-  Decrease: "Decrease",
-  ShiftIncrease: "ShiftIncrease", //NOTE: unused shortcut
-  ShiftDecrease: "ShiftDecrease", //NOTE: unused shortcut
-
-  ToggleFloat: "ToggleFloat",
-  ToggleFloatAll: "ToggleFloatAll",
-  SetMaster: "SetMaster",
-  NextLayout: "NextLayout",
-  PreviousLayout: "PreviousLayout",
-  SetLayout: "SetLayout",
-
-  Rotate: "Rotate",
-  RotatePart: "RotatePart",
-
-  ToggleDock: "ToggleDock",
-
-  RaiseSurfaceCapacity: "RaiseSurfaceCapacity",
-  LowerSurfaceCapacity: "LowerSurfaceCapacity",
-
-  KrohnkiteMeta: "KrohnkiteMeta",
-
-  MetaResetSurfaceCapacity: "MetaResetSurfaceCapacity",
-  MetaFocusLeft: "MetaFocusLeft",
-  MetaFocusRight: "MetaFocusRight",
-  MetaFocusUp: "MetaFocusUp",
-  MetaFocusDown: "MetaFocusDown",
-} as const;
-type Shortcut = (typeof Shortcut)[keyof typeof Shortcut];
-
 interface IShortcuts {
   getToggleDock(): ShortcutHandler;
 
@@ -159,6 +64,7 @@ interface IDBusQml {
   getDBusMoveMouseToCenter(): DBusCall;
   getDBusVirtualKeyboardVisible(): DBusCall;
 }
+
 interface IDBus {
   moveMouseToFocus(timeout?: number): void;
   moveMouseToCenter(timeout?: number): void;
@@ -179,9 +85,12 @@ interface IConfig {
   layoutFactories: { [key: string]: () => ILayout };
 
   //Surfaces
-  surfacesDefaultConfig: string[];
-  surfacesIsMoveWindows: boolean;
-  surfacesIsMoveOldestWindows: boolean;
+  srfDefaultConfig: string[];
+  srfExceededToScreen: boolean;
+  srfToScreenOrder: Direction[];
+  srfExceededToVDesktop: boolean;
+  srfToVDesktopOrder: Direction[];
+  srfIsMoveOldestWindows: boolean;
 
   //Geometry
   screenGapTop: number;
@@ -292,10 +201,50 @@ interface IDriverWindow {
 
   surface: ISurface;
 
-  commit(geometry?: Rect, noBorder?: boolean, windowLayer?: WindowLayer): void;
-  visible(srf: ISurface): boolean;
+  commit(
+    ctx: IDriverContext,
+    geometry?: Rect,
+    noBorder?: boolean,
+    windowLayer?: WindowLayer,
+  ): void;
   getInitFloatGeometry(): Rect;
   moveMouseToFocus(): void;
+  visible(srf: ISurface): boolean;
+}
+
+interface IWindowClass {
+  readonly id: string;
+  readonly window: IDriverWindow;
+  readonly actualGeometry: Readonly<Rect>;
+  readonly shouldFloat: boolean;
+  readonly shouldIgnore: boolean;
+  readonly isTileable: boolean;
+  readonly isTiled: boolean;
+  readonly isFloating: boolean;
+  readonly isDocked: boolean;
+  readonly geometryDelta: RectDelta | null;
+  readonly minSize: ISize;
+  readonly maxSize: ISize;
+  readonly windowClassName: string;
+  readonly windowCaption: string;
+  readonly minimized: boolean;
+  readonly srfTime: number;
+  state: WindowState;
+  surface: ISurface;
+  weight: number;
+  floatGeometry: Rect;
+  dock: Dock | null;
+  geometry: Rect;
+  focusTime: number;
+  isSendingToOutput: boolean;
+
+  setDraggingState(): void;
+  setState(value: WindowState): void;
+
+  commit(ctx: IDriverContext, noBorders?: boolean): void;
+  forceSetGeometry(ctx: IDriverContext, geometry: Rect): void;
+  moveMouseToFocus(): void;
+  visible(srf: ISurface): boolean;
 }
 
 interface ISurfaceStore {
@@ -325,31 +274,46 @@ interface IDriverContext {
   readonly currentSurfaces: ISurface[];
   readonly cursorPosition: [number, number] | null;
 
+  currentDesktop: VirtualDesktop;
   currentSurface: ISurface;
   currentWindow: WindowClass | null;
   isMetaMode: boolean;
 
-  setTimeout(func: () => void, timeout: number): void;
-  showNotification(text: string): void;
-  moveWindowsToScreen(windowsToScreen: [Output, WindowClass[]][]): void;
-  moveToScreen(window: WindowClass, direction: Direction): boolean;
-  moveToVDesktop(window: WindowClass, direction: Direction): boolean;
+  getNeighborOutput(direction: Direction, source: Output): Output | null;
+  getNeighborVDesktop(
+    direction: Direction,
+    sourceVDesktop?: VirtualDesktop,
+  ): VirtualDesktop | null;
+  getSurface(output: Output, vDesktop?: VirtualDesktop): ISurface | null;
   focusSpecial(direction: Direction): boolean;
   focusNeighborWindow(
     direction: Direction,
     winTypes: WinTypes,
-  ): Window | null | boolean;
+  ): KwinWindow | null | boolean;
   focusOutput(
-    window: Window | null,
+    window: KwinWindow | null,
     direction: Direction,
     winTypes: WinTypes,
   ): boolean;
   focusVDesktop(
-    window: Window | null,
+    window: KwinWindow | null,
     direction: Direction,
     winTypes: WinTypes,
   ): boolean;
   metaPushed(): void;
+  moveWindowToOutputDirection(
+    window: WindowClass,
+    direction: Direction,
+    retargetDesktop?: boolean,
+    arrangeScreens?: boolean,
+  ): boolean;
+  moveWinToVDesktopByDirection(
+    window: WindowClass,
+    direction: Direction,
+  ): boolean;
+  positioningOverCapacityWindows(): void;
+  setTimeout(func: () => void, timeout: number): void;
+  showNotification(text: string): void;
 }
 
 interface ILayoutClass {
@@ -399,93 +363,6 @@ interface ISize {
   width: number;
   height: number;
 }
-
-// Logging
-const LogModules = {
-  newWindowAdded: "newWindowAdded",
-  newWindowFiltered: "newWindowFiltered",
-  newWindowUnmanaged: "newWindowUnmanaged",
-
-  screensChanged: "screensChanged",
-  virtualScreenGeometryChanged: "virtualScreenGeometryChanged",
-  currentActivityChanged: "currentActivityChanged",
-  currentDesktopChanged: "currentDesktopChanged",
-  windowAdded: "windowAdded",
-  windowActivated: "windowActivated",
-  windowRemoved: "windowRemoved",
-  surfaceChanged: "surfaceChanged",
-
-  activitiesChanged: "activitiesChanged",
-  bufferGeometryChanged: "bufferGeometryChanged",
-  desktopsChanged: "desktopsChanged",
-  fullScreenChanged: "fullScreenChanged",
-  interactiveMoveResizeStepped: "interactiveMoveResizeStepped",
-  maximizedAboutToChange: "maximizedAboutToChange",
-  minimizedChanged: "minimizedChanged",
-  moveResizedChanged: "moveResizedChanged",
-  outputChanged: "outputChanged",
-  shortcut: "shortcut",
-  arrangeScreen: "arrangeScreen",
-  printConfig: "printConfig",
-  setTimeout: "setTimeout",
-  window: "window",
-  dbus: "dbus",
-};
-type LogModule = (typeof LogModules)[keyof typeof LogModules];
-
-const LogPartitions = {
-  newWindow: {
-    number: 100,
-    name: "newWindow",
-    modules: [
-      LogModules.newWindowAdded,
-      LogModules.newWindowFiltered,
-      LogModules.newWindowUnmanaged,
-    ],
-  },
-  workspaceSignals: {
-    number: 200,
-    name: "workspaceSignal",
-    modules: [
-      LogModules.screensChanged,
-      LogModules.virtualScreenGeometryChanged,
-      LogModules.currentActivityChanged,
-      LogModules.currentDesktopChanged,
-      LogModules.windowAdded,
-      LogModules.windowActivated,
-      LogModules.windowRemoved,
-      LogModules.surfaceChanged,
-    ],
-  },
-  windowSignals: {
-    number: 300,
-    name: "windowSignal",
-    modules: [
-      LogModules.activitiesChanged,
-      LogModules.bufferGeometryChanged,
-      LogModules.desktopsChanged,
-      LogModules.fullScreenChanged,
-      LogModules.interactiveMoveResizeStepped,
-      LogModules.maximizedAboutToChange,
-      LogModules.minimizedChanged,
-      LogModules.moveResizedChanged,
-      LogModules.outputChanged,
-    ],
-  },
-  other: {
-    number: 1000,
-    name: "other",
-    modules: [
-      LogModules.shortcut,
-      LogModules.arrangeScreen,
-      LogModules.printConfig,
-      LogModules.setTimeout,
-      LogModules.window,
-      LogModules.dbus,
-    ],
-  },
-} as const;
-type LogPartition = (typeof LogPartitions)[keyof typeof LogPartitions];
 
 interface ILogModules {
   send(

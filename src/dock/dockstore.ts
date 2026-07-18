@@ -73,7 +73,7 @@ class DockStore implements IDockStore {
     if (
       window.windowClassName in this.windowClassesCfg &&
       (this.windowClassesCfg[window.windowClassName].caption === null ||
-        KWinWindow.isContain(
+        DriverWindow.isContain(
           [this.windowClassesCfg[window.windowClassName].caption!],
           window.window.windowCaption,
         )) &&

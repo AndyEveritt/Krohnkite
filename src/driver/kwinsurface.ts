@@ -138,7 +138,7 @@ class KWinSurfaceStore implements ISurfaceStore {
   }
   private static getSurfacesUserCfg(): SurfaceCfg<ISurfaceCfg>[] {
     let userCfg: SurfaceCfg<ISurfaceCfg>[] = [];
-    getSurfacesCfg(CONFIG.surfacesDefaultConfig).forEach((srf) => {
+    getSurfacesCfg(CONFIG.srfDefaultConfig).forEach((srf) => {
       let validatedCfg = KWinSurfaceStore.validateUserCfg(srf.unvalidatedCfg);
       userCfg.push(
         new SurfaceCfg<ISurfaceCfg>(
