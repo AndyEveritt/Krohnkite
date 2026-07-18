@@ -4,6 +4,7 @@
 
     SPDX-License-Identifier: MIT
 '''
+import logging
 from logging import warning, error, info, debug
 import os
 from pathlib import Path
@@ -55,7 +56,7 @@ def kwin_script_install(p: Path):
     else:
         isInstalled = True
 
-    debug(f"{config.kwin_script_name} isInstalled: {isInstalled}")
+    info(f"{config.kwin_script_name} isInstalled: {isInstalled}")
 
     install_result_binary = run_cmd(
         [
@@ -95,6 +96,7 @@ class FileEventHandler(PatternMatchingEventHandler):
             case_sensitive=case_sensitive,
         )
         self.event_path: Path | None = None
+        self.event_time = round(time.time() * 1000)
 
     def on_any_event(self, event: FileSystemEvent) -> None:
         path = event.src_path
@@ -109,12 +111,16 @@ class FileEventHandler(PatternMatchingEventHandler):
 
         if event.event_type == "created":
             self.event_path = path
-        if event.event_type == "closed":
+        if event.event_type == "closed_no_write" or event.event_type == "closed":
+            if round(time.time() * 1000) - self.event_time < 1000:
+                return
             if self.event_path == path:
                 if not os.path.isfile(path):
                     warning(f"file:{path} doesn't exit")
                     self.event_path = None
                     return
+                self.event_time = round(time.time() * 1000)
+                info(f"{self.event_time}. install. {path}. ")
                 kwin_script_install(path)
             else:
                 return
@@ -144,6 +150,7 @@ def exit_hdl(signum, frame):
     exit_event.set()
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
     if '/usr/bin' not in os.environ['PATH']:
         os.environ['PATH'] = '/usr/bin:' + os.environ['PATH']
     exit_event = threading.Event()
