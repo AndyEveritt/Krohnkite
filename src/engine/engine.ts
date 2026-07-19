@@ -385,7 +385,7 @@ class TilingEngine {
     return !(reason in [reasons]);
   }
 
-  private _prepareWindowsToAvailableSlots(
+  private _searchAvailableSlotsForOvercapacity(
     ctx: IDriverContext,
     sourceScreenData: ScreenData,
     output: Output,
@@ -394,7 +394,7 @@ class TilingEngine {
     const overCapacity = sourceScreenData.overCapacity.length;
     if (overCapacity <= 0) return [];
     let targetSrf = ctx.getSurface(output, vDesktop);
-    if (targetSrf == null) return [];
+    if (targetSrf == null || !targetSrf.isOvercapacityCandidate) return [];
     if (!this._screenDataStore.has(targetSrf.id)) {
       this._screenDataStore.set(targetSrf.id, this.getTileables(targetSrf));
     }
@@ -426,7 +426,7 @@ class TilingEngine {
     while (sourceScreenData.overCapacity.length > 0 && outputQueue.size !== 0) {
       let neighborOutput = outputQueue.shift();
       if (!neighborOutput) return;
-      const windowsToMove = this._prepareWindowsToAvailableSlots(
+      const windowsToMove = this._searchAvailableSlotsForOvercapacity(
         ctx,
         sourceScreenData,
         neighborOutput,
@@ -484,7 +484,7 @@ class TilingEngine {
     ) {
       let neighborVDesktop = vDesktopsQueue.shift();
       if (!neighborVDesktop) return;
-      const windowsToTransfer = this._prepareWindowsToAvailableSlots(
+      const windowsToTransfer = this._searchAvailableSlotsForOvercapacity(
         ctx,
         sourceScreenData,
         sourceScreenData.srf.output,

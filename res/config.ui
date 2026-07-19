@@ -2097,44 +2097,25 @@
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout_20">
        <item>
-        <widget class="QGroupBox" name="groupBox_33">
+        <widget class="QGroupBox" name="groupBox_13">
          <property name="title">
-          <string>Default Surfaces Configuration</string>
+          <string>Overcapacity windows configuration</string>
          </property>
-         <property name="flat">
-          <bool>true</bool>
-         </property>
-         <layout class="QVBoxLayout" name="verticalLayout_19">
+         <layout class="QVBoxLayout" name="verticalLayout_23">
           <item>
-           <widget class="QPlainTextEdit" name="kcfg_srfDefaultConfig">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="minimumSize">
-             <size>
-              <width>0</width>
-              <height>300</height>
-             </size>
-            </property>
-            <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;Overriding default parameters for every surface. Format: &lt;/span&gt;&lt;span style=&quot; font-size:12pt; font-weight:700;&quot;&gt;OuputName:ActivityId:VirtualDesktopName:param=value,param=value... &amp;lt;Enter&amp;gt;&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;You can only write down parameters you want to change. &lt;/span&gt;&lt;span style=&quot; font-size:12pt; font-weight:700;&quot;&gt;OutputName, ActivityId, VirtualDesktopName is case sensitive&lt;/span&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;Possible parameters(case insensetive): &lt;/span&gt;&lt;span style=&quot; font-size:12pt; font-weight:700;&quot;&gt;capacity&lt;/span&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt; or &lt;/span&gt;&lt;span style=&quot; font-size:12pt; font-weight:700;&quot;&gt;cp&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;Next example set capacity on all surfaces with OutputName=HDMI-A-1 = 6.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt; font-weight:700;&quot;&gt;HDMI-A-1:::cp=6&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;the same but only on Virtual Desktop with name: Desktop 1&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt; font-weight:700;&quot;&gt;HDMI-A-1::Desktop 1:capacity=6&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QGroupBox" name="groupBox_32">
+           <widget class="QGroupBox" name="groupBox_12">
             <property name="title">
              <string/>
             </property>
             <property name="flat">
              <bool>true</bool>
             </property>
-            <layout class="QVBoxLayout" name="verticalLayout_26">
+            <layout class="QVBoxLayout" name="verticalLayout_21">
+             <property name="leftMargin">
+              <number>12</number>
+             </property>
              <property name="topMargin">
-              <number>6</number>
+              <number>0</number>
              </property>
              <property name="bottomMargin">
               <number>0</number>
@@ -2142,7 +2123,7 @@
              <item>
               <widget class="QCheckBox" name="kcfg_srfExceededToScreen">
                <property name="text">
-                <string>move windows to next screen if surface(or layout) capacity is exceeded</string>
+                <string>move overcapacity windows to Screens</string>
                </property>
                <property name="checked">
                 <bool>true</bool>
@@ -2170,41 +2151,18 @@
                 <bool>true</bool>
                </property>
                <layout class="QGridLayout" name="gridLayout_36">
-                <item row="1" column="0">
-                 <widget class="QComboBox" name="kcfg_srfToScreenOrderLeft">
-                  <property name="focusPolicy">
-                   <enum>Qt::FocusPolicy::ClickFocus</enum>
-                  </property>
-                  <property name="currentIndex">
-                   <number>1</number>
-                  </property>
-                  <item>
-                   <property name="text">
-                    <string>Off</string>
-                   </property>
-                  </item>
-                  <item>
-                   <property name="text">
-                    <string>First</string>
-                   </property>
-                  </item>
-                  <item>
-                   <property name="text">
-                    <string>Second</string>
-                   </property>
-                  </item>
-                  <item>
-                   <property name="text">
-                    <string>Third</string>
-                   </property>
-                  </item>
-                  <item>
-                   <property name="text">
-                    <string>Fourth</string>
-                   </property>
-                  </item>
-                 </widget>
-                </item>
+                <property name="leftMargin">
+                 <number>12</number>
+                </property>
+                <property name="topMargin">
+                 <number>0</number>
+                </property>
+                <property name="rightMargin">
+                 <number>12</number>
+                </property>
+                <property name="bottomMargin">
+                 <number>0</number>
+                </property>
                 <item row="1" column="2">
                  <widget class="QComboBox" name="kcfg_srfToScreenOrderRight">
                   <property name="focusPolicy">
@@ -2243,13 +2201,68 @@
                   </item>
                  </widget>
                 </item>
+                <item row="1" column="1">
+                 <widget class="QComboBox" name="kcfg_srfToScreenOrderTop">
+                  <property name="focusPolicy">
+                   <enum>Qt::FocusPolicy::ClickFocus</enum>
+                  </property>
+                  <property name="currentIndex">
+                   <number>2</number>
+                  </property>
+                  <item>
+                   <property name="text">
+                    <string>Off</string>
+                   </property>
+                  </item>
+                  <item>
+                   <property name="text">
+                    <string>First</string>
+                   </property>
+                  </item>
+                  <item>
+                   <property name="text">
+                    <string>Second</string>
+                   </property>
+                  </item>
+                  <item>
+                   <property name="text">
+                    <string>Third</string>
+                   </property>
+                  </item>
+                  <item>
+                   <property name="text">
+                    <string>Fourth</string>
+                   </property>
+                  </item>
+                 </widget>
+                </item>
                 <item row="0" column="1" alignment="Qt::AlignmentFlag::AlignHCenter">
                  <widget class="QLabel" name="label_66">
                   <property name="toolTip">
-                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;hv - short name&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                   </property>
                   <property name="text">
                    <string>Top</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="3" alignment="Qt::AlignmentFlag::AlignHCenter">
+                 <widget class="QLabel" name="label_67">
+                  <property name="toolTip">
+                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                  </property>
+                  <property name="text">
+                   <string>Bottom</string>
+                  </property>
+                 </widget>
+                </item>
+                <item row="0" column="2" alignment="Qt::AlignmentFlag::AlignHCenter">
+                 <widget class="QLabel" name="label_65">
+                  <property name="toolTip">
+                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                  </property>
+                  <property name="text">
+                   <string>Right</string>
                   </property>
                  </widget>
                 </item>
@@ -2288,43 +2301,13 @@
                   </item>
                  </widget>
                 </item>
-                <item row="0" column="3" alignment="Qt::AlignmentFlag::AlignHCenter">
-                 <widget class="QLabel" name="label_67">
-                  <property name="toolTip">
-                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;hv - short name&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                  </property>
-                  <property name="text">
-                   <string>Bottom</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="0" column="0" alignment="Qt::AlignmentFlag::AlignHCenter">
-                 <widget class="QLabel" name="label_64">
-                  <property name="toolTip">
-                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;hv - short name&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                  </property>
-                  <property name="text">
-                   <string>Left</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="0" column="2" alignment="Qt::AlignmentFlag::AlignHCenter">
-                 <widget class="QLabel" name="label_65">
-                  <property name="toolTip">
-                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;hv - short name&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                  </property>
-                  <property name="text">
-                   <string>Right</string>
-                  </property>
-                 </widget>
-                </item>
-                <item row="1" column="1">
-                 <widget class="QComboBox" name="kcfg_srfToScreenOrderTop">
+                <item row="1" column="0">
+                 <widget class="QComboBox" name="kcfg_srfToScreenOrderLeft">
                   <property name="focusPolicy">
                    <enum>Qt::FocusPolicy::ClickFocus</enum>
                   </property>
                   <property name="currentIndex">
-                   <number>2</number>
+                   <number>1</number>
                   </property>
                   <item>
                    <property name="text">
@@ -2353,25 +2336,23 @@
                   </item>
                  </widget>
                 </item>
+                <item row="0" column="0" alignment="Qt::AlignmentFlag::AlignHCenter">
+                 <widget class="QLabel" name="label_64">
+                  <property name="toolTip">
+                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                  </property>
+                  <property name="text">
+                   <string>Left</string>
+                  </property>
+                 </widget>
+                </item>
                </layout>
               </widget>
              </item>
-            </layout>
-           </widget>
-          </item>
-          <item>
-           <widget class="QGroupBox" name="groupBox_12">
-            <property name="title">
-             <string/>
-            </property>
-            <property name="flat">
-             <bool>true</bool>
-            </property>
-            <layout class="QVBoxLayout" name="verticalLayout_21">
              <item>
               <widget class="QCheckBox" name="kcfg_srfExceededToVDesktop">
                <property name="text">
-                <string>move windows to next Virtual Desktop if surface(or layout) capacity is exceeded</string>
+                <string>move overcapacity windows to Virtual Desktops</string>
                </property>
                <property name="checked">
                 <bool>true</bool>
@@ -2399,6 +2380,18 @@
                 <bool>true</bool>
                </property>
                <layout class="QGridLayout" name="gridLayout_37">
+                <property name="leftMargin">
+                 <number>12</number>
+                </property>
+                <property name="topMargin">
+                 <number>0</number>
+                </property>
+                <property name="rightMargin">
+                 <number>12</number>
+                </property>
+                <property name="bottomMargin">
+                 <number>0</number>
+                </property>
                 <item row="1" column="0">
                  <widget class="QComboBox" name="kcfg_srfToVDesktopOrderLeft">
                   <property name="focusPolicy">
@@ -2475,7 +2468,7 @@
                 <item row="0" column="1" alignment="Qt::AlignmentFlag::AlignHCenter">
                  <widget class="QLabel" name="label_68">
                   <property name="toolTip">
-                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;hv - short name&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                   </property>
                   <property name="text">
                    <string>Top</string>
@@ -2520,7 +2513,7 @@
                 <item row="0" column="3" alignment="Qt::AlignmentFlag::AlignHCenter">
                  <widget class="QLabel" name="label_69">
                   <property name="toolTip">
-                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;hv - short name&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                   </property>
                   <property name="text">
                    <string>Bottom</string>
@@ -2530,7 +2523,7 @@
                 <item row="0" column="0" alignment="Qt::AlignmentFlag::AlignHCenter">
                  <widget class="QLabel" name="label_70">
                   <property name="toolTip">
-                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;hv - short name&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                   </property>
                   <property name="text">
                    <string>Left</string>
@@ -2540,7 +2533,7 @@
                 <item row="0" column="2" alignment="Qt::AlignmentFlag::AlignHCenter">
                  <widget class="QLabel" name="label_71">
                   <property name="toolTip">
-                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;hv - short name&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                   </property>
                   <property name="text">
                    <string>Right</string>
@@ -2589,9 +2582,61 @@
            </widget>
           </item>
           <item>
-           <widget class="QCheckBox" name="kcfg_srfIsMoveOldestWindows">
-            <property name="text">
-             <string>move the oldest windows</string>
+           <widget class="QGroupBox" name="groupBox_32">
+            <property name="title">
+             <string/>
+            </property>
+            <property name="flat">
+             <bool>true</bool>
+            </property>
+            <layout class="QVBoxLayout" name="verticalLayout_26">
+             <property name="leftMargin">
+              <number>6</number>
+             </property>
+             <property name="topMargin">
+              <number>6</number>
+             </property>
+             <property name="bottomMargin">
+              <number>0</number>
+             </property>
+             <item>
+              <widget class="QCheckBox" name="kcfg_srfIsMoveOldestWindows">
+               <property name="text">
+                <string>move the oldest windows</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QGroupBox" name="groupBox_33">
+         <property name="title">
+          <string>Default Surfaces Configuration</string>
+         </property>
+         <property name="flat">
+          <bool>true</bool>
+         </property>
+         <layout class="QVBoxLayout" name="verticalLayout_19">
+          <item>
+           <widget class="QPlainTextEdit" name="kcfg_srfDefaultConfig">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>300</height>
+             </size>
+            </property>
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;Overriding default parameters for every surface. Format: &lt;/span&gt;&lt;span style=&quot; font-size:12pt; font-weight:700;&quot;&gt;OuputName:ActivityId:VirtualDesktopName:param=value,param=value... &amp;lt;Enter&amp;gt;&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;You can only write down parameters you want to change. &lt;/span&gt;&lt;span style=&quot; font-size:12pt; font-weight:700;&quot;&gt;OutputName, ActivityId, VirtualDesktopName is case sensitive&lt;/span&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;Possible parameters(case insensetive): &lt;/span&gt;&lt;span style=&quot; font-size:12pt; font-weight:700;&quot;&gt;capacity&lt;/span&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt; or &lt;/span&gt;&lt;span style=&quot; font-size:12pt; font-weight:700;&quot;&gt;cp; overcapacity &lt;/span&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;or&lt;/span&gt;&lt;span style=&quot; font-size:12pt; font-weight:700;&quot;&gt; oc &lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;Next example set capacity on all surfaces with OutputName=HDMI-A-1 = 6 and disable  overcapacity windows movement  on them&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt; font-weight:700;&quot;&gt;HDMI-A-1:::cp=6,oc=false&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;the same but only on Virtual Desktop with name: Desktop 1&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt; font-weight:700;&quot;&gt;HDMI-A-1::Desktop 1:capacity=6,oc=false&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
            </widget>
           </item>

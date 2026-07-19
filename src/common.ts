@@ -264,6 +264,7 @@ interface ISurface {
   readonly workingArea: Readonly<Rect>;
   readonly activity: string;
   readonly vDesktop: VirtualDesktop;
+  readonly isOvercapacityCandidate: boolean;
 
   next(): ISurface | null;
   getParams(): [string, string, string];

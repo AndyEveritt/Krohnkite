@@ -7,6 +7,7 @@
 
 interface ISurfaceCfg {
   capacity: number;
+  isOvercapacityCandidate: boolean;
 }
 class KWinSurfaceStore implements ISurfaceStore {
   private _store: { [id: string]: KWinSurface };
@@ -154,10 +155,14 @@ class KWinSurfaceStore implements ISurfaceStore {
   }
   private static validateUserCfg(rawCfg: string[]): ISurfaceCfg {
     let errors: string[] = [];
-    const cfgFields = ["cp", "capacity"];
-    let surfaceCfg: ISurfaceCfg = { capacity: 99 };
+    const cfgFields = ["cp", "capacity", "oc", "overcapacity"];
+    const cfgPossibleValues = "cp=6,oc=false";
+    let surfaceCfg: ISurfaceCfg = {
+      capacity: 99,
+      isOvercapacityCandidate: true,
+    };
     rawCfg.forEach((part) => {
-      let splittedPart = part.split("=").map((p) => p.trim());
+      let splittedPart = part.split("=").map((p) => p.trim().toLowerCase());
       if (splittedPart.length !== 2) {
         errors.push(`"${part}" have to has the one equal sign`);
         return;
@@ -172,17 +177,24 @@ class KWinSurfaceStore implements ISurfaceStore {
         errors.push(
           `"${userCfgField}" has unknown parameter. Possible parameters: ${cfgFields.join(
             ",",
-          )}`,
+          )}.Possible values: ${cfgPossibleValues}`,
         );
         return;
       }
-      let value: number | Err;
-      let key: keyof ISurfaceCfg;
       switch (userCfgField) {
         case "cp":
         case "capacity":
-          value = validateNumber(userValue, 1, 99);
-          key = "capacity";
+          const value = validateNumber(userValue, 1, 99);
+          if (value instanceof Err) {
+            errors.push(`splittedPart[0]: ${value}`);
+            break;
+          }
+          surfaceCfg["capacity"] = value;
+          break;
+        case "oc":
+        case "overcapacity":
+          surfaceCfg["isOvercapacityCandidate"] =
+            userValue === "false" || userValue === "disable" ? false : true;
           break;
         default:
           errors.push(
@@ -192,8 +204,6 @@ class KWinSurfaceStore implements ISurfaceStore {
           );
           return;
       }
-      if (value instanceof Err) errors.push(`splittedPart[0]: ${value}`);
-      else surfaceCfg[key] = value;
     });
     if (errors.length > 0) {
       warning(errors.join("\n"));
@@ -212,6 +222,11 @@ class KWinSurface implements ISurface {
     }
     return `${hash}`;
   }
+
+  public get isOvercapacityCandidate(): boolean {
+    return this._isOvercapacityCandidate;
+  }
+
   public static generateId(
     output: Output,
     activity: string,
@@ -294,6 +309,7 @@ class KWinSurface implements ISurface {
   private _output: Output;
   private _capacity: number | null;
   private _lastWorkingArea: Rect | null;
+  private _isOvercapacityCandidate: boolean;
 
   constructor(
     output: Output,
@@ -314,7 +330,14 @@ class KWinSurface implements ISurface {
     this.activity = activity;
     this.vDesktop = vDesktop;
     this._workspace = workspace;
-    this._capacity = surfaceConfig !== null ? surfaceConfig.capacity : null;
+    this._capacity =
+      typeof surfaceConfig?.capacity === "number"
+        ? surfaceConfig.capacity
+        : null;
+    this._isOvercapacityCandidate =
+      typeof surfaceConfig?.isOvercapacityCandidate === "boolean"
+        ? surfaceConfig.isOvercapacityCandidate
+        : true;
     this._lastWorkingArea = null;
   }
 
