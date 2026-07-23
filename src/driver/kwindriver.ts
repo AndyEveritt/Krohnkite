@@ -1254,7 +1254,7 @@ class KWinDriver implements IDriverContext {
       /* Outputs may have been destroyed (unplug, resume from sleep):
        * drop surfaces that reference them before arranging, so nothing
        * downstream feeds a dangling Output back into KWin. */
-      this._surfaceStore.removeOutdatedSurfaces();
+      this._surfaceStore.onOutputsChanged();
       this.control.onSurfaceUpdate(this, "screensChangedCB");
     });
 

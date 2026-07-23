@@ -18,14 +18,19 @@ class KWinSurfaceStore implements ISurfaceStore {
    * keyed by surface id, so a temporary unplug/resume doesn't reset them.
    * Ids are stable across replug cycles (derived from the output name). */
   private _evictedCapacities: { [id: string]: number | null };
+  private _definedSurfaces: { [label: string]: IDefinedSurface };
   private workspace: Workspace;
+  private _liveOutputNames: Set<string>;
 
   constructor(workspace: Workspace) {
     this._store = {};
-    this._userSurfacesCfg = KWinSurfaceStore.getSurfacesUserCfg();
     this.workspace = workspace;
     this._vDesktopsIds = new Set<string>();
     this._evictedCapacities = {};
+    this._definedSurfaces = {};
+    this._applyUsrDefSurfaces(CONFIG.srfDefineCfg);
+    this._userSurfacesCfg = this.getSurfacesUserCfg();
+    this._liveOutputNames = this._getLiveOutputNames();
   }
 
   public checkVirtualDesktops() {
@@ -44,40 +49,6 @@ class KWinSurfaceStore implements ISurfaceStore {
       this._vDesktopsIds.delete(id);
     }
   }
-
-  public removeByActivity(id: string) {
-    this._removeById(id, "activityId");
-  }
-
-  /* Drop surfaces whose output is gone. KWin destroys Output QObjects on
-   * hotplug/resume; a surface kept past that holds a dangling wrapper, and
-   * feeding it back into KWin API calls (workspace.clientArea etc.) can
-   * crash KWin. Surfaces are cheap to recreate -- getSurface rebuilds them
-   * with the same ids when the output comes back, layouts live in
-   * LayoutStore keyed by output name, and runtime capacity overrides are
-   * stashed here and restored on recreation, so no state is lost. */
-  public removeOutdatedSurfaces() {
-    const liveNames = new Set<string>();
-    this.workspace.screens.forEach((output) => {
-      if (outputIsAlive(output)) liveNames.add(output.name);
-    });
-    const removeIds = Object.keys(this._store).filter(
-      (id) => !liveNames.has(this._store[id].outputName),
-    );
-    if (removeIds.length === 0) return;
-    LOG?.send(
-      LogModules.surfaceChanged,
-      "removeOutdatedSurfaces",
-      `outputs removed; dropping surfaces: ${removeIds
-        .map((id) => this._store[id].toString())
-        .join("#")}`,
-    );
-    removeIds.forEach((id) => {
-      this._evictedCapacities[id] = this._store[id].capacity;
-      delete this._store[id];
-    });
-  }
-
   public getSurface(
     output: Output,
     activity: string,
@@ -92,6 +63,7 @@ class KWinSurfaceStore implements ISurfaceStore {
         vDesktop,
         this.workspace,
         surfaceCfg,
+        this,
       );
       if (id in this._evictedCapacities) {
         this._store[id].capacity = this._evictedCapacities[id];
@@ -108,6 +80,53 @@ class KWinSurfaceStore implements ISurfaceStore {
     }
     return this._store[id];
   }
+  public isFit(surface: ISurface, label: string): boolean {
+    return this._surfaceMatchesLabel(
+      surface.output.name,
+      surface.activity,
+      surface.vDesktop.name,
+      label,
+    );
+  }
+  public removeByActivity(id: string) {
+    this._removeById(id, "activityId");
+  }
+  public onOutputsChanged() {
+    this._liveOutputNames = this._getLiveOutputNames();
+    this._removeOutdatedSurfaces();
+  }
+  /* Drop surfaces whose output is gone. KWin destroys Output QObjects on
+   * hotplug/resume; a surface kept past that holds a dangling wrapper, and
+   * feeding it back into KWin API calls (workspace.clientArea etc.) can
+   * crash KWin. Surfaces are cheap to recreate -- getSurface rebuilds them
+   * with the same ids when the output comes back, layouts live in
+   * LayoutStore keyed by output name, and runtime capacity overrides are
+   * stashed here and restored on recreation, so no state is lost. */
+  private _removeOutdatedSurfaces() {
+    this._getLiveOutputNames();
+    const removeIds = Object.keys(this._store).filter(
+      (id) => !this._liveOutputNames.has(this._store[id].outputName),
+    );
+    if (removeIds.length === 0) return;
+    LOG?.send(
+      LogModules.surfaceChanged,
+      "removeOutdatedSurfaces",
+      `outputs removed; dropping surfaces: ${removeIds
+        .map((id) => this._store[id].toString())
+        .join("#")}`,
+    );
+    removeIds.forEach((id) => {
+      this._evictedCapacities[id] = this._store[id].capacity;
+      delete this._store[id];
+    });
+  }
+  private _getLiveOutputNames(): Set<string> {
+    const liveNames = new Set<string>();
+    this.workspace.screens.forEach((output) => {
+      if (outputIsAlive(output)) liveNames.add(output.name);
+    });
+    return liveNames;
+  }
   private _surfaceCfg(
     output: Output,
     activity: string,
@@ -115,9 +134,42 @@ class KWinSurfaceStore implements ISurfaceStore {
   ): ISurfaceCfg | null {
     for (let i = 0; i < this._userSurfacesCfg.length; i++) {
       let userCfg = this._userSurfacesCfg[i];
-      if (userCfg.isFit(output, activity, vDesktop)) return userCfg.cfg;
+      if (
+        this._surfaceMatchesLabel(
+          output.name,
+          activity,
+          vDesktop.name,
+          userCfg.userLabel,
+        )
+      )
+        return userCfg.cfg;
     }
     return null;
+  }
+  private _surfaceMatchesLabel(
+    outputName: string,
+    activity: string,
+    vDesktopName: string,
+    label: string,
+  ): boolean {
+    const defined = this._definedSurfaces[label];
+    if (defined === undefined) return false;
+    if (defined.outputNames.length !== 0) {
+      let foundIdx = defined.outputNames.indexOf(outputName);
+      if (foundIdx === -1) return false;
+      if (defined.outputNames.length > 1 && foundIdx !== 0) {
+        for (let i = 0; i < foundIdx; i++) {
+          if (this._liveOutputNames!.has(defined.outputNames[i])) return false;
+        }
+      }
+    }
+    if (
+      (defined.activityId === "" || defined.activityId === activity) &&
+      (defined.virtualDesktopNames.length === 0 ||
+        defined.virtualDesktopNames.indexOf(vDesktopName) !== -1)
+    )
+      return true;
+    return false;
   }
   private _removeById(sourceId: string, byType: "vDesktopId" | "activityId") {
     let removeIds: string[] = [];
@@ -137,20 +189,94 @@ class KWinSurfaceStore implements ISurfaceStore {
       delete this._store[id];
     });
   }
-  private static getSurfacesUserCfg(): SurfaceCfg<ISurfaceCfg>[] {
-    let userCfg: SurfaceCfg<ISurfaceCfg>[] = [];
-    getSurfacesCfg(CONFIG.srfDefaultConfig).forEach((srf) => {
-      let validatedCfg = KWinSurfaceStore.validateUserCfg(srf.unvalidatedCfg);
-      userCfg.push(
-        new SurfaceCfg<ISurfaceCfg>(
-          srf.outputName,
-          srf.activityId,
-          srf.vDesktopName,
-          validatedCfg,
-        ),
-      );
-    });
+  private _applyUsrDefSurfaces(userConfig: string[]): void {
+    for (const line of userConfig) {
+      const eqIdx = line.indexOf("=");
+      if (eqIdx === -1) {
+        warning(
+          `Invalid defined surface: "${line}" — missing "=" (expected: label=Surface)`,
+        );
+        continue;
+      }
+      const label = line.slice(0, eqIdx).trim();
+      if (label.length === 0) {
+        warning(`Invalid defined surface: "${line}" — label is empty`);
+        continue;
+      }
 
+      const surface = line.slice(eqIdx + 1).trim();
+      const parts = surface.split(":").map((p) => p.trim());
+
+      if (parts.length > 3) {
+        warning(
+          `Invalid defined surface: "${line}" — too many colons (expected: outputs[:vDesktops[:activity]])`,
+        );
+        continue;
+      }
+
+      const outputStr = parts[0];
+      const outputNames = outputStr
+        .split(",")
+        .map((o) => o.trim())
+        .filter((o) => o.length > 0);
+
+      const virtualDesktopNames =
+        parts.length >= 2
+          ? parts[1]
+              .split(",")
+              .map((d) => d.trim())
+              .filter((d) => d.length > 0)
+          : [];
+      const activityId = parts.length >= 3 ? parts[2] : "";
+
+      const entries: IDefinedSurface = {
+        label,
+        outputNames,
+        virtualDesktopNames,
+        activityId,
+      };
+
+      if (this._definedSurfaces[label] !== undefined) {
+        warning(`Duplicate label "${label}" — overwriting previous definition`);
+      }
+      this._definedSurfaces[label] = entries;
+    }
+  }
+  private getSurfacesUserCfg(): SurfaceCfg<ISurfaceCfg>[] {
+    let userCfg: SurfaceCfg<ISurfaceCfg>[] = [];
+    for (const line of CONFIG.srfDefaultConfig) {
+      const colonIdx = line.indexOf(":");
+      if (colonIdx === -1) {
+        warning(
+          `Invalid surface config: "${line}" — missing ":" (expected: label:param=value,...)`,
+        );
+        continue;
+      }
+      const label = line.slice(0, colonIdx).trim();
+      if (label.length === 0) {
+        warning(`Invalid surface config: "${line}" — label is empty`);
+        continue;
+      }
+
+      const paramsStr = line.slice(colonIdx + 1).trim();
+      const rawCfg =
+        paramsStr.length > 0
+          ? paramsStr
+              .split(",")
+              .map((p) => p.trim())
+              .filter((p) => p.length > 0)
+          : [];
+      const validatedCfg = KWinSurfaceStore.validateUserCfg(rawCfg);
+
+      const defined = this._definedSurfaces[label];
+      if (defined === undefined) {
+        warning(
+          `Surface config label "${label}" not found in defined surfaces`,
+        );
+        continue;
+      }
+      userCfg.push(new SurfaceCfg<ISurfaceCfg>(label, validatedCfg));
+    }
     return userCfg;
   }
   private static validateUserCfg(rawCfg: string[]): ISurfaceCfg {
@@ -306,6 +432,7 @@ class KWinSurface implements ISurface {
   public readonly vDesktop: VirtualDesktop;
 
   private readonly _workspace: Workspace;
+  private readonly _surfaceStore: KWinSurfaceStore;
   private _output: Output;
   private _capacity: number | null;
   private _lastWorkingArea: Rect | null;
@@ -317,6 +444,7 @@ class KWinSurface implements ISurface {
     vDesktop: VirtualDesktop,
     workspace: Workspace,
     surfaceConfig: ISurfaceCfg | null,
+    surfaceStore: KWinSurfaceStore,
   ) {
     this.id = KWinSurface.generateId(output, activity, vDesktop);
     this.layoutId = KWinSurface.generateId(output, activity, vDesktop, true);
@@ -330,6 +458,7 @@ class KWinSurface implements ISurface {
     this.activity = activity;
     this.vDesktop = vDesktop;
     this._workspace = workspace;
+    this._surfaceStore = surfaceStore;
     this._capacity =
       typeof surfaceConfig?.capacity === "number"
         ? surfaceConfig.capacity
@@ -339,6 +468,10 @@ class KWinSurface implements ISurface {
         ? surfaceConfig.isOvercapacityCandidate
         : true;
     this._lastWorkingArea = null;
+  }
+
+  public isFit(label: string): boolean {
+    return this._surfaceStore.isFit(this, label);
   }
 
   public getParams(): [string, string, string] {

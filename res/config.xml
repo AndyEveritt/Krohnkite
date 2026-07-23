@@ -145,11 +145,6 @@
       <!-- **********Surfaces*********** -->
       <!-- ***************************** -->
 
-    <entry name="srfDefaultConfig" type="String">
-	    <label>Surfaces settings change the default parameters for the surface</label>
-        <default></default>
-    </entry>
-
     <entry name="srfExceededToScreen" type="Bool">
 	    <label>Move windows to next screen if surface(or layout) capacity is exceeded</label>
         <default>true</default>
@@ -196,6 +191,17 @@
 	    <label>Move the oldest windows</label>
         <default>false</default>
     </entry>
+
+    <entry name="srfDefineCfg" type="String">
+      <label>Define surfaces with user lable. Surface=userLabel</label>
+        <default></default>
+    </entry>
+
+    <entry name="srfDefaultConfig" type="String">
+	    <label>Surfaces settings change the default parameters for the surface</label>
+        <default></default>
+    </entry>
+
 
       <!-- ***************************** -->
       <!-- **********Geometry*********** -->

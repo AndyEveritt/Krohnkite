@@ -53,12 +53,13 @@ class KWinConfig implements IConfig {
   /*
    * Surfaces
    * */
-  public srfDefaultConfig: string[];
   public srfExceededToScreen: boolean;
   public srfToScreenOrder: Direction[];
   public srfExceededToVDesktop: boolean;
   public srfToVDesktopOrder: Direction[];
   public srfIsMoveOldestWindows: boolean;
+  public srfDefineCfg: string[];
+  public srfDefaultConfig: string[];
   /*
    * Geometry
    * */
@@ -200,10 +201,6 @@ class KWinConfig implements IConfig {
     //***************************
     //****************** Surfaces
     //***************************
-    this.srfDefaultConfig = separate(
-      KWIN.readConfig("srfDefaultConfig", ""),
-      "\n",
-    );
     this.srfExceededToScreen = KWIN.readConfig("srfExceededToScreen", true);
     // Define the config mapping (cleaner and easier to maintain)
     const directionConfigs: {
@@ -259,6 +256,11 @@ class KWinConfig implements IConfig {
     this.srfIsMoveOldestWindows = KWIN.readConfig(
       "srfIsMoveOldestWindows",
       false,
+    );
+    this.srfDefineCfg = separate(KWIN.readConfig("srfDefineCfg", ""), "\n");
+    this.srfDefaultConfig = separate(
+      KWIN.readConfig("srfDefaultConfig", ""),
+      "\n",
     );
 
     //***************************

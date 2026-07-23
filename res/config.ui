@@ -2613,48 +2613,78 @@
         </widget>
        </item>
        <item>
-        <widget class="QGroupBox" name="groupBox_33">
-         <property name="title">
-          <string>Default Surfaces Configuration</string>
+        <widget class="QLabel" name="label_72">
+         <property name="text">
+          <string>Surfaces define</string>
          </property>
-         <property name="flat">
-          <bool>true</bool>
+         <property name="alignment">
+          <set>Qt::AlignmentFlag::AlignCenter</set>
          </property>
-         <layout class="QVBoxLayout" name="verticalLayout_19">
-          <item>
-           <widget class="QPlainTextEdit" name="kcfg_srfDefaultConfig">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="minimumSize">
-             <size>
-              <width>0</width>
-              <height>300</height>
-             </size>
-            </property>
-            <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;Overriding default parameters for every surface. Format: &lt;/span&gt;&lt;span style=&quot; font-size:12pt; font-weight:700;&quot;&gt;OuputName:ActivityId:VirtualDesktopName:param=value,param=value... &amp;lt;Enter&amp;gt;&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;You can only write down parameters you want to change. &lt;/span&gt;&lt;span style=&quot; font-size:12pt; font-weight:700;&quot;&gt;OutputName, ActivityId, VirtualDesktopName is case sensitive&lt;/span&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;Possible parameters(case insensetive): &lt;/span&gt;&lt;span style=&quot; font-size:12pt; font-weight:700;&quot;&gt;capacity&lt;/span&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt; or &lt;/span&gt;&lt;span style=&quot; font-size:12pt; font-weight:700;&quot;&gt;cp; overcapacity &lt;/span&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;or&lt;/span&gt;&lt;span style=&quot; font-size:12pt; font-weight:700;&quot;&gt; oc &lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;Next example set capacity on all surfaces with OutputName=HDMI-A-1 = 6 and disable  overcapacity windows movement  on them&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt; font-weight:700;&quot;&gt;HDMI-A-1:::cp=6,oc=false&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;the same but only on Virtual Desktop with name: Desktop 1&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt; font-weight:700;&quot;&gt;HDMI-A-1::Desktop 1:capacity=6,oc=false&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <spacer name="verticalSpacer_2">
-            <property name="orientation">
-             <enum>Qt::Orientation::Vertical</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>20</width>
-              <height>40</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
-         </layout>
         </widget>
+       </item>
+       <item>
+        <widget class="QPlainTextEdit" name="kcfg_srfDefineCfg">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>300</height>
+          </size>
+         </property>
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;Surface is combination of three parameters: Screen(Output) name and optional VirtualDesktops and ActivityId. For example:&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt; font-weight:700;&quot;&gt;HDMI-A-1:Desktop 1:99e10d31-e8f3-44aa-bbed-2a543f13fa54- &lt;/span&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;this uniquely defines one surface, another example defines group of surfaces: &lt;/span&gt;&lt;span style=&quot; font-size:12pt; font-weight:700;&quot;&gt;DP-2 &lt;/span&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;- this include all surfaces with any activities and virtual desktops on monitor DP-2. To define a surface for further use in program configuration use the next format: &lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt; font-weight:700;&quot;&gt;label=&amp;lt;outputName&amp;gt;,&amp;lt;outputName&amp;gt;...[:&amp;lt;virtualDesktop&amp;gt;,&amp;lt;virtualDesktop&amp;gt;...[:&amp;lt;activityId&amp;gt;]] &lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;For example:&lt;/span&gt;&lt;span style=&quot; font-size:12pt; font-weight:700;&quot;&gt; allMonitors=: &lt;/span&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;to make label for all monitors or&lt;/span&gt;&lt;span style=&quot; font-size:12pt; font-weight:700;&quot;&gt; mainScreen=HDMI-A-1,DP-2:Desktop 1 &lt;/span&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;in another parts of Krohnkite config you can use &lt;/span&gt;&lt;span style=&quot; font-size:12pt; font-weight:700;&quot;&gt;mainMonitor&lt;/span&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt; as surface name(&lt;/span&gt;&lt;span style=&quot; font-size:12pt; font-weight:700;&quot;&gt;All Case Sensitive)&lt;/span&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;.Please note that there may be multiple monitor names, separated by commas as in the example, or there may be none. The first one has higher priority and if this monitor works in this moment the surface in example will belong ONLY him NOT BOTH.This can be useful if you apply monitor to your notebook for example and you want the monitor to have this config. &lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+         <property name="inputMethodHints">
+          <set>Qt::InputMethodHint::ImhMultiLine</set>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="label_73">
+         <property name="text">
+          <string>Surfaces Configuration</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignmentFlag::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPlainTextEdit" name="kcfg_srfDefaultConfig">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>300</height>
+          </size>
+         </property>
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;Overriding default parameters for every surface. Format: &lt;/span&gt;&lt;span style=&quot; font-size:12pt; font-weight:700;&quot;&gt;SrfLabel:param=value,param=value... &amp;lt;Enter&amp;gt;&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;Possible parameters(case insensetive): &lt;/span&gt;&lt;span style=&quot; font-size:12pt; font-weight:700;&quot;&gt;capacity&lt;/span&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt; or &lt;/span&gt;&lt;span style=&quot; font-size:12pt; font-weight:700;&quot;&gt;cp; overcapacity &lt;/span&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;or&lt;/span&gt;&lt;span style=&quot; font-size:12pt; font-weight:700;&quot;&gt; oc &lt;/span&gt;&lt;/p&gt;&lt;p&gt;For example: &lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt; font-weight:700;&quot;&gt;primaryScreen:cp=6,oc=false&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;Next example set capacity on surface(s)  with Label = primaryScreen  and disable overcapacity windows movement on them.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <spacer name="verticalSpacer_2">
+         <property name="orientation">
+          <enum>Qt::Orientation::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
        </item>
       </layout>
      </widget>
@@ -2904,10 +2934,10 @@
           <item>
            <widget class="QPlainTextEdit" name="kcfg_gapsOverrideConfig">
             <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;Overriding default gaps parameters for the specified Screen Name(OutputName). Format:&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt; font-weight:700;&quot;&gt;OutputName:&amp;lt;left,right,top,bottom,between&amp;gt;=number,...&amp;lt;Enter&amp;gt;&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt; font-weight:700;&quot;&gt;OutputName:ActivityId:VirtualDesktopName:&amp;lt;left,right,top,bottom,between&amp;gt;=number,...&amp;lt;Enter&amp;gt;&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt; font-weight:700;&quot;&gt;xrandr --listmonitors&lt;/span&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt; to define Output names&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt; font-weight:700;&quot;&gt;left,right,top,bottom,between&lt;/span&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt; or you can use shortname&lt;/span&gt;&lt;span style=&quot; font-size:12pt; font-weight:700;&quot;&gt; l,r,t,b,e &lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;You can only write down the parameters you want to change. Examples:&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;on monitor with Output name &lt;/span&gt;&lt;span style=&quot; font-size:12pt; font-weight:700;&quot;&gt;DP-2 &lt;/span&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;will override right gap to 10, left gap to 20 and between gap to 10&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt; font-weight:700;&quot;&gt;DP-2:r=10,l=20,between=10&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;this one, will override between gaps only for defined display, virtual desktop and activity&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt; font-weight:700;&quot;&gt;HDMI-A-1:99e10d31-e8f3-44aa-bbed-2a543f13fa54:Desktop 1:e=0&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;Overriding default gaps parameters for defined SurfaceLabel(see Surfaces tab). Format:&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt; font-weight:700;&quot;&gt;SurfaceLabel:&amp;lt;left,right,top,bottom,between&amp;gt;=number,...&amp;lt;Enter&amp;gt;&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt; font-weight:700;&quot;&gt;left,right,top,bottom,between&lt;/span&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt; or you can use shortname&lt;/span&gt;&lt;span style=&quot; font-size:12pt; font-weight:700;&quot;&gt; l,r,t,b,e &lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;You can only write down the parameters you want to change. Examples:&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;on your defined surface(see surfaces tab) with name: &lt;/span&gt;&lt;span style=&quot; font-size:12pt; font-weight:700;&quot;&gt;myFirstMonitor&lt;/span&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt; will override right gap to 10, left gap to 20 and between gap to 10&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt; font-weight:700;&quot;&gt;MyFirstMonitor:r=10,l=20,between=10&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="placeholderText">
-             <string>OutputName:&lt;left,right,top,bottom,between&gt;=number,...&lt;Enter&gt;</string>
+             <string>SurfaceLabel:&lt;left,right,top,bottom,between&gt;=number,...&lt;Enter&gt;</string>
             </property>
            </widget>
           </item>
@@ -3782,19 +3812,6 @@
          </property>
          <layout class="QGridLayout" name="gridLayout_6">
           <item row="5" column="1">
-           <widget class="QCheckBox" name="kcfg_floatUtility">
-            <property name="toolTip">
-             <string>This is mainly for debugging purpose, but can also be used to meet some specific requirements.</string>
-            </property>
-            <property name="text">
-             <string>Float utility windows(applies to window type Dialog, Splash, Utility)</string>
-            </property>
-            <property name="checked">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-          <item row="4" column="1">
            <widget class="QCheckBox" name="kcfg_floatDefault">
             <property name="toolTip">
              <string>This is mainly for debugging purpose, but can also be used to meet some specific requirements.</string>
@@ -3807,6 +3824,19 @@
             </property>
            </widget>
           </item>
+          <item row="6" column="1">
+           <widget class="QCheckBox" name="kcfg_floatUtility">
+            <property name="toolTip">
+             <string>This is mainly for debugging purpose, but can also be used to meet some specific requirements.</string>
+            </property>
+            <property name="text">
+             <string>Float utility windows(applies to window type Dialog, Splash, Utility)</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
           <item row="3" column="1">
            <widget class="QGroupBox" name="groupBox_31">
             <property name="title">
@@ -3816,8 +3846,17 @@
              <bool>true</bool>
             </property>
             <layout class="QGridLayout" name="gridLayout_28">
+             <property name="topMargin">
+              <number>0</number>
+             </property>
+             <property name="bottomMargin">
+              <number>0</number>
+             </property>
              <item row="0" column="1">
               <widget class="QLineEdit" name="kcfg_floatingClass">
+               <property name="enabled">
+                <bool>false</bool>
+               </property>
                <property name="toolTip">
                 <string>Comma-separated list of window classes. Matching windows will become float automatically.</string>
                </property>
@@ -3839,6 +3878,9 @@
              </item>
              <item row="1" column="1">
               <widget class="QLineEdit" name="kcfg_floatingTitle">
+               <property name="enabled">
+                <bool>false</bool>
+               </property>
                <property name="toolTip">
                 <string>Comma-separated list of keywords(or substrings). Any windows with matching title will become float automatically</string>
                </property>
@@ -3846,6 +3888,9 @@
              </item>
             </layout>
            </widget>
+          </item>
+          <item row="4" column="1">
+           <widget class="QPlainTextEdit" name="plainTextEdit"/>
           </item>
          </layout>
         </widget>

@@ -110,7 +110,7 @@ class TilingEngine {
   public makeWinActive: WindowClass | null;
   public arrangeProcessId: number | null;
   private _defaultGaps: DefaultGapsCfg | null;
-  private _gapsSurfacesCfg: gapsSurfaceCfg[];
+  private _gapsSurfacesCfg: SurfaceCfg<IGaps>[];
   private _screenDataStore: Map<string, ScreenData>;
 
   constructor() {
@@ -1198,7 +1198,7 @@ class TilingEngine {
       this._gapsSurfacesCfg = gapsSurfaceCfg.parseGapsUserSurfacesCfg();
     }
     const surfaceCfg = this._gapsSurfacesCfg.find((surfaceCfg) =>
-      surfaceCfg.isFit(srf),
+      srf.isFit(surfaceCfg.userLabel),
     );
     if (surfaceCfg === undefined) return this._defaultGaps;
     return surfaceCfg.cfg;

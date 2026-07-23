@@ -4,10 +4,15 @@
     SPDX-License-Identifier: MIT
 */
 
+interface DockSurfaceCfg {
+  srfLabel: string;
+  cfg: IDockCfg;
+}
+
 class DockStore implements IDockStore {
   private store: { [SurfaceId: string]: DockEntry };
   private defaultCfg: DefaultDockCfg | null;
-  private surfacesCfg: SurfaceCfg<IDockCfg>[];
+  private surfacesCfg: DockSurfaceCfg[];
   private windowClassesCfg: { [windowClassName: string]: IDock };
 
   constructor() {
@@ -83,22 +88,16 @@ class DockStore implements IDockStore {
     return false;
   }
 
-  private getSurfaceCfg(srf: ISurface): SurfaceCfg<IDockCfg> {
+  private getSurfaceCfg(srf: ISurface): IDockCfg {
     let dockCfg: IDockCfg | null = null;
     for (let surfaceCfg of this.surfacesCfg) {
-      if (surfaceCfg.isFit(srf.output, srf.activity, srf.vDesktop)) {
+      if (srf.isFit(surfaceCfg.srfLabel)) {
         dockCfg = { ...surfaceCfg.cfg };
         break;
       }
     }
     if (dockCfg === null) dockCfg = this.defaultCfg!.cloneAndUpdate({});
-    let [outputName, activityId, vDesktopName] = srf.getParams();
 
-    return new SurfaceCfg<IDockCfg>(
-      outputName,
-      activityId,
-      vDesktopName,
-      dockCfg,
-    );
+    return dockCfg;
   }
 }

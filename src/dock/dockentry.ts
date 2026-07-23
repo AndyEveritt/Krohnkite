@@ -6,11 +6,11 @@
 
 class DockEntry implements IDockEntry {
   private _slots: DockSlot[];
-  private surfaceCfg: SurfaceCfg<IDockCfg>;
+  private dockCfg: IDockCfg;
   private _id: string;
 
-  constructor(cfg: SurfaceCfg<IDockCfg>, id: string) {
-    this.surfaceCfg = cfg;
+  constructor(cfg: IDockCfg, id: string) {
+    this.dockCfg = cfg;
     this._slots = this.parseSlots();
     this._id = id;
   }
@@ -350,7 +350,7 @@ class DockEntry implements IDockEntry {
       contenders.push(
         ...windows.filter((w) => {
           if (w.dock === null) {
-            w.dock = new Dock(this.surfaceCfg.cfg);
+            w.dock = new Dock(this.dockCfg);
             return true;
           }
           if (w.dock.position === slot.position) {

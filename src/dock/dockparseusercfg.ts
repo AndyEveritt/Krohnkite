@@ -4,26 +4,43 @@
     SPDX-License-Identifier: MIT
 */
 
-function parseDockUserSurfacesCfg(): SurfaceCfg<IDockCfg>[] {
-  //format: "OuputName:ActivityId:VirtualDesktopName:shortname=value,shortname=value..."
-  let surfacesCfg: SurfaceCfg<IDockCfg>[] = [];
-  getSurfacesCfg(CONFIG.dockSurfacesConfig).forEach((srf) => {
-    let partialDockCfg = parseSplittedUserCfg(srf.unvalidatedCfg);
+function parseDockUserSurfacesCfg(): DockSurfaceCfg[] {
+  //format: "srfLabel:shortname=value,shortname=value..."
+  let surfacesCfg: DockSurfaceCfg[] = [];
+  for (const line of CONFIG.dockSurfacesConfig) {
+    const eqIdx = line.indexOf(":");
+    if (eqIdx === -1) {
+      warning(
+        `Invalid dock surface config: "${line}" — missing ":" (expected: srfLabel:shortname=value,...)`,
+      );
+      continue;
+    }
+    const srfLabel = line.slice(0, eqIdx).trim();
+    if (srfLabel.length === 0) {
+      warning(`Invalid dock surface config: "${line}" — label is empty`);
+      continue;
+    }
+
+    const paramsStr = line.slice(eqIdx + 1).trim();
+    const rawCfg =
+      paramsStr.length > 0
+        ? paramsStr
+            .split(",")
+            .map((p) => p.trim())
+            .filter((p) => p.length > 0)
+        : [];
+    const partialDockCfg = parseSplittedUserCfg(rawCfg);
     if (partialDockCfg instanceof Err) {
-      warning(`Invalid User surface config: ${srf}. ${partialDockCfg}`);
-      return;
+      warning(`Invalid dock surface config: "${line}". ${partialDockCfg}`);
+      continue;
     }
     if (Object.keys(partialDockCfg).length > 0) {
-      surfacesCfg.push(
-        new SurfaceCfg<IDockCfg>(
-          srf.outputName,
-          srf.activityId,
-          srf.vDesktopName,
-          DefaultDockCfg.instance.cloneAndUpdate(partialDockCfg) as IDockCfg,
-        ),
-      );
+      surfacesCfg.push({
+        srfLabel,
+        cfg: DefaultDockCfg.instance.cloneAndUpdate(partialDockCfg) as IDockCfg,
+      });
     }
-  });
+  }
   return surfacesCfg;
 }
 

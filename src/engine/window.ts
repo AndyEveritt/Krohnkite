@@ -170,6 +170,7 @@ class WindowClass implements IWindowClass {
   private weightMap: { [key: string]: number };
   private _minSize: ISize;
   private _maxSize: ISize;
+  private _nativeFloatGeometry: Readonly<Rect>;
   private _floatGeometry: Rect | null;
 
   constructor(window: IDriverWindow) {
@@ -177,6 +178,7 @@ class WindowClass implements IWindowClass {
     this.window = window;
 
     this.geometry = window.geometry;
+    this._nativeFloatGeometry = this.geometry.clone();
     this.focusTime = 0;
     this.isSendingToOutput = false;
     this.internalState = WindowState.Unmanaged;

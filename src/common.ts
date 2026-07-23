@@ -85,12 +85,13 @@ interface IConfig {
   layoutFactories: { [key: string]: () => ILayout };
 
   //Surfaces
-  srfDefaultConfig: string[];
   srfExceededToScreen: boolean;
   srfToScreenOrder: Direction[];
   srfExceededToVDesktop: boolean;
   srfToVDesktopOrder: Direction[];
   srfIsMoveOldestWindows: boolean;
+  srfDefineCfg: string[];
+  srfDefaultConfig: string[];
 
   //Geometry
   screenGapTop: number;
@@ -268,6 +269,7 @@ interface ISurface {
 
   next(): ISurface | null;
   getParams(): [string, string, string];
+  isFit(label: string): boolean;
 }
 
 interface IDriverContext {
