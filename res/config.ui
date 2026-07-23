@@ -2615,7 +2615,7 @@
        <item>
         <widget class="QLabel" name="label_72">
          <property name="text">
-          <string>Surfaces define</string>
+          <string>Defining Surfaces</string>
          </property>
          <property name="alignment">
           <set>Qt::AlignmentFlag::AlignCenter</set>
