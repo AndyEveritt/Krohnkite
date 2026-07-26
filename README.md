@@ -188,28 +188,37 @@ New windows split the bottom-right-most window along its longer side, so the
 arrangement grows the way a manual tiling WM's does. From there you shape it
 yourself:
 
-| Key       | Action                                |
-| --------- | ------------------------------------- |
-| Meta + I  | Split along the pane's longer side    |
-| Meta + D  | Unsplit                               |
-| _unbound_ | Split Horizontal (panes side by side) |
-| _unbound_ | Split Vertical (panes stacked)        |
+| Key       | Action                                     |
+| --------- | ------------------------------------------ |
+| Meta + I  | Split along the pane's longer side          |
+| Meta + D  | Unsplit                                     |
+| Meta + R  | Rotate the split between stacked/side by side |
+| _unbound_ | Split Horizontal (panes side by side)       |
+| _unbound_ | Split Vertical (panes stacked)              |
 
-`Split` puts a new split around the focused window and pulls the window next to
-it on screen into the other half; everything else reflows to fill the gap that
-leaves. `Unsplit` removes the split above the focused window, expanding it into
-that whole area and moving whatever shared the split - keeping its own internal
+`Split` divides the focused window's pane and moves the nearest other window
+into the new half; everything else reflows to fill the gap that leaves. It
+skips the window already sharing the focused window's split when choosing which
+to move, because using that one would simply reorient the split they share
+rather than adding a division - `Rotate` is the way to do that deliberately.
+With only two windows tiled there is nobody else to draw on, so a split falls
+back to reorienting.
+
+`Rotate` flips the split the focused window sits in, keeping its proportions,
+and skips any split whose other half is not currently on screen.
+
+`Unsplit` removes the split above the focused window, expanding it into that
+whole area and moving whatever shared the split - keeping its own internal
 arrangement - into the bottom-right-most pane elsewhere. It is refused when
 there is nowhere else to move it to, which includes every two-window
-arrangement.
+arrangement. It takes no direction because a window has exactly one split above
+it; there is never a choice of which one to remove.
 
-Split and unsplit reuse `Increase` and `Decrease`, the keys the other layouts
-already use to mean more and fewer divisions, so the layout is usable without
+Split, unsplit and rotate reuse `Increase`, `Decrease` and `Rotate`, keys the
+other layouts already use for the same ideas, so the layout is usable without
 binding anything. `Meta + I` picks the direction the same way a new window does
 - the pane's longer side, or the other one if that is the only way both windows
 fit - and the two explicit shortcuts are there for when you want to force it.
-Unsplit takes no direction because a window has exactly one split above it;
-there is never a choice of which one to remove.
 
 `Meta + Shift + H/J/K/L` swaps the focused window with its neighbor, and split
 borders resize with the usual grow/shrink keys or the mouse. The arrangement

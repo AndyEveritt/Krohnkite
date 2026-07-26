@@ -44,6 +44,7 @@ const OPERATIONS = [
   "splitHorizontal",
   "splitVertical",
   "unsplit",
+  "rotate",
   "move",
   "move",
   "adjust",
@@ -115,6 +116,9 @@ function runSeed(seed, steps) {
         break;
       case "unsplit":
         world.shortcut("Decrease");
+        break;
+      case "rotate":
+        world.shortcut("Rotate");
         break;
       case "move":
         world.shortcut(`Swap${pick(DIRECTIONS)}`);

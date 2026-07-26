@@ -105,12 +105,14 @@ test("splitting reflows the windows around the new split", (t) => {
   assert.deepStrictEqual(
     world.snapshot(),
     {
-      A: px(0, 0, 0.5, 0.5),
-      B: px(0, 0.5, 0.5, 0.5),
-      C: px(0.5, 0, 0.25, 1),
-      D: px(0.75, 0, 0.25, 1),
+      A: px(0, 0, 0.5, 1),
+      B: px(0.5, 0, 0.25, 0.5),
+      C: px(0.75, 0, 0.25, 0.5),
+      D: px(0.5, 0.5, 0.5, 0.5),
     },
-    "C and D are already a pair, so their shared split just reorients",
+    "C's pane really is divided: B is pulled up into it, and D takes the lower half " +
+      "that B's departure frees. D is skipped as the partner because it already " +
+      "shares C's split - using it would reorient that split rather than add one",
   );
 
   world.open("E");
@@ -118,13 +120,13 @@ test("splitting reflows the windows around the new split", (t) => {
   assert.deepStrictEqual(
     world.snapshot(),
     {
-      A: px(0, 0, 0.5, 0.5),
-      B: px(0, 0.5, 0.5, 0.5),
-      C: px(0.5, 0, 0.25, 1),
-      D: px(0.75, 0, 0.25, 0.5),
+      A: px(0, 0, 0.5, 1),
+      B: px(0.5, 0, 0.25, 0.5),
+      C: px(0.75, 0, 0.25, 0.5),
+      D: px(0.5, 0.5, 0.25, 0.5),
       E: px(0.75, 0.5, 0.25, 0.5),
     },
-    "D is now the bottom-right-most pane and is tall, so E stacks under it",
+    "D is now the bottom-right-most pane and is wide, so E goes beside it",
   );
 });
 
@@ -132,47 +134,78 @@ test("Increase splits along the pane's longer side", (t) => {
   const world = exampleWorld();
   const px = world.px;
 
+  /* A holds the left half, 960x1080, so the longer side is vertical. */
   world.focus("A");
   assert.strictEqual(world.shortcut("Increase"), true);
+  assert.deepStrictEqual(
+    world.snapshot(),
+    {
+      A: px(0, 0, 0.5, 0.5),
+      B: px(0, 0.5, 0.5, 0.5),
+      C: px(0.5, 0, 0.5, 0.5),
+      D: px(0.5, 0.5, 0.25, 0.5),
+      E: px(0.75, 0.5, 0.25, 0.5),
+    },
+    "A's pane is divided top and bottom, with B pulled into the new half",
+  );
+});
+
+test("Rotate flips the split the focused window sits in", (t) => {
+  const world = exampleWorld();
+  const px = world.px;
+  world.focus("A");
+  world.shortcut("Increase");
+  const stacked = world.snapshot();
+
+  assert.strictEqual(world.shortcut("Rotate"), true);
   assert.deepStrictEqual(
     world.snapshot(),
     {
       A: px(0, 0, 0.25, 1),
       B: px(0.25, 0, 0.25, 1),
-      C: px(0.5, 0, 0.25, 1),
-      D: px(0.75, 0, 0.25, 0.5),
+      C: px(0.5, 0, 0.5, 0.5),
+      D: px(0.5, 0.5, 0.25, 0.5),
       E: px(0.75, 0.5, 0.25, 0.5),
     },
-    "A is wide, and already paired with B, so the pair turns side by side",
+    "A and B were stacked, and are now side by side; nothing else moves",
   );
+
+  assert.strictEqual(world.shortcut("Rotate"), true);
+  assert.deepStrictEqual(
+    world.snapshot(),
+    stacked,
+    "and rotating again puts them back",
+  );
+});
+
+test("Rotate keeps the proportions of the split it flips", (t) => {
+  const world = createWorld();
+  world.open("A");
+  world.apply();
+  world.open("B");
+  world.apply();
+
+  world.adjust("A", world.delta(240));
+  world.apply();
+  const widths = world.snapshot();
+  assert.strictEqual(widths.A[2], 1920 / 2 + 240);
 
   world.focus("A");
-  assert.strictEqual(world.shortcut("Increase"), true);
-  assert.deepStrictEqual(
-    world.snapshot(),
-    {
-      A: px(0, 0, 0.5, 0.5),
-      B: px(0, 0.5, 0.5, 0.5),
-      C: px(0.5, 0, 0.25, 1),
-      D: px(0.75, 0, 0.25, 0.5),
-      E: px(0.75, 0.5, 0.25, 0.5),
-    },
-    "A is tall now, so the same key stacks the pair again",
+  assert.strictEqual(world.shortcut("Rotate"), true);
+  const heights = world.snapshot();
+  assert.strictEqual(
+    heights.A[3],
+    Math.round((1080 * (1920 / 2 + 240)) / 1920),
+    "the 62/38 split becomes 62/38 the other way round, not 50/50",
   );
+});
 
-  world.focus("C");
-  assert.strictEqual(world.shortcut("Increase"), true);
-  assert.deepStrictEqual(
-    world.snapshot(),
-    {
-      A: px(0, 0, 0.5, 0.5),
-      B: px(0, 0.5, 0.5, 0.5),
-      C: px(0.5, 0, 0.25, 0.5),
-      D: px(0.5, 0.5, 0.25, 0.5),
-      E: px(0.75, 0, 0.25, 1),
-    },
-    "C's neighbour D is not its sibling, so this builds a real new split",
-  );
+test("Rotate refuses when the window has no split to flip", (t) => {
+  const world = createWorld();
+  world.open("A");
+  world.apply();
+  world.focus("A");
+  assert.strictEqual(world.shortcut("Rotate"), false);
 });
 
 test("Decrease removes the split above the focused window", (t) => {
@@ -185,12 +218,12 @@ test("Decrease removes the split above the focused window", (t) => {
     world.snapshot(),
     {
       A: px(0, 0, 0.5, 0.5),
-      B: px(0, 0.5, 0.5, 0.5),
-      C: px(0.5, 0, 0.25, 0.5),
-      D: px(0.75, 0, 0.25, 1),
-      E: px(0.5, 0.5, 0.25, 0.5),
+      B: px(0.5, 0, 0.25, 0.5),
+      C: px(0.75, 0, 0.25, 0.5),
+      D: px(0.5, 0.5, 0.5, 0.5),
+      E: px(0, 0.5, 0.5, 0.5),
     },
-    "D takes the whole column it shared with E, and E moves into C's - the bottom-right-most pane left",
+    "D takes the whole half it shared with E, and E moves into A's - the bottom-right-most pane left",
   );
 });
 
@@ -199,14 +232,41 @@ test("explicit split shortcuts force the axis", (t) => {
   const px = world.px;
 
   world.focus("A");
+  assert.strictEqual(world.shortcut("SplitHorizontal"), true);
+  assert.deepStrictEqual(
+    world.snapshot(),
+    {
+      A: px(0, 0, 0.25, 1),
+      B: px(0.25, 0, 0.25, 1),
+      C: px(0.5, 0, 0.5, 0.5),
+      D: px(0.5, 0.5, 0.25, 0.5),
+      E: px(0.75, 0.5, 0.25, 0.5),
+    },
+    "A's pane is taller than wide, but the explicit shortcut splits it side by side anyway",
+  );
+});
+
+test("with only two windows a split can only reorient the one they share", (t) => {
+  const world = createWorld();
+  const px = world.px;
+  world.open("A");
+  world.apply();
+  world.open("B");
+  world.apply();
+
+  world.focus("A");
   assert.strictEqual(
-    world.shortcut("SplitVertical"),
+    world.shortcut("SplitHorizontal"),
     false,
-    "A and B are already stacked, so there is nothing to change",
+    "B is the only window that could be pulled in, and it already shares A's split",
   );
 
-  assert.strictEqual(world.shortcut("SplitHorizontal"), true);
-  assert.deepStrictEqual(world.snapshot().A, px(0, 0, 0.25, 1));
+  assert.strictEqual(world.shortcut("SplitVertical"), true);
+  assert.deepStrictEqual(
+    world.snapshot(),
+    { A: px(0, 0, 1, 0.5), B: px(0, 0.5, 1, 0.5) },
+    "so the split is reoriented, which is all that is left to do",
+  );
 });
 
 test("commands refuse rather than pretend when they cannot act", (t) => {
@@ -253,26 +313,33 @@ test("commands refuse rather than pretend when they cannot act", (t) => {
 
 test("directional move swaps panes and leaves the structure alone", (t) => {
   const world = exampleWorld();
-  const before = world.tree();
+  const before = world.snapshot();
+  const beforeTree = world.tree();
 
   world.focus("A");
   assert.strictEqual(world.shortcut("SwapRight"), true);
   const moved = world.snapshot();
+
+  const partner = Object.keys(before).find(
+    (id) => id !== "A" && String(moved[id]) === String(before.A),
+  );
+  assert.ok(partner !== undefined, "some window took A's pane");
   assert.deepStrictEqual(
     moved.A,
-    world.px(0.5, 0, 0.25, 1),
-    "A takes C's pane",
+    before[partner],
+    `and A took ${partner}'s in exchange`,
   );
-  assert.deepStrictEqual(
-    moved.C,
-    world.px(0, 0, 0.5, 0.5),
-    "and C takes A's",
-  );
-  assert.notStrictEqual(before, world.tree(), "the occupants changed");
+  assert.ok(moved.A[0] > before.A[0], "the pane A moved into is to the right");
+  assert.notStrictEqual(beforeTree, world.tree(), "the occupants changed");
 
   world.focus("A");
   assert.strictEqual(world.shortcut("SwapLeft"), true);
-  assert.strictEqual(world.tree(), before, "swapping back restores the tree");
+  assert.strictEqual(
+    world.tree(),
+    beforeTree,
+    "swapping back restores the tree",
+  );
+  assert.deepStrictEqual(world.snapshot(), before);
 });
 
 test("a window with no neighbour in that direction defers to the engine", (t) => {
@@ -301,10 +368,10 @@ test("windows keep their pane through minimize and fullscreen", (t) => {
   assert.deepStrictEqual(
     world.snapshot(),
     {
-      A: px(0, 0, 0.5, 0.5),
-      B: px(0, 0.5, 0.5, 0.5),
-      C: px(0.5, 0, 0.25, 1),
-      E: px(0.75, 0, 0.25, 1),
+      A: px(0, 0, 0.5, 1),
+      B: px(0.5, 0, 0.25, 0.5),
+      C: px(0.75, 0, 0.25, 0.5),
+      E: px(0.5, 0.5, 0.5, 0.5),
     },
     "E takes the space while D is away",
   );
@@ -328,11 +395,11 @@ test("closing a window gives its space to its sibling only", (t) => {
     world.snapshot(),
     {
       A: px(0, 0, 0.5, 1),
-      C: px(0.5, 0, 0.25, 1),
-      D: px(0.75, 0, 0.25, 0.5),
+      C: px(0.5, 0, 0.5, 0.5),
+      D: px(0.5, 0.5, 0.25, 0.5),
       E: px(0.75, 0.5, 0.25, 0.5),
     },
-    "A absorbs B's half; the right-hand panes are untouched",
+    "C absorbs B's quarter; every other pane is untouched",
   );
 });
 
@@ -345,10 +412,10 @@ test("floating a window releases its pane, and re-tiling gives it a new one", (t
   assert.deepStrictEqual(
     world.snapshot(),
     {
-      A: px(0, 0, 0.5, 0.5),
-      B: px(0, 0.5, 0.5, 0.5),
-      D: px(0.5, 0, 0.5, 0.5),
-      E: px(0.5, 0.5, 0.5, 0.5),
+      A: px(0, 0, 0.5, 1),
+      B: px(0.5, 0, 0.5, 0.5),
+      D: px(0.5, 0.5, 0.25, 0.5),
+      E: px(0.75, 0.5, 0.25, 0.5),
     },
     "the tree closes up rather than holding an empty pane",
   );
@@ -409,7 +476,8 @@ test("gaps stay inside the working area", (t) => {
     );
   });
 
-  const a = world.snapshot().A;
+  /* B and C share the top-right pane, side by side. */
   const b = world.snapshot().B;
-  assert.strictEqual(a[1] + a[3] + 8, b[1], "exactly one gap between panes");
+  const c = world.snapshot().C;
+  assert.strictEqual(b[0] + b[2] + 8, c[0], "exactly one gap between panes");
 });

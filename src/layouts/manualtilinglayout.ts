@@ -196,6 +196,11 @@ class ManualTilingLayout implements ILayout {
       case Shortcut.Decrease:
         return this._unsplit(ctx);
 
+      /* Flipping a split is its own action, not something splitting does as a
+       * side effect of having nowhere else to put a window. */
+      case Shortcut.Rotate:
+        return this._rotate(ctx);
+
       /* The engine's own directional move only reorders WindowStore.list,
        * which this layout never reads, so it would look dead here. Shift* is
        * remapped to Swap* before layouts are consulted in "focus" mode, but
@@ -239,17 +244,11 @@ class ManualTilingLayout implements ILayout {
     const leaf = this._focusedRenderedLeaf(ctx);
     if (leaf === null) return false;
 
-    const index = this.renderedLeaves.indexOf(leaf);
-    let partner: MTLeaf | null = null;
-    let partnerIsAfter = true;
-    if (index + 1 < this.renderedLeaves.length) {
-      partner = this.renderedLeaves[index + 1];
-    } else if (index - 1 >= 0) {
-      partner = this.renderedLeaves[index - 1];
-      partnerIsAfter = false;
-    }
+    const partner = this._splitPartner(leaf);
     /* Nothing to pull in: only one window is tiled here. */
     if (partner === null) return false;
+    const partnerIsAfter =
+      this.renderedLeaves.indexOf(partner) > this.renderedLeaves.indexOf(leaf);
 
     /* Resolved once the partner is known, so the fit check can weigh both
      * windows' minimum sizes. */
@@ -258,16 +257,13 @@ class ManualTilingLayout implements ILayout {
         ? orientation
         : this._insertOrientation(leaf, partner.windowId);
 
-    const leafParent = this._findParent(leaf);
-    const partnerParent = this._findParent(partner);
-    if (
-      leafParent !== null &&
-      partnerParent !== null &&
-      leafParent.parent === partnerParent.parent
-    ) {
-      /* Already a pair. Detaching and re-wrapping would rebuild the very same
-       * node, so just reorient the one they share. */
-      const node = leafParent.parent;
+    if (partner === this._siblingLeafOf(leaf)) {
+      /* Only reachable when the focused window's own sibling is the sole
+       * candidate, i.e. two windows are tiled. Pulling it into a new split
+       * beside the focused window would rebuild the very node they already
+       * share, so all that is left to do is reorient it. Use Rotate to do
+       * this deliberately. */
+      const node = (this._findParent(leaf) as { parent: MTNode }).parent;
       if (node.orientation === cut) return false;
       node.orientation = cut;
       node.ratio = 0.5;
@@ -283,6 +279,76 @@ class ManualTilingLayout implements ILayout {
       partnerIsAfter ? partner : leaf,
     );
     return this._replace(leaf, node);
+  }
+
+  /**
+   * The window to move into the other half of a new split.
+   *
+   * Nearest on screen wins, looking forwards before backwards, but the
+   * focused window's own sibling is taken last: moving *that* one into a new
+   * split beside the focused window produces the very node they already
+   * share, so it reorients the pane instead of dividing it. Preferring anyone
+   * else means a split actually adds a division. The sibling is still the
+   * fallback, for when it is the only window left to draw on.
+   */
+  private _splitPartner(leaf: MTLeaf): MTLeaf | null {
+    const index = this.renderedLeaves.indexOf(leaf);
+    if (index < 0) return null;
+
+    const sibling = this._siblingLeafOf(leaf);
+    let fallback: MTLeaf | null = null;
+    for (let step = 1; step < this.renderedLeaves.length; step++) {
+      const nearby: MTLeaf[] = [];
+      if (index + step < this.renderedLeaves.length)
+        nearby.push(this.renderedLeaves[index + step]);
+      if (index - step >= 0) nearby.push(this.renderedLeaves[index - step]);
+      for (const candidate of nearby) {
+        if (candidate !== sibling) return candidate;
+        if (fallback === null) fallback = candidate;
+      }
+    }
+    return fallback;
+  }
+
+  /** The window sharing the focused window's split, if it is a single window. */
+  private _siblingLeafOf(leaf: MTLeaf): MTLeaf | null {
+    const parentInfo = this._findParent(leaf);
+    if (parentInfo === null) return null;
+    const sibling =
+      parentInfo.slot === "first"
+        ? parentInfo.parent.second
+        : parentInfo.parent.first;
+    return sibling instanceof MTLeaf ? sibling : null;
+  }
+
+  /**
+   * Turn the split the focused window sits in from side-by-side to stacked, or
+   * back. The ratio is kept, so the panes hold their proportions.
+   *
+   * Walks past splits whose other side isn't on screen - rotating one of those
+   * would change nothing the user can see.
+   */
+  private _rotate(ctx: EngineContext): boolean {
+    const leaf = this._focusedRenderedLeaf(ctx);
+    if (leaf === null) return false;
+
+    let node: MTTree = leaf;
+    for (;;) {
+      const parentInfo = this._findParent(node);
+      if (parentInfo === null) return false;
+      const other =
+        parentInfo.slot === "first"
+          ? parentInfo.parent.second
+          : parentInfo.parent.first;
+      if (this._hasRenderable(other, this.lastRenderedIds)) {
+        parentInfo.parent.orientation =
+          parentInfo.parent.orientation === "horizontal"
+            ? "vertical"
+            : "horizontal";
+        return true;
+      }
+      node = parentInfo.parent;
+    }
   }
 
   /**
