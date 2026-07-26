@@ -24,22 +24,28 @@ class LayoutUtils {
     const actualLength = length - (n - 1) * gap;
     const weightSum = weights.reduce((sum, weight) => sum + weight, 0);
 
+    /* Take each part from where the previous one ended, rounding the running
+     * boundary once, rather than rounding a part's origin and its length
+     * separately and patching up the leftover pixels afterwards. Every part
+     * then ends exactly where the next one's gap begins, and the last ends
+     * exactly on the end of the line. Rounding them apart left the trailing
+     * part hanging a pixel past the line on some weight and gap combinations. */
     let weightAcc = 0;
-    const parts: [number, number][] = weights.map((weight, i) => {
-      const partBegin = (actualLength * weightAcc) / weightSum + i * gap;
-      const partLength = (actualLength * weight) / weightSum;
+    let partBegin = 0;
+    return weights.map((weight, i): [number, number] => {
       weightAcc += weight;
-      return [begin + Math.floor(partBegin), Math.floor(partLength)];
+      /* Divide before multiplying. The accumulator ends up bit-identical to
+       * weightSum, so the last part's ratio is exactly 1 and it lands exactly
+       * on the end of the line; (length * acc) / sum would come out a whole
+       * pixel short instead. */
+      const partEnd = Math.floor(actualLength * (weightAcc / weightSum));
+      const part: [number, number] = [
+        begin + partBegin + i * gap,
+        partEnd - partBegin,
+      ];
+      partBegin = partEnd;
+      return part;
     });
-    let finalLength = parts.reduce((sum, [, length]) => sum + length, 0);
-    finalLength += (n - 1) * gap;
-    let remainder = length - finalLength;
-    if (remainder > 0 && remainder < n) {
-      for (let i = 0; i < remainder; i++) {
-        parts[n - i - 1][1] += 1;
-      }
-    }
-    return parts;
   }
 
   /**

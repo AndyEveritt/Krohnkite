@@ -37,6 +37,9 @@ interface IShortcuts {
   getRotate(): ShortcutHandler;
   getRotatePart(): ShortcutHandler;
 
+  getSplitHorizontal(): ShortcutHandler;
+  getSplitVertical(): ShortcutHandler;
+
   getSetMaster(): ShortcutHandler;
 
   getTileLayout(): ShortcutHandler;
@@ -51,6 +54,7 @@ interface IShortcuts {
   getSpiralLayout(): ShortcutHandler;
   getBTreeLayout(): ShortcutHandler;
   getCascadeLayout(): ShortcutHandler;
+  getManualTilingLayout(): ShortcutHandler;
 
   getRaiseSurfaceCapacity(): ShortcutHandler;
   getLowerSurfaceCapacity(): ShortcutHandler;

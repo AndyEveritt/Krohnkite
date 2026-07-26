@@ -408,4 +408,34 @@ Item {
         text: "Krohnkite: Select Layout - Cascade";
         sequence: "";
     }
+    function getManualTilingLayout() {
+        return manualTilingLayout;
+    }
+    ShortcutHandler {
+        id: manualTilingLayout;
+
+        name: "KrohnkiteManualTilingLayout";
+        text: "Krohnkite: Select Layout - Manual Tiling";
+        sequence: "";
+    }
+    function getSplitHorizontal() {
+        return splitHorizontal;
+    }
+    ShortcutHandler {
+        id: splitHorizontal;
+
+        name: "KrohnkiteSplitHorizontal";
+        text: "Krohnkite: Split Horizontal - side by side (Manual Tiling layout)";
+        sequence: "";
+    }
+    function getSplitVertical() {
+        return splitVertical;
+    }
+    ShortcutHandler {
+        id: splitVertical;
+
+        name: "KrohnkiteSplitVertical";
+        text: "Krohnkite: Split Vertical - stacked (Manual Tiling layout)";
+        sequence: "";
+    }
 }

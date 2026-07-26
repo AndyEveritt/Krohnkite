@@ -167,7 +167,7 @@
              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;0 - to disable&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="maximum">
-             <number>12</number>
+             <number>13</number>
             </property>
             <property name="value">
              <number>1</number>
@@ -401,7 +401,7 @@
              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;0 - to disable&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="maximum">
-             <number>12</number>
+             <number>13</number>
             </property>
             <property name="value">
              <number>2</number>
@@ -624,7 +624,7 @@
              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;0 - to disable&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="maximum">
-             <number>12</number>
+             <number>13</number>
             </property>
             <property name="value">
              <number>3</number>
@@ -743,7 +743,7 @@
              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;0 - to disable&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="maximum">
-             <number>12</number>
+             <number>13</number>
             </property>
             <property name="value">
              <number>4</number>
@@ -862,7 +862,7 @@
              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;0 - to disable&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="maximum">
-             <number>12</number>
+             <number>13</number>
             </property>
             <property name="value">
              <number>5</number>
@@ -1007,7 +1007,7 @@
              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;0 - to disable&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="maximum">
-             <number>12</number>
+             <number>13</number>
             </property>
             <property name="value">
              <number>6</number>
@@ -1148,7 +1148,7 @@
              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;0 - to disable&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="maximum">
-             <number>12</number>
+             <number>13</number>
             </property>
             <property name="value">
              <number>7</number>
@@ -1460,7 +1460,7 @@
              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;0 - to disable&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="maximum">
-             <number>12</number>
+             <number>13</number>
             </property>
             <property name="value">
              <number>8</number>
@@ -1560,7 +1560,7 @@
              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;0 - to disable&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="maximum">
-             <number>12</number>
+             <number>13</number>
             </property>
             <property name="value">
              <number>9</number>
@@ -1657,7 +1657,7 @@
              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;0 - to disable&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="maximum">
-             <number>12</number>
+             <number>13</number>
             </property>
             <property name="value">
              <number>10</number>
@@ -1878,7 +1878,7 @@
              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;0 - to disable&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="maximum">
-             <number>12</number>
+             <number>13</number>
             </property>
             <property name="value">
              <number>11</number>
@@ -2079,10 +2079,157 @@
              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;0 - to disable&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="maximum">
-             <number>12</number>
+             <number>13</number>
             </property>
             <property name="value">
              <number>12</number>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QGroupBox" name="GB_d_manualTilingLayout">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="title">
+          <string/>
+         </property>
+         <property name="flat">
+          <bool>true</bool>
+         </property>
+         <layout class="QGridLayout" name="gridLayout_66">
+          <property name="leftMargin">
+           <number>6</number>
+          </property>
+          <property name="topMargin">
+           <number>0</number>
+          </property>
+          <property name="rightMargin">
+           <number>6</number>
+          </property>
+          <property name="bottomMargin">
+           <number>0</number>
+          </property>
+          <property name="horizontalSpacing">
+           <number>6</number>
+          </property>
+          <property name="verticalSpacing">
+           <number>0</number>
+          </property>
+          <item row="0" column="0">
+           <widget class="QLabel" name="label_120">
+            <property name="font">
+             <font>
+              <family>Noto Sans</family>
+              <pointsize>12</pointsize>
+              <italic>false</italic>
+              <bold>false</bold>
+              <underline>true</underline>
+             </font>
+            </property>
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;A manual tiling layout. New windows split the bottom-right-most window along its longer side. Rearrange it with the Split/Unsplit shortcuts, which are unbound by default.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="text">
+             <string>Manual Tiling Layout</string>
+            </property>
+            <property name="margin">
+             <number>0</number>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <spacer name="horizontalSpacer_61">
+            <property name="orientation">
+             <enum>Qt::Orientation::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item row="0" column="2">
+           <widget class="QLabel" name="label_121">
+            <property name="font">
+             <font>
+              <family>Noto Sans</family>
+              <pointsize>12</pointsize>
+              <italic>false</italic>
+              <bold>false</bold>
+              <underline>false</underline>
+             </font>
+            </property>
+            <property name="text">
+             <string>Capacity</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="3">
+           <widget class="QSpinBox" name="kcfg_manualTilingLayoutCapacity">
+            <property name="font">
+             <font>
+              <family>Noto Sans</family>
+              <pointsize>12</pointsize>
+              <italic>false</italic>
+              <bold>false</bold>
+              <underline>false</underline>
+             </font>
+            </property>
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;0 - to disable&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="maximum">
+             <number>99</number>
+            </property>
+            <property name="value">
+             <number>0</number>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="4">
+           <widget class="QLabel" name="label_122">
+            <property name="font">
+             <font>
+              <family>Noto Sans</family>
+              <pointsize>12</pointsize>
+              <italic>false</italic>
+              <bold>false</bold>
+              <underline>false</underline>
+             </font>
+            </property>
+            <property name="text">
+             <string>Order:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="5">
+           <widget class="QSpinBox" name="kcfg_manualTilingLayoutOrder">
+            <property name="font">
+             <font>
+              <family>Noto Sans</family>
+              <pointsize>12</pointsize>
+              <italic>false</italic>
+              <bold>false</bold>
+              <underline>false</underline>
+             </font>
+            </property>
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;0 - to disable&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="maximum">
+             <number>13</number>
+            </property>
+            <property name="value">
+             <number>13</number>
             </property>
            </widget>
           </item>

@@ -90,6 +90,12 @@ tasks:
       - "touch {{.KWIN_META}}"
       - 'sed "s/\$VER/{{.PROJECT_VER}}/" res/metadata.json | sed "s/\$REV/{{.PROJECT_REV}}/" > {{.KWIN_META}}'
 
+  test:
+    desc: "Run the test suite against the compiled bundle"
+    deps: [build-ts]
+    cmds:
+      - npm test
+
   build-ts:
     deps:
       - install-deps

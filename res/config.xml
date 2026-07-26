@@ -141,6 +141,15 @@
         <default>0</default>
     </entry>
 
+    <entry name="manualTilingLayoutOrder" type="Int">
+	    <label> Manual Tiling layout order</label>
+        <default>13</default>
+    </entry>
+    <entry name="manualTilingLayoutCapacity" type="Int">
+	    <label>How many tiles can a layout contain before windows start floating or moving to another screen</label>
+        <default>0</default>
+    </entry>
+
       <!-- ***************************** -->
       <!-- **********Surfaces*********** -->
       <!-- ***************************** -->

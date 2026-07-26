@@ -1166,6 +1166,8 @@ class KWinDriver implements IDriverContext {
         Shortcut.LowerSurfaceCapacity,
       ],
       [() => this.shortcuts.getKrohnkiteMeta(), Shortcut.KrohnkiteMeta],
+      [() => this.shortcuts.getSplitHorizontal(), Shortcut.SplitHorizontal],
+      [() => this.shortcuts.getSplitVertical(), Shortcut.SplitVertical],
     ];
 
     for (const [getHandler, shortcut] of shortcutPairs) {
@@ -1199,6 +1201,7 @@ class KWinDriver implements IDriverContext {
       [() => this.shortcuts.getSpiralLayout(), SpiralLayout],
       [() => this.shortcuts.getBTreeLayout(), BinaryTreeLayout],
       [() => this.shortcuts.getCascadeLayout(), CascadeLayout],
+      [() => this.shortcuts.getManualTilingLayout(), ManualTilingLayout],
     ];
 
     for (const [getHandler, layoutClass] of layoutPairs) {

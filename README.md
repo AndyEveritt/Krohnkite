@@ -24,12 +24,19 @@ K and looks cool.
   - Tiling layout
   - Monocle layout
   - Desktop-friendly layouts (Spread, Stair)
+  - Manual Tiling layout - build the arrangement yourself with explicit splits
 
 ## Development Requirement
 
 - Typescript (see package.json)
 - [go-task](https://github.com/go-task/task)
 - p7zip (7z)
+
+Tests live in `test/` and run on Node's built-in test runner, with no extra dependencies:
+
+```
+go-task test
+```
 
 ## Look at me
 
@@ -128,7 +135,7 @@ go-task uninstall
 
 - Push ignore button
 - Type in filter string: `krohnkite`
-- Right after `KROHNKITE: starting the script` string you will see one if you have one monitor or multiple lines: Screen(output):`Screen Name`,Desktop(name):`Virtual Desktop Name`,Activity:`Activity Id`,layouts: `numbered layouts` (the case doesn't matter,`layout` ending can be omitted): `tilelayout`, `monoclelayout`, `columns`, `threecolumnlayout,` `spreadlayout`, `stairlayout`, `spirallayout`, `stackedlayout`, `floatinglayout`, `btreelayout`
+- Right after `KROHNKITE: starting the script` string you will see one if you have one monitor or multiple lines: Screen(output):`Screen Name`,Desktop(name):`Virtual Desktop Name`,Activity:`Activity Id`,layouts: `numbered layouts` (the case doesn't matter,`layout` ending can be omitted): `tilelayout`, `monoclelayout`, `columns`, `threecolumnlayout,` `spreadlayout`, `stairlayout`, `spirallayout`, `stackedlayout`, `floatinglayout`, `btreelayout`, `manualtilinglayout`
 
 3. `Apply` -> `reboot`
 
@@ -173,6 +180,50 @@ go-task uninstall
 | _unbound_        | Use Spread Layout  |
 | _unbound_        | Use Stair Layout   |
 | _unbound_        | Use Cascade Layout |
+| _unbound_        | Use Manual Tiling Layout |
+
+### Manual Tiling Layout
+
+New windows split the bottom-right-most window along its longer side, so the
+arrangement grows the way a manual tiling WM's does. From there you shape it
+yourself:
+
+| Key       | Action                                |
+| --------- | ------------------------------------- |
+| Meta + I  | Split along the pane's longer side    |
+| Meta + D  | Unsplit                               |
+| _unbound_ | Split Horizontal (panes side by side) |
+| _unbound_ | Split Vertical (panes stacked)        |
+
+`Split` puts a new split around the focused window and pulls the window next to
+it on screen into the other half; everything else reflows to fill the gap that
+leaves. `Unsplit` removes the split above the focused window, expanding it into
+that whole area and moving whatever shared the split - keeping its own internal
+arrangement - into the bottom-right-most pane elsewhere. It is refused when
+there is nowhere else to move it to, which includes every two-window
+arrangement.
+
+Split and unsplit reuse `Increase` and `Decrease`, the keys the other layouts
+already use to mean more and fewer divisions, so the layout is usable without
+binding anything. `Meta + I` picks the direction the same way a new window does
+- the pane's longer side, or the other one if that is the only way both windows
+fit - and the two explicit shortcuts are there for when you want to force it.
+Unsplit takes no direction because a window has exactly one split above it;
+there is never a choice of which one to remove.
+
+`Meta + Shift + H/J/K/L` swaps the focused window with its neighbor, and split
+borders resize with the usual grow/shrink keys or the mouse. The arrangement
+persists while the script runs - including across minimize/restore, fullscreen,
+virtual desktop switches and switching to another layout and back - but is not
+saved across a KWin restart. Floating a window (`Meta + F`) releases its pane;
+re-tiling it gives it a fresh one rather than the old spot.
+
+Panes are sized to respect each window's minimum size. If the windows on a
+screen can't all meet their minimums at once - an Electron app asking for 940px
+of width on a 1280px screen leaves little room for anything else - Krohnkite
+floats windows until the rest fit, which is the behavior of `Options -> Unfit
+windows`. Setting a **Capacity** for the layout caps how many panes it will
+create, which is usually a better way to bound this.
 
 ## Tips
 

@@ -108,6 +108,9 @@ const Shortcut = {
   Rotate: "Rotate",
   RotatePart: "RotatePart",
 
+  SplitHorizontal: "SplitHorizontal",
+  SplitVertical: "SplitVertical",
+
   ToggleDock: "ToggleDock",
 
   RaiseSurfaceCapacity: "RaiseSurfaceCapacity",
