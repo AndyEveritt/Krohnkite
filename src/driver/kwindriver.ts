@@ -71,6 +71,24 @@ class KWinDriver implements IDriverContext {
     }
   }
 
+  /**
+   * Give a client the focus, stamping the focusTime that Krohnkite's own
+   * most-recently-used ordering runs on.
+   *
+   * Assigning workspace.activeWindow alone is not enough. KWin answers with
+   * windowActivated, and that handler does stamp focusTime - but it is wrapped
+   * in _enter, so it is dropped whenever the focus change came from Krohnkite
+   * itself, because every shortcut is already running inside _enter. Left to
+   * that signal, timestamps would only ever advance for focus changes made
+   * with the mouse or Alt+Tab, and the directional focus shortcuts would look
+   * like they never focused anything at all.
+   */
+  private _activate(client: KwinWindow): void {
+    const window = this.windowMap.get(client);
+    if (window !== null) window.focusTime = getTime();
+    this.workspace.activeWindow = client;
+  }
+
   public get currentSurfaces(): ISurface[] {
     const currentSurfaces: ISurface[] = [];
     this.workspace.screens.forEach((output) => {
@@ -240,7 +258,7 @@ class KWinDriver implements IDriverContext {
     if (windows.length === 0) return null;
     let idx = windows.indexOf(window);
     if (idx < 0) {
-      this.workspace.activeWindow = windows[0];
+      this._activate(windows[0]);
       return true;
     }
     if (windows.length === 1) return window;
@@ -318,7 +336,7 @@ class KWinDriver implements IDriverContext {
         );
         let idx = windows.indexOf(window);
         if (idx < 0) {
-          this.workspace.activeWindow = windows[0];
+          this._activate(windows[0]);
           if (CONFIG.movePointerOnFocus) {
             DBUS.moveMouseToFocus();
           }
@@ -326,7 +344,7 @@ class KWinDriver implements IDriverContext {
         }
         if (windows.length === 1) return false;
         idx = idx < windows.length - 1 ? idx + 1 : 0;
-        this.workspace.activeWindow = windows[idx];
+        this._activate(windows[idx]);
         if (CONFIG.movePointerOnFocus) {
           DBUS.moveMouseToFocus();
         }
@@ -774,7 +792,7 @@ class KWinDriver implements IDriverContext {
         }
       }
       try {
-        this.workspace.activeWindow = client;
+        this._activate(client);
         if (CONFIG.movePointerOnFocus) {
           DBUS.moveMouseToCenter(20);
         }
@@ -818,7 +836,7 @@ class KWinDriver implements IDriverContext {
     let client = (window.window as DriverWindow).window;
     this.workspace.currentDesktop = targetVDesktop;
     client.desktops = [targetVDesktop];
-    this.workspace.activeWindow = client;
+    this._activate(client);
     //TODO: delete next 5 commented string. This code given ability to move window on different monitor during move to neighbor VDesktop.
     //   let output = this._getOutputByDirection(direction);
     //   if (output !== null) {
@@ -966,7 +984,7 @@ class KWinDriver implements IDriverContext {
   private _makeActiveScreen(output: Output, notify: boolean = true) {
     for (let win of this.workspace.stackingOrder) {
       if (win.resourceClass === "plasmashell" && win.output === output) {
-        this.workspace.activeWindow = win;
+        this._activate(win);
         if (notify) this.showNotification("Active screen");
         break;
       }
@@ -1082,7 +1100,7 @@ class KWinDriver implements IDriverContext {
       }
     }
     if (focusCandidate !== null) {
-      this.workspace.activeWindow = focusCandidate;
+      this._activate(focusCandidate);
       return true;
     } else {
       return false;
@@ -1495,7 +1513,7 @@ class KWinDriver implements IDriverContext {
       );
       if (KWINCONFIG.preventMinimize) {
         client.minimized = false;
-        this.workspace.activeWindow = client;
+        this._activate(client);
       } else {
         let comment = client.minimized ? "minimized" : "unminimized";
         this.control.onWindowChanged(

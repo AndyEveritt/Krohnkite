@@ -23,16 +23,18 @@ function exampleWorld() {
   world.apply();
   world.focus("A");
   world.shortcut("SplitVertical");
+  world.focus("C");
   world.open("D");
   world.apply();
   world.focus("C");
   world.shortcut("SplitHorizontal");
+  world.focus("D");
   world.open("E");
   world.apply();
   return world;
 }
 
-test("new windows split the bottom-right-most pane along its longer side", (t) => {
+test("new windows split the focused pane along its longer side", (t) => {
   const world = createWorld();
   const px = world.px;
 
@@ -61,7 +63,23 @@ test("new windows split the bottom-right-most pane along its longer side", (t) =
       B: px(0.5, 0, 0.5, 0.5),
       C: px(0.5, 0.5, 0.5, 0.5),
     },
-    "B is the bottom-right-most pane and is taller than wide, so it stacks",
+    "B is the pane that had the focus and is taller than wide, so it stacks",
+  );
+
+  /* The new window is already active by the time the layout runs, so the pane
+   * that gets divided is the one focused before it opened. */
+  world.focus("A");
+  world.open("D");
+  world.apply();
+  assert.deepStrictEqual(
+    world.snapshot(),
+    {
+      A: px(0, 0, 0.5, 0.5),
+      D: px(0, 0.5, 0.5, 0.5),
+      B: px(0.5, 0, 0.5, 0.5),
+      C: px(0.5, 0.5, 0.5, 0.5),
+    },
+    "D splits A, the focused pane, rather than the bottom-right-most one",
   );
 });
 
@@ -87,6 +105,7 @@ test("splitting reflows the windows around the new split", (t) => {
     "B is pulled in under A, and C takes the whole right half it leaves",
   );
 
+  world.focus("C");
   world.open("D");
   world.apply();
   assert.deepStrictEqual(
@@ -97,7 +116,7 @@ test("splitting reflows the windows around the new split", (t) => {
       C: px(0.5, 0, 0.5, 0.5),
       D: px(0.5, 0.5, 0.5, 0.5),
     },
-    "C is the bottom-right-most pane and is tall, so D stacks under it",
+    "C had the focus and is tall, so D stacks under it",
   );
 
   world.focus("C");
@@ -115,6 +134,7 @@ test("splitting reflows the windows around the new split", (t) => {
       "shares C's split - using it would reorient that split rather than add one",
   );
 
+  world.focus("D");
   world.open("E");
   world.apply();
   assert.deepStrictEqual(
@@ -126,7 +146,7 @@ test("splitting reflows the windows around the new split", (t) => {
       D: px(0.5, 0.5, 0.25, 0.5),
       E: px(0.75, 0.5, 0.25, 0.5),
     },
-    "D is now the bottom-right-most pane and is wide, so E goes beside it",
+    "D is focused now and is wide, so E goes beside it",
   );
 });
 

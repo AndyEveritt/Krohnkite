@@ -45,7 +45,7 @@ type MTTree = MTLeaf | MTNode;
  * A manual tiling layout: a binary split tree the user edits directly, rather
  * than a shape derived from the number of windows.
  *
- * New windows split the bottom-right-most pane, along its longer axis. From
+ * New windows split the focused pane, along its longer axis. From
  * there the user rearranges with the Split/Unsplit shortcuts, resizes splits
  * like any other layout, and swaps panes with the directional move shortcuts.
  *
@@ -131,7 +131,7 @@ class ManualTilingLayout implements ILayout {
      * lands exactly where opening them one by one would put them. */
     tileables.forEach((tileable) => {
       if (this._findLeaf(tileable.id) !== null) return;
-      this._insertWindow(tileable.id);
+      this._insertWindow(ctx, tileable.id);
       this.renderedLeaves = this._renderPass(area, ids, gap);
     });
 
@@ -540,15 +540,15 @@ class ManualTilingLayout implements ILayout {
     doomed.forEach((leaf) => this._detach(leaf));
   }
 
-  /** Split the bottom-right-most pane along its longer axis, and take the new half. */
-  private _insertWindow(windowId: string): void {
+  /** Split the focused pane along its longer axis, and take the new half. */
+  private _insertWindow(ctx: EngineContext, windowId: string): void {
     const leaf = new MTLeaf(windowId);
     if (this.root === null) {
       this.root = leaf;
       return;
     }
 
-    const target = this._bottomRightMost();
+    const target = this._insertTarget(ctx);
     if (target === null || target.rect === null) {
       /* Nothing is rendering (e.g. every window in the tree is minimized).
        * Graft alongside the existing tree rather than discard its structure. */
@@ -605,6 +605,32 @@ class ManualTilingLayout implements ILayout {
     const min = this.lastMinSizes[windowId];
     if (min === undefined) return MT_MIN_PANE;
     return Math.max(MT_MIN_PANE, horizontal ? min.width : min.height);
+  }
+
+  /**
+   * The pane a new window takes half of: the focused one.
+   *
+   * The new window is usually already active by the time this runs - KWin
+   * focuses it as it maps - so the focused window is more often than not the
+   * one that isn't in the tree yet. Falling back to the most recently focused
+   * pane covers that, and it covers a batch of windows arriving in one apply()
+   * too: each insert makes its own leaf the newest, so the second window
+   * splits the first exactly as it would have if they had opened one at a
+   * time.
+   */
+  private _insertTarget(ctx: EngineContext): MTLeaf | null {
+    const current = ctx.currentWindow;
+    let newest: MTLeaf | null = null;
+    let newestTime = -Infinity;
+    for (const leaf of this.renderedLeaves) {
+      if (leaf.rect === null) continue;
+      if (current !== null && leaf.windowId === current.id) return leaf;
+      const window = ctx.getWindowById(leaf.windowId);
+      const time = window !== null ? window.focusTime : 0;
+      if (time > newestTime) ((newest = leaf), (newestTime = time));
+    }
+    /* null only when nothing is rendering at all; the caller grafts instead. */
+    return newest;
   }
 
   private _bottomRightMost(exclude?: Set<MTLeaf>): MTLeaf | null {

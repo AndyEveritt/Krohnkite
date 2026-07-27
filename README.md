@@ -184,9 +184,9 @@ go-task uninstall
 
 ### Manual Tiling Layout
 
-New windows split the bottom-right-most window along its longer side, so the
-arrangement grows the way a manual tiling WM's does. From there you shape it
-yourself:
+New windows split the focused window along its longer side, so the arrangement
+grows where you are working, the way a manual tiling WM's does. From there you
+shape it yourself:
 
 | Key       | Action                                     |
 | --------- | ------------------------------------------ |
