@@ -322,8 +322,15 @@ class ManualTilingLayout implements ILayout {
   }
 
   /**
-   * Turn the split the focused window sits in from side-by-side to stacked, or
-   * back. The ratio is kept, so the panes hold their proportions.
+   * Give the split the focused window sits in a quarter turn clockwise, so
+   * four presses come back to where they started:
+   *
+   *     A | B  ->  A / B  ->  B | A  ->  B / A  ->  A | B
+   *
+   * A quarter turn always flips the axis; every other one also swaps the two
+   * sides, because rotating a stack clockwise puts the top pane on the right.
+   * The ratio is carried through - inverted on the turns that swap - so the
+   * panes hold their proportions and each window keeps its own share.
    *
    * Walks past splits whose other side isn't on screen - rotating one of those
    * would change nothing the user can see.
@@ -336,18 +343,22 @@ class ManualTilingLayout implements ILayout {
     for (;;) {
       const parentInfo = this._findParent(node);
       if (parentInfo === null) return false;
+      const parent = parentInfo.parent;
       const other =
-        parentInfo.slot === "first"
-          ? parentInfo.parent.second
-          : parentInfo.parent.first;
+        parentInfo.slot === "first" ? parent.second : parent.first;
       if (this._hasRenderable(other, this.lastRenderedIds)) {
-        parentInfo.parent.orientation =
-          parentInfo.parent.orientation === "horizontal"
-            ? "vertical"
-            : "horizontal";
+        if (parent.orientation === "horizontal") {
+          parent.orientation = "vertical";
+        } else {
+          parent.orientation = "horizontal";
+          const first = parent.first;
+          parent.first = parent.second;
+          parent.second = first;
+          parent.ratio = 1 - parent.ratio;
+        }
         return true;
       }
-      node = parentInfo.parent;
+      node = parent;
     }
   }
 

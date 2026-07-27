@@ -192,7 +192,7 @@ yourself:
 | --------- | ------------------------------------------ |
 | Meta + I  | Split along the pane's longer side          |
 | Meta + D  | Unsplit                                     |
-| Meta + R  | Rotate the split between stacked/side by side |
+| Meta + R  | Rotate the split a quarter turn clockwise   |
 | _unbound_ | Split Horizontal (panes side by side)       |
 | _unbound_ | Split Vertical (panes stacked)              |
 
@@ -204,8 +204,17 @@ rather than adding a division - `Rotate` is the way to do that deliberately.
 With only two windows tiled there is nobody else to draw on, so a split falls
 back to reorienting.
 
-`Rotate` flips the split the focused window sits in, keeping its proportions,
-and skips any split whose other half is not currently on screen.
+`Rotate` gives the split the focused window sits in a quarter turn clockwise,
+so four presses come back to where they started:
+
+```
+A | B  ->  A / B  ->  B | A  ->  B / A  ->  A | B
+```
+
+Every turn flips the axis, and every other one also swaps the two sides -
+turning a stack clockwise puts the top pane on the right. Each pane keeps its
+own share of the split throughout, and splits whose other half is not currently
+on screen are skipped.
 
 `Unsplit` removes the split above the focused window, expanding it into that
 whole area and moving whatever shared the split - keeping its own internal

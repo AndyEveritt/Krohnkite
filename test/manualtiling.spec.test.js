@@ -150,35 +150,50 @@ test("Increase splits along the pane's longer side", (t) => {
   );
 });
 
-test("Rotate flips the split the focused window sits in", (t) => {
+test("Rotate turns the split the focused window sits in", (t) => {
   const world = exampleWorld();
   const px = world.px;
   world.focus("A");
   world.shortcut("Increase");
   const stacked = world.snapshot();
 
+  /* The rest of the arrangement is untouched by every turn. */
+  const rest = {
+    C: px(0.5, 0, 0.5, 0.5),
+    D: px(0.5, 0.5, 0.25, 0.5),
+    E: px(0.75, 0.5, 0.25, 0.5),
+  };
+
   assert.strictEqual(world.shortcut("Rotate"), true);
   assert.deepStrictEqual(
     world.snapshot(),
-    {
-      A: px(0, 0, 0.25, 1),
-      B: px(0.25, 0, 0.25, 1),
-      C: px(0.5, 0, 0.5, 0.5),
-      D: px(0.5, 0.5, 0.25, 0.5),
-      E: px(0.75, 0.5, 0.25, 0.5),
-    },
-    "A and B were stacked, and are now side by side; nothing else moves",
+    { B: px(0, 0, 0.25, 1), A: px(0.25, 0, 0.25, 1), ...rest },
+    "A over B turns a quarter clockwise: B on the left, A on the right",
+  );
+
+  assert.strictEqual(world.shortcut("Rotate"), true);
+  assert.deepStrictEqual(
+    world.snapshot(),
+    { B: px(0, 0, 0.5, 0.5), A: px(0, 0.5, 0.5, 0.5), ...rest },
+    "another quarter turn stacks them the other way up: B over A",
+  );
+
+  assert.strictEqual(world.shortcut("Rotate"), true);
+  assert.deepStrictEqual(
+    world.snapshot(),
+    { A: px(0, 0, 0.25, 1), B: px(0.25, 0, 0.25, 1), ...rest },
+    "and then side by side, A on the left",
   );
 
   assert.strictEqual(world.shortcut("Rotate"), true);
   assert.deepStrictEqual(
     world.snapshot(),
     stacked,
-    "and rotating again puts them back",
+    "four turns is a full circle, back to where it started",
   );
 });
 
-test("Rotate keeps the proportions of the split it flips", (t) => {
+test("Rotate keeps the proportions of the split it turns", (t) => {
   const world = createWorld();
   world.open("A");
   world.apply();
@@ -189,18 +204,31 @@ test("Rotate keeps the proportions of the split it flips", (t) => {
   world.apply();
   const widths = world.snapshot();
   assert.strictEqual(widths.A[2], 1920 / 2 + 240);
+  const share = (1920 / 2 + 240) / 1920;
 
   world.focus("A");
   assert.strictEqual(world.shortcut("Rotate"), true);
-  const heights = world.snapshot();
   assert.strictEqual(
-    heights.A[3],
-    Math.round((1080 * (1920 / 2 + 240)) / 1920),
+    world.snapshot().A[3],
+    Math.round(1080 * share),
     "the 62/38 split becomes 62/38 the other way round, not 50/50",
+  );
+
+  assert.strictEqual(world.shortcut("Rotate"), true);
+  const swapped = world.snapshot();
+  assert.strictEqual(
+    swapped.A[2],
+    Math.round(1920 * share),
+    "the turn that swaps the sides keeps A's own share, now on the right",
+  );
+  assert.strictEqual(
+    swapped.A[0],
+    1920 - Math.round(1920 * share),
+    "and A really is the right-hand pane",
   );
 });
 
-test("Rotate refuses when the window has no split to flip", (t) => {
+test("Rotate refuses when the window has no split to turn", (t) => {
   const world = createWorld();
   world.open("A");
   world.apply();
