@@ -13,12 +13,6 @@
  * functions.
  */
 var KWIN: KWin;
-// type SendClientToScreenType = {
-//   isSending: boolean;
-//   startTime: number;
-//   windows: Set<WindowClass>;
-//   calledWindows: Set<WindowClass>;
-// };
 
 class KWinDriver implements IDriverContext {
   public static backendName: string = "kwin";
@@ -557,40 +551,38 @@ class KWinDriver implements IDriverContext {
     }
   }
 
-  public positioningOverCapacityWindows(): void {
-    const overCapacityWindows = this.engine.overCapacityWindows;
-    if (overCapacityWindows.totalNumWinsPrepareToOutput === 0) {
+  public relocateWindows(): boolean {
+    const relocationWindows = this.engine.relocationWindows;
+    if (relocationWindows.totalNumWinsPrepareToOutput === 0) {
       this._transferWindowsToVDesktops();
-      return;
+      return true;
     }
     let totalWindowsSentToOutput = 0;
-    for (const [output, windows] of overCapacityWindows.toOutputs.entries()) {
+    for (const [output, windows] of relocationWindows.toOutputs.entries()) {
       for (const window of windows) {
-        if (this._moveWindowToOutputNew(window, output!)) {
-          if (overCapacityWindows.isSending === false)
-            overCapacityWindows.isSending = true;
+        if (this._moveWindowToOutput(window, output!)) {
+          if (relocationWindows.isSending === false)
+            relocationWindows.isSending = true;
           totalWindowsSentToOutput++;
         }
       }
     }
 
     if (totalWindowsSentToOutput === 0) {
-      overCapacityWindows.isSending = false;
-      return;
+      relocationWindows.clear();
+      return false;
     }
+    if (this._sendingWindowsProcessCall("quickRelocationWindows")) return true;
+
     const time = getTime();
-    overCapacityWindows.startTime = time;
+    relocationWindows.startTime = time;
 
     const forcedArrangeScreen = () => {
-      if (
-        overCapacityWindows.isSending &&
-        overCapacityWindows.startTime <= time
-      ) {
+      if (relocationWindows.isSending && relocationWindows.startTime <= time) {
         warning(
-          `${getMethodName()}. Forced Arrange. Start time: ${time}, Number of prepared Windows: ${overCapacityWindows.totalNumWinsPrepareToOutput}, sent:${totalWindowsSentToOutput}, sending to Output: ${overCapacityWindows.getWinsSendingToOutput}, prepare to transfer to VDesktop: ${overCapacityWindows.totalNumWinsPrepareToVDesktop}`,
+          `${getMethodName()}. Forced Arrange. Start time: ${time}, Number of prepared Windows: ${relocationWindows.totalNumWinsPrepareToOutput}, sent:${totalWindowsSentToOutput}, sending to Output: ${relocationWindows.getWinsSendingToOutput}, prepare to transfer to VDesktop: ${relocationWindows.totalNumWinsPrepareToVDesktop}`,
         );
-        overCapacityWindows.isSending = false;
-        overCapacityWindows.clear();
+        relocationWindows.clear();
         try {
           this.control.engine.arrange(this, "forcedArrangeScreen");
         } catch (e) {
@@ -603,24 +595,10 @@ class KWinDriver implements IDriverContext {
       forcedArrangeScreen,
       this.engine.SENDING_WINDOWS_MAX_WAIT_TIME,
     );
+    return true;
   }
 
-  public moveWindowToOutputDirection(
-    window: WindowClass,
-    direction: Direction,
-    retargetDesktop = true,
-    arrangeScreens = true,
-  ): boolean {
-    return this._moveWindowToOutput(
-      window,
-      undefined,
-      direction,
-      retargetDesktop,
-      arrangeScreens,
-    );
-  }
-
-  private _moveWindowToOutputNew(
+  private _moveWindowToOutput(
     window: WindowClass,
     targetOutput: Output,
   ): boolean {
@@ -639,7 +617,7 @@ class KWinDriver implements IDriverContext {
   }
 
   private _transferWindowsToVDesktops() {
-    const overCapacityWindows = this.engine.overCapacityWindows;
+    const overCapacityWindows = this.engine.relocationWindows;
     if (overCapacityWindows.totalNumWinsPrepareToVDesktop <= 0) return;
     let totalWindowsTransferToVDesktop = 0;
     for (const [
@@ -651,15 +629,13 @@ class KWinDriver implements IDriverContext {
         totalWindowsTransferToVDesktop++;
       }
     }
-    this._overCapacityWindowsSendProcessFinish("transferWindowToVDesktop");
+    this._relocateWindowsProcessFinish("transferWindowToVDesktop");
   }
 
-  private _overCapacityWindowsSendProcessFinish(
-    reason: keyof typeof ArrangeReason,
-  ) {
-    if (this.engine.overCapacityWindows.activeWindow !== null)
-      this.currentWindow = this.engine.overCapacityWindows.activeWindow;
-    this.engine.overCapacityWindows.clear();
+  private _relocateWindowsProcessFinish(reason: keyof typeof ArrangeReason) {
+    if (this.engine.relocationWindows.activeWindow !== null)
+      this.currentWindow = this.engine.relocationWindows.activeWindow;
+    this.engine.relocationWindows.clear();
     try {
       this.control.engine.arrange(this, reason);
     } catch (e) {
@@ -667,146 +643,22 @@ class KWinDriver implements IDriverContext {
     }
   }
 
-  private _sendingWindowsProcessCall() {
-    if (
-      this.engine.overCapacityWindows.isSending &&
-      !this.engine.overCapacityWindows.isExistSendingWindowsToOutput
-    ) {
-      if (this.engine.overCapacityWindows.isExistTransferWindowsToVDesktop) {
-        this._transferWindowsToVDesktops();
-        return;
-      }
-
-      this._overCapacityWindowsSendProcessFinish("sendToOutputProcessFinish");
-    }
-  }
-
-  private _moveWindowToOutput(
-    window: WindowClass,
-    targetOutput?: Output | null | undefined,
-    direction?: Direction,
-    retargetDesktop: boolean = true,
-    arrangeScreens: boolean = true,
+  private _sendingWindowsProcessCall(
+    reason: keyof typeof ArrangeReason,
   ): boolean {
-    const client = (window.window as DriverWindow).window;
-
-    // Try the client's output property and match by name
-    let sourceOutput: Output | null = null;
-    const clientOut = client.output;
-    if (clientOut) {
-      for (const out of this.workspace.screens) {
-        try {
-          if (out.name && clientOut.name && out.name === clientOut.name) {
-            sourceOutput = out;
-            break;
-          }
-        } catch (e) {
-          /* ignore per-output errors */
-        }
+    if (
+      this.engine.relocationWindows.isSending &&
+      !this.engine.relocationWindows.isExistSendingWindowsToOutput
+    ) {
+      if (this.engine.relocationWindows.isExistTransferWindowsToVDesktop) {
+        this._transferWindowsToVDesktops();
+        return true;
       }
+
+      this._relocateWindowsProcessFinish(reason);
+      return true;
     }
-
-    // If we don't have a source, give up.
-    if (!sourceOutput) return false;
-
-    // Find the adjacent output.
-    if (!targetOutput && direction != null) {
-      try {
-        targetOutput = this.getNeighborOutput(direction, sourceOutput);
-      } catch (e) {
-        targetOutput = undefined;
-      }
-    }
-
-    if (!targetOutput) return false;
-
-    // Per-screen virtual desktops: the target output may show a different
-    // desktop than the window's. We must move the window VISIBLE-then-fix:
-    // sendClientToScreen won't move a hidden window (one whose desktop isn't
-    // shown on its current output), so we send first while the window is still
-    // visible on the source, then once it has landed on the target output we
-    // reassign it to that output's visible desktop. Setting the desktop first
-    // would hide the window on the source and the send would no-op.
-    let retargetTo: VirtualDesktop | null =
-      retargetDesktop && !client.onAllDesktops
-        ? this._outputCurrentDesktop(targetOutput)
-        : null;
-    // When the target output shows a different desktop, sendClientToScreen
-    // hides the window (it reassigns its desktop to the target's) and then
-    // can't move a hidden window — the output change races the hide and only
-    // sometimes wins. Bridge via on-all-desktops: a window visible everywhere is
-    // never hidden mid-move, so the output change always lands. We restore the
-    // proper desktop once it has arrived.
-    const bridge =
-      retargetTo !== null &&
-      !(
-        client.desktops.length === 1 && client.desktops[0].id === retargetTo.id
-      );
-    if (bridge) {
-      try {
-        client.desktops = [];
-      } catch (e) {
-        /* ignore */
-      }
-    }
-
-    try {
-      this.workspace.sendClientToScreen(client, targetOutput);
-    } catch (e) {
-      return false;
-    }
-
-    // Poll until timeout — then finish activation.
-    const interval = 20;
-    const maxWait = 100;
-    let elapsed = 0;
-
-    const finishActivation = () => {
-      // Once on the target output, drop the on-all-desktops bridge and pin the
-      // window to that output's visible desktop. If the move never landed, leave
-      // it on-all-desktops (visible) rather than pinning it to a desktop the
-      // source output isn't showing, which would make it vanish.
-      if (bridge && retargetTo !== null && client.output === targetOutput) {
-        try {
-          client.desktops = [retargetTo];
-        } catch (e) {
-          /* ignore */
-        }
-      }
-      try {
-        this.workspace.activeWindow = client;
-        if (CONFIG.movePointerOnFocus) {
-          DBUS.moveMouseToCenter(20);
-        }
-      } catch (e) {
-        /* ignore */
-      }
-
-      try {
-        if (arrangeScreens)
-          this.control.engine.arrange(this, "moveWindowToOutput");
-      } catch (e) {
-        /* ignore */
-      }
-    };
-
-    const poll = () => {
-      if (client.output === targetOutput) {
-        finishActivation();
-        return;
-      }
-      elapsed += interval;
-      if (elapsed >= maxWait) {
-        finishActivation();
-        return;
-      }
-
-      this.setTimeout(poll, interval);
-    };
-
-    // Start polling after a short initial delay
-    this.setTimeout(poll, interval);
-    return true;
+    return false;
   }
 
   public moveWinToVDesktopByDirection(
@@ -817,14 +669,8 @@ class KWinDriver implements IDriverContext {
     if (targetVDesktop === null) return false;
     let client = (window.window as DriverWindow).window;
     this.workspace.currentDesktop = targetVDesktop;
-    client.desktops = [targetVDesktop];
+    this._moveWinToVDesktop(window, targetVDesktop);
     this.workspace.activeWindow = client;
-    //TODO: delete next 5 commented string. This code given ability to move window on different monitor during move to neighbor VDesktop.
-    //   let output = this._getOutputByDirection(direction);
-    //   if (output !== null) {
-    //     this.moveToScreen(window, direction, output, false);
-    //     return false; // moveWindowsToScreen arrange screens
-    //   }
     return true;
   }
 
@@ -837,23 +683,6 @@ class KWinDriver implements IDriverContext {
     if (desktops.length !== 0 && !desktops.find((d) => d === virtualDesktop)) {
       client.desktops = [virtualDesktop];
     }
-  }
-
-  private _getOutputByDirection(direction: Direction): Output | null {
-    let oppositeDirection = getOppositeDirection(direction);
-    let currentOutput = this.workspace.activeScreen;
-    let sourceOutput = currentOutput;
-    let targetOutput: Output | null;
-
-    while (
-      (targetOutput = this.getNeighborOutput(
-        oppositeDirection,
-        sourceOutput,
-      )) !== null
-    ) {
-      sourceOutput = targetOutput;
-    }
-    return sourceOutput !== currentOutput ? sourceOutput : null;
   }
 
   private _getWindowsByDirection(
@@ -1083,10 +912,8 @@ class KWinDriver implements IDriverContext {
     }
     if (focusCandidate !== null) {
       this.workspace.activeWindow = focusCandidate;
-      return true;
-    } else {
-      return false;
     }
+    return true;
   }
 
   // Read the virtual desktop currently shown on a specific output. Uses KWin
@@ -1381,7 +1208,6 @@ class KWinDriver implements IDriverContext {
         "activity=" + client.activities.join(","),
       );
     });
-
     this._connect(client.bufferGeometryChanged, () => {
       if (!client || client.deleted) return;
       LOG?.send(
@@ -1546,7 +1372,7 @@ class KWinDriver implements IDriverContext {
       );
       if (window.isSendingToOutput) {
         window.isSendingToOutput = false;
-        this._sendingWindowsProcessCall();
+        this._sendingWindowsProcessCall("relocationOutputChangedCB");
         return;
       }
       this.control.onWindowChanged(
@@ -1556,6 +1382,7 @@ class KWinDriver implements IDriverContext {
         "screen=" + client.output.name,
       );
     });
+
     if (CONFIG.floatSkipPager) {
       this._connect(client.skipPagerChanged, () => {
         this.control.onWindowSkipPagerChanged(

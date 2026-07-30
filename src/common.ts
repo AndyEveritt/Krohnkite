@@ -304,17 +304,11 @@ interface IDriverContext {
     winTypes: WinTypes,
   ): boolean;
   metaPushed(): void;
-  moveWindowToOutputDirection(
-    window: WindowClass,
-    direction: Direction,
-    retargetDesktop?: boolean,
-    arrangeScreens?: boolean,
-  ): boolean;
   moveWinToVDesktopByDirection(
     window: WindowClass,
     direction: Direction,
   ): boolean;
-  positioningOverCapacityWindows(): void;
+  relocateWindows(): boolean;
   setTimeout(func: () => void, timeout: number): void;
   showNotification(text: string): void;
 }

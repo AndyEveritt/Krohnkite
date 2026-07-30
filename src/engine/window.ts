@@ -39,7 +39,6 @@ class WindowClass implements IWindowClass {
   public get shouldIgnore(): boolean {
     return this.window.shouldIgnore;
   }
-
   /** If this window ***can be*** tiled by layout. */
   public get isTileable(): boolean {
     return WindowClass.isTileableState(this.state);
@@ -52,24 +51,20 @@ class WindowClass implements IWindowClass {
   public get isFloating(): boolean {
     return WindowClass.isFloatingState(this.state);
   }
-
   public get isDocked(): boolean {
     return WindowClass.isDockedState(this.state);
   }
-
   public get geometryDelta(): RectDelta | null {
     if (this.geometry === this.actualGeometry) return null;
 
     return RectDelta.fromRects(this.geometry, this.actualGeometry);
   }
-
   public get minSize(): ISize {
     return this._minSize;
   }
   public get maxSize(): ISize {
     return this._maxSize;
   }
-
   /**
    * The current state of the window.
    *
@@ -85,7 +80,6 @@ class WindowClass implements IWindowClass {
 
     return this.internalState;
   }
-
   public set state(value: WindowState) {
     const state = this.state;
 
