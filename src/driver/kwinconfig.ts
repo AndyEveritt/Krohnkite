@@ -88,7 +88,7 @@ class KWinConfig implements IConfig {
   public metaTimeout: number;
   public metaIsToggle: boolean;
   public metaIsPushedTwice: boolean;
-  public newWindowPosition: number;
+  public newWindowPosition: "last" | "first" | "second";
   /*
    * Rules
    * */
@@ -341,7 +341,16 @@ class KWinConfig implements IConfig {
     this.metaIsToggle = KWIN.readConfig("metaIsToggle", false);
     this.metaIsPushedTwice = KWIN.readConfig("metaIsPushedTwice", false);
 
-    this.newWindowPosition = KWIN.readConfig("newWindowPosition", 0);
+    this.newWindowPosition =
+      (["last", "first", "second"] as const)[
+        validateNumberWithDefault(
+          KWIN.readConfig("newWindowPosition", 0),
+          0,
+          "newWindowPosition",
+          0,
+          2,
+        )
+      ] ?? "last";
 
     //***************************
     //****************** Rules

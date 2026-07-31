@@ -118,7 +118,7 @@ interface IConfig {
   metaTimeout: number;
   metaIsToggle: boolean;
   metaIsPushedTwice: boolean;
-  newWindowPosition: number;
+  newWindowPosition: "last" | "first" | "second";
 
   //Rules
   ignoreClass: string[];

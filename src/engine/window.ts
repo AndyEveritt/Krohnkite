@@ -47,6 +47,9 @@ class WindowClass implements IWindowClass {
   public get isTiled(): boolean {
     return WindowClass.isTiledState(this.state);
   }
+  public get isNew(): boolean {
+    return this._srfTime.srfId === null;
+  }
   /** If this window is floating, thus its geometry is not tightly managed. */
   public get isFloating(): boolean {
     return WindowClass.isFloatingState(this.state);
@@ -106,15 +109,12 @@ class WindowClass implements IWindowClass {
   public setState(value: WindowState) {
     this.internalState = value;
   }
-
   public get surface(): ISurface {
     return this.window.surface;
   }
-
   public set surface(srf: ISurface) {
     this.window.surface = srf;
   }
-
   public get weight(): number {
     const srfID = this.window.surface.id;
     const weight: number | undefined = this.weightMap[srfID];
@@ -124,20 +124,16 @@ class WindowClass implements IWindowClass {
     }
     return weight;
   }
-
   public set weight(value: number) {
     const srfID = this.window.surface.id;
     this.weightMap[srfID] = value;
   }
-
   public get windowClassName(): string {
     return this.window.windowClassName;
   }
-
   public get windowCaption(): string {
     return this.window.windowCaption;
   }
-
   public get floatGeometry(): Rect {
     if (this._floatGeometry === null) {
       this._floatGeometry = this.window.getInitFloatGeometry();
@@ -147,7 +143,6 @@ class WindowClass implements IWindowClass {
   public set floatGeometry(value: Rect) {
     this._floatGeometry = value;
   }
-
   public get srfTime() {
     if (this._srfTime.time === null) this._srfTime.time = getTime();
     return this._srfTime.time;

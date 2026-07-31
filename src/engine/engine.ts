@@ -544,7 +544,27 @@ class TilingEngine {
       LOG.print(LogModules.arrangeScreen, "visibles", mes);
     }
     let tileables = this.windows.getVisibleTileables(srf);
-    tileables.forEach((tile) => tile.updateSrfTime(srf.id));
+    const newWindowsIdxs: number[] = [];
+    for (const [i, tileable] of tileables.entries()) {
+      if (tileable.isNew) newWindowsIdxs.push(i);
+      tileable.updateSrfTime(srf.id);
+    }
+    if (
+      CONFIG.newWindowPosition !== "last" &&
+      newWindowsIdxs.length > 0 &&
+      tileables.length > 1
+    ) {
+      const newWins: WindowClass[] = [];
+      for (let i = newWindowsIdxs.length - 1; i >= 0; i--) {
+        newWins.push(tileables.splice(newWindowsIdxs[i], 1)[0]);
+      }
+      newWins.reverse();
+      if (CONFIG.newWindowPosition === "first") {
+        tileables.unshift(...newWins);
+      } else {
+        tileables.splice(1, 0, ...newWins);
+      }
+    }
     let layout = this.layouts.getCurrentLayout(srf);
 
     let capacity: number | null;
@@ -812,10 +832,7 @@ class TilingEngine {
         window.state = WindowState.Docked;
       } else window.state = WindowState.Undecided;
       /* engine#arrange will update the state when required. */
-      if (CONFIG.newWindowPosition === 1) this.windows.unshift(window);
-      else if (CONFIG.newWindowPosition === 2) {
-        this.windows.beside_first(window);
-      } else this.windows.push(window);
+      this.windows.push(window);
     }
   }
 

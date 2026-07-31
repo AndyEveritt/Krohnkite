@@ -46,7 +46,7 @@ const ArrangeReason = {
   windowMaximizeAboutChangeCB: "windowMaximizeAboutChangeCB",
   shortcutCB: "shortcutCB",
   shortcutLayoutCB: "shortcutLayoutCB",
-};
+} as const;
 type ArrangeReason = (typeof ArrangeReason)[keyof typeof ArrangeReason];
 
 const WindowState = {
@@ -65,7 +65,7 @@ const WindowState = {
   Undecided: "Undecided",
   Dragging: "Dragging",
   Docked: "Docked",
-};
+} as const;
 type WindowState = (typeof WindowState)[keyof typeof WindowState];
 
 const Shortcut = {
@@ -154,7 +154,7 @@ const LogModules = {
   setTimeout: "setTimeout",
   window: "window",
   dbus: "dbus",
-};
+} as const;
 type LogModule = (typeof LogModules)[keyof typeof LogModules];
 
 const LogPartitions = {
