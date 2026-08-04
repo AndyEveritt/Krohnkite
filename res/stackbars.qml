@@ -44,13 +44,13 @@ Item {
         return bar;
     }
 
-    function render(bars, onTabClicked) {
+    function render(bars, onTabClicked, accentColor) {
         clickHandler = onTabClicked;
 
         for (var i = 0; i < bars.length; i++) {
             var bar = i < pool.length ? pool[i] : _acquire();
             if (bar === null) continue;
-            bar.render(bars[i]);
+            bar.render(bars[i], accentColor);
         }
         for (var j = bars.length; j < pool.length; j++)
             pool[j].hideOverlay();

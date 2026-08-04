@@ -36,6 +36,7 @@ PlasmaCore.Dialog {
 
     property int wantX: 0
     property int wantY: 0
+    property color accent: "#5999f2"
 
     onXChanged: if (visible && x !== wantX) x = wantX;
     onYChanged: if (visible && y !== wantY) y = wantY;
@@ -63,7 +64,7 @@ PlasmaCore.Dialog {
                             : tabRow.width
 
                         color: modelData.active
-                            ? Qt.rgba(0.35, 0.6, 0.95, 0.95)
+                            ? Qt.rgba(stackBar.accent.r, stackBar.accent.g, stackBar.accent.b, 0.95)
                             : Qt.rgba(0.16, 0.16, 0.16, 0.95)
 
                         Label {
@@ -89,7 +90,9 @@ PlasmaCore.Dialog {
         }
     }
 
-    function render(bar) {
+    function render(bar, accentColor) {
+        if (accentColor !== undefined && accentColor !== "")
+            stackBar.accent = accentColor;
         tabRepeater.model = bar.tabs;
 
         stackBar.wantX = bar.x;

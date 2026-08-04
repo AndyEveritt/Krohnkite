@@ -41,8 +41,8 @@ Item {
                 console.log("KROHNKITE: dropindicator.qml failed to load");
         }
 
-        function showAt(x, y, width, height, duration, filled) {
-            if (this.item) this.item.showAt(x, y, width, height, duration, filled);
+        function showAt(x, y, width, height, duration, filled, accentColor) {
+            if (this.item) this.item.showAt(x, y, width, height, duration, filled, accentColor);
             else console.log("KROHNKITE: drop indicator not loaded");
         }
 
@@ -62,8 +62,8 @@ Item {
                 console.log("KROHNKITE: selection outline failed to load");
         }
 
-        function showAt(x, y, width, height, duration, filled) {
-            if (this.item) this.item.showAt(x, y, width, height, duration, filled);
+        function showAt(x, y, width, height, duration, filled, accentColor) {
+            if (this.item) this.item.showAt(x, y, width, height, duration, filled, accentColor);
         }
 
         function hideOverlay() {
@@ -80,8 +80,8 @@ Item {
                 console.log("KROHNKITE: stackbars.qml failed to load");
         }
 
-        function render(bars, onTabClicked) {
-            if (this.item) this.item.render(bars, onTabClicked);
+        function render(bars, onTabClicked, accentColor) {
+            if (this.item) this.item.render(bars, onTabClicked, accentColor);
             else if (bars.length > 0)
                 console.log("KROHNKITE: stack bars not loaded");
         }

@@ -562,6 +562,11 @@
         <default>true</default>
     </entry>
 
+    <entry name="overlayColor" type="String">
+	    <label>Colour of the manual tiling overlays</label>
+        <default>#5999f2</default>
+    </entry>
+
     <entry name="notificationDuration" type="Int">
 	    <label>Duration of pop-up notifications</label>
         <default>1000</default>

@@ -593,14 +593,18 @@ class KWinDriver implements IDriverContext {
     const bars: IStackBar[] = [];
     for (const key in this._pendingStackBars)
       bars.push(...this._pendingStackBars[key]);
-    stackBars.render(bars, (windowId: string) => {
-      this._enter(() => {
-        const window = this.engine.windows.getWindowById(windowId);
-        if (window === null) return;
-        this.currentWindow = window;
-        this.engine.arrange(this, "stackBarCB", "stackBarTabClicked");
-      });
-    });
+    stackBars.render(
+      bars,
+      (windowId: string) => {
+        this._enter(() => {
+          const window = this.engine.windows.getWindowById(windowId);
+          if (window === null) return;
+          this.currentWindow = window;
+          this.engine.arrange(this, "stackBarCB", "stackBarTabClicked");
+        });
+      },
+      CONFIG.overlayColor,
+    );
 
     /* Only one selection can be current - it follows the focused window - so
      * the first registered outline wins and the rest are nulls anyway. */
@@ -620,6 +624,7 @@ class KWinDriver implements IDriverContext {
         outline.height,
         0,
         false,
+        CONFIG.overlayColor,
       );
     else selectionOutline.hideOverlay();
   }
@@ -632,6 +637,7 @@ class KWinDriver implements IDriverContext {
       rect.height,
       duration !== undefined ? duration : 0,
       true,
+      CONFIG.overlayColor,
     );
   }
 

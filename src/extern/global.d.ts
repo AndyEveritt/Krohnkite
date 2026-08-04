@@ -42,6 +42,7 @@ interface DropIndicator {
     height: number,
     duration: number,
     filled: boolean,
+    accentColor: string,
   ): void;
   hideOverlay(): void;
 }
@@ -51,7 +52,11 @@ declare var selectionOutline: DropIndicator;
 
 interface StackBars {
   /** Draw exactly these strips, reusing what is already on screen. */
-  render(bars: IStackBar[], onTabClicked: (windowId: string) => void): void;
+  render(
+    bars: IStackBar[],
+    onTabClicked: (windowId: string) => void,
+    accentColor: string,
+  ): void;
 }
 declare var stackBars: StackBars;
 

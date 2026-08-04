@@ -79,3 +79,18 @@ function validateNumberWithDefault(
   }
   return num;
 }
+
+/**
+ * A colour QML will accept: `#rgb`, `#rrggbb`, `#aarrggbb` or one of the SVG
+ * colour names. Anything else falls back, because a colour QML cannot parse
+ * leaves the overlay drawn in transparent black - invisible, and easy to
+ * mistake for the overlays being broken again.
+ */
+function validateColor(value: string, defaultValue: string): string {
+  const colour = `${value}`.trim();
+  if (/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/.test(colour))
+    return colour;
+  if (/^[a-zA-Z]+$/.test(colour)) return colour;
+  warning(`validateColor: ${value} is not a colour, using ${defaultValue}`);
+  return defaultValue;
+}

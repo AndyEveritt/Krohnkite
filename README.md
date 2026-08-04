@@ -281,6 +281,11 @@ tab-mates with it, and takes half of the stack's pane.
 
 Each move flashes an outline where the selection landed.
 
+The colour of all three overlays - the drop indicator, the group outline and a
+stack's active tab - is `Options -> Manual Tiling Overlays -> Colour`. It takes
+`#rgb`, `#rrggbb`, `#aarrggbb` or a colour name, and anything it cannot parse
+falls back to the default rather than drawing an invisible overlay.
+
 #### Stacks
 
 `Toggle Stack` collects everything in the selection into one pane where the

@@ -5582,6 +5582,45 @@
         </widget>
        </item>
        <item>
+        <widget class="QGroupBox" name="GB_5_Overlays">
+         <property name="title">
+          <string>Manual Tiling Overlays</string>
+         </property>
+         <layout class="QGridLayout" name="gridLayout_overlays">
+          <item row="0" column="0">
+           <widget class="QLabel" name="label_overlayColor">
+            <property name="text">
+             <string>Colour  </string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QLineEdit" name="kcfg_overlayColor">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Colour of the Manual Tiling layout's overlays: the drop indicator shown while dragging a window, the outline around the selected group, and the active tab of a stack. Accepts #rgb, #rrggbb, #aarrggbb or a colour name. Anything else falls back to the default.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="text">
+             <string>#5999f2</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="2">
+           <spacer name="horizontalSpacer_overlays">
+            <property name="orientation">
+             <enum>Qt::Orientation::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
         <widget class="QCheckBox" name="kcfg_layoutPerActivity">
          <property name="toolTip">
           <string>All tiled windows will have no borders. Borders will be added back if window become float.</string>

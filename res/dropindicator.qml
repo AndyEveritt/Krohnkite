@@ -34,6 +34,10 @@ PlasmaCore.Dialog {
      * there, so it must not wash out the windows underneath it. */
     property bool filled: true
 
+    /* Set from CONFIG.overlayColor on every call, so a config change takes
+     * effect on the next overlay rather than the next session. */
+    property color accent: "#5999f2"
+
     /* Where this was last asked to be. */
     property int wantX: 0
     property int wantY: 0
@@ -49,8 +53,10 @@ PlasmaCore.Dialog {
         Rectangle {
             anchors.fill: parent
 
-            color: indicator.filled ? Qt.rgba(0.35, 0.6, 0.95, 0.25) : "transparent"
-            border.color: Qt.rgba(0.35, 0.6, 0.95, 0.9)
+            color: indicator.filled
+                ? Qt.rgba(indicator.accent.r, indicator.accent.g, indicator.accent.b, 0.25)
+                : "transparent"
+            border.color: Qt.rgba(indicator.accent.r, indicator.accent.g, indicator.accent.b, 0.9)
             border.width: indicator.filled ? 2 : 3
             radius: 4
         }
@@ -90,10 +96,12 @@ PlasmaCore.Dialog {
      *
      * A duration of 0 leaves it up until hideOverlay - that is the drag case,
      * where the indicator tracks the cursor for as long as the drag lasts. */
-    function showAt(px, py, pw, ph, duration, isFilled) {
+    function showAt(px, py, pw, ph, duration, isFilled, accentColor) {
         hideTimer.stop();
 
         indicator.filled = isFilled === undefined ? true : isFilled;
+        if (accentColor !== undefined && accentColor !== "")
+            indicator.accent = accentColor;
         indicator.wantX = px;
         indicator.wantY = py;
         indicator.wantWidth = pw;

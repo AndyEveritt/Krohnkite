@@ -141,6 +141,7 @@ class KWinConfig implements IConfig {
   public unfitLess: boolean;
 
   public notificationDuration: number;
+  public overlayColor: string;
 
   public layoutPerActivity: boolean;
   public layoutPerDesktop: boolean;
@@ -483,6 +484,10 @@ class KWinConfig implements IConfig {
     this.unfitLess = KWIN.readConfig("unfitLess", true);
 
     this.notificationDuration = KWIN.readConfig("notificationDuration", 1000);
+    this.overlayColor = validateColor(
+      KWIN.readConfig("overlayColor", "#5999f2"),
+      "#5999f2",
+    );
 
     this.layoutPerActivity = KWIN.readConfig("layoutPerActivity", true);
     this.layoutPerDesktop = KWIN.readConfig("layoutPerDesktop", true);

@@ -179,6 +179,7 @@ interface IConfig {
   unfitLess: boolean;
 
   notificationDuration: number;
+  overlayColor: string;
 
   layoutPerActivity: boolean;
   layoutPerDesktop: boolean;
