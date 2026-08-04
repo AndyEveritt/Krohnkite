@@ -75,8 +75,15 @@ side) and is what this layout calls `"horizontal"`. The directional move keys
 directional move, and there is no migrate shortcut: a group crosses to another
 screen or desktop by *following* the window KWin moved, via
 `TilingController.onWindowChanged` → `TilingEngine.followGroupMove` →
-`ManualTilingLayout.takeGroupFollowers`, which hands over the subtree to graft
-at the destination.
+`ManualTilingLayout.groupFollowerIds` (which asks) and `takeGroup` (which
+commits), split in two because moving to another screen also reassigns the
+virtual desktop, so the handler runs more than once per move and the first pass
+arrives before the window has landed.
+
+`focus.test.js` covers `topOfEachPane` ([src/util/focus.ts](src/util/focus.ts)), which the driver
+applies to directional-focus candidates. A stacked pane's tabs share one geometry, so without it
+a tab-mate sits at distance zero from the window being left and always wins — focus could never
+leave a stack.
 
 `layoututils.test.js` covers the shared geometry helpers — `LayoutUtils.splitWeighted` and the
 `ILayoutPart` implementations built on it — since a change there moves every layout's geometry and
@@ -118,11 +125,15 @@ Layers, outermost first:
    Two more overlays exist for `ManualTilingLayout`: [res/dropindicator.qml](res/dropindicator.qml)
    (drag target / group selection outline) and
    [res/stackbars.qml](res/stackbars.qml), which pools [res/stackbar.qml](res/stackbar.qml)
-   — one clickable tab strip per stacked pane. Both are plain `Window`s, not
-   `PlasmaCore.Dialog`s like the OSD: a Dialog with no `visualParent` positions
-   *itself* (centred on the screen) and ignores the x/y you assign, and these
-   have to sit exactly over a pane. `Qt.ToolTip` keeps KWin from calling them
-   normal windows, which is what stops Krohnkite tiling its own overlays. Both are `Loader`s in
+   — one clickable tab strip per stacked pane. Both are `PlasmaCore.Dialog`s
+   like the OSD, because that is the window kind KWin reliably shows for a
+   script: a plain QtQuick `Window` is never mapped. The catch is that a Dialog
+   with no `visualParent` re-places *itself*, centred on the screen, whenever it
+   is shown or resized — hence the `wantX`/`wantY` properties and the
+   `onXChanged`/`onYChanged` handlers that put it back, and the sizing through
+   `mainItem`'s implicit size rather than the window's own width/height. Both
+   log to the KWin journal (grep `KROHNKITE`) if they fail to load or end up
+   somewhere other than where they were put. Both are `Loader`s in
    `main.qml` whose ids the driver reaches as globals, the same trick
    `popupDialog` uses; declare any new one in [src/extern/global.d.ts](src/extern/global.d.ts).
    `dropindicator.qml` is loaded twice: once filled as the drop indicator, once

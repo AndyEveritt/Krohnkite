@@ -37,6 +37,7 @@ const EXPORTS = [
   "RectDelta",
   "WindowState",
   "Shortcut",
+  "topOfEachPane",
 ];
 
 let cached = null;

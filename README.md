@@ -291,7 +291,9 @@ falls back to the default rather than drawing an invisible overlay.
 `Toggle Stack` collects everything in the selection into one pane where the
 windows share the space as tabs, with a strip along the top of the pane naming
 them; the active tab is highlighted and clicking a tab raises that window.
-`Next Tab` / `Previous Tab` cycle without the mouse. While a pane is a stack,
+`Next Tab` / `Previous Tab` cycle without the mouse, and the ordinary focus
+keys treat the whole stack as one pane: they move focus off it in any
+direction, and moving focus *onto* it lands on the tab that is showing. While a pane is a stack,
 new windows join it as another tab instead of splitting it - so a stack stays a
 stack even when it is down to one window, until you toggle it off. Toggling off
 fans the members back out into a balanced set of splits. Splitting a stack

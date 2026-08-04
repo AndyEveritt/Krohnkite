@@ -1177,6 +1177,22 @@ class KWinDriver implements IDriverContext {
         direction,
       );
     }
+    /* Windows sharing a pane - the tabs of a stacked pane - all sit in the
+     * same place, which would otherwise pin focus inside the stack. */
+    windows = topOfEachPane(
+      windows,
+      (win) => toRect(win.frameGeometry),
+      (win) => {
+        const managed = this.engine.windows.getWindowById(
+          String(win.internalId),
+        );
+        return managed !== null && managed !== undefined
+          ? managed.focusTime
+          : 0;
+      },
+      window,
+    );
+
     let focusCandidate: KwinWindow | null = null;
     let fCTimeStamp: number | null | undefined = null;
     let distance = null;
