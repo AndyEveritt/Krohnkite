@@ -30,6 +30,63 @@ Item {
         }
     }
 
+    Loader {
+        id: dropIndicator
+        source: "dropindicator.qml"
+
+        /* A component that fails to load leaves item null and the overlay
+         * simply never appears, with nothing to say why. Say why. */
+        onStatusChanged: {
+            if (status === Loader.Error)
+                console.log("KROHNKITE: dropindicator.qml failed to load");
+        }
+
+        function showAt(x, y, width, height, duration, filled) {
+            if (this.item) this.item.showAt(x, y, width, height, duration, filled);
+            else console.log("KROHNKITE: drop indicator not loaded");
+        }
+
+        function hideOverlay() {
+            if (this.item) this.item.hideOverlay();
+        }
+    }
+
+    /* Same component as the drop indicator, but hollow and long-lived: it
+     * outlines the group the manual layout's commands are aimed at. */
+    Loader {
+        id: selectionOutline
+        source: "dropindicator.qml"
+
+        onStatusChanged: {
+            if (status === Loader.Error)
+                console.log("KROHNKITE: selection outline failed to load");
+        }
+
+        function showAt(x, y, width, height, duration, filled) {
+            if (this.item) this.item.showAt(x, y, width, height, duration, filled);
+        }
+
+        function hideOverlay() {
+            if (this.item) this.item.hideOverlay();
+        }
+    }
+
+    Loader {
+        id: stackBars
+        source: "stackbars.qml"
+
+        onStatusChanged: {
+            if (status === Loader.Error)
+                console.log("KROHNKITE: stackbars.qml failed to load");
+        }
+
+        function render(bars, onTabClicked) {
+            if (this.item) this.item.render(bars, onTabClicked);
+            else if (bars.length > 0)
+                console.log("KROHNKITE: stack bars not loaded");
+        }
+    }
+
     Component.onCompleted: {
         console.log("KROHNKITE: starting the script");
         const api = {

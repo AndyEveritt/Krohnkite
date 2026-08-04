@@ -195,6 +195,9 @@ shape it yourself:
 | Meta + R  | Rotate the split a quarter turn clockwise   |
 | _unbound_ | Split Horizontal (panes side by side)       |
 | _unbound_ | Split Vertical (panes stacked)              |
+| Meta + Shift + H/J/K/L | Move through the tree (see below)  |
+| _unbound_ | Select More / Select Less (group selection) |
+| _unbound_ | Toggle Stack, Next Tab, Previous Tab        |
 
 `Split` divides the focused window's pane and moves the nearest other window
 into the new half; everything else reflows to fill the gap that leaves. It
@@ -229,8 +232,86 @@ binding anything. `Meta + I` picks the direction the same way a new window does
 - the pane's longer side, or the other one if that is the only way both windows
 fit - and the two explicit shortcuts are there for when you want to force it.
 
-`Meta + Shift + H/J/K/L` swaps the focused window with its neighbor, and split
-borders resize with the usual grow/shrink keys or the mouse. The arrangement
+#### Group selection
+
+`Select More` widens what the commands act on from the focused pane to the
+split around it, then to the split around that, and `Select Less` narrows it
+back down; the group stays outlined on screen for as long as it is selected,
+and its size is announced. The selection is dropped - and the outline comes
+down - the moment you focus a window outside it, so a command can never quietly
+apply to panes you have stopped looking at. `Move`, `Migrate` and
+`Toggle Stack` all act on the selection; split, unsplit and swap always act on
+the focused pane alone.
+
+#### Moving
+
+`Meta + Shift + H/J/K/L` - Krohnkite's usual move keys - move the selection the
+COSMIC way, reshaping the arrangement rather than swapping two panes' contents.
+It is a move through
+the tree rather than across the screen - what happens is decided by where the
+selection sits in its split, not by which pane it happens to be beside.
+
+A split here holds *any number* of panes, not just two, and that distinction is
+the whole point: three panes across the screen (`A | B | C`) and two panes whose
+first is split again (`(A | B) | C`) look similar but behave differently under
+every later move, so they are kept apart. Walking outwards from the selection,
+the first of these that applies wins:
+
+1. **The split runs across the way you are going** - panes side by side, and
+   you press Up. The whole split is wrapped in a new one facing that way, with
+   the selection on that side. This is the one you use most: you shape an
+   arrangement by pushing windows the way you want them to go.
+2. **You got here from a split further in.** The selection joins this split as
+   another pane of it, beside the one it came out of - two panes become three,
+   rather than nesting deeper. This is how you get equal thirds.
+3. **There is a pane that way.** What it is decides what happens. A stack takes
+   the window in as a tab. A group is entered - at its near end if it runs the
+   same way you are going, in the middle if it runs across you, since then it
+   has no near end. A plain pane trades places with you when the two of you are
+   all that is in the split, and otherwise is halved to take you in - that is
+   what turns `A | B | C` into `(A | B) | C`.
+4. **Nothing that way.** Step out to the split above and start again.
+
+Only when there is no split left to step out to does `Move` decline, and then
+the press falls through to Krohnkite's usual "push it to the next screen".
+There is one set of move keys, not one for windows and one for groups: they act
+on the selection, which is a single pane until you grow it. A window inside a
+stack is the one special case - it leaves the stack rather than dragging its
+tab-mates with it, and takes half of the stack's pane.
+
+Each move flashes an outline where the selection landed.
+
+#### Stacks
+
+`Toggle Stack` collects everything in the selection into one pane where the
+windows share the space as tabs, with a strip along the top of the pane naming
+them; the active tab is highlighted and clicking a tab raises that window.
+`Next Tab` / `Previous Tab` cycle without the mouse. While a pane is a stack,
+new windows join it as another tab instead of splitting it - so a stack stays a
+stack even when it is down to one window, until you toggle it off. Toggling off
+fans the members back out into a balanced set of splits. Splitting a stack
+pulls just the focused member out into a pane of its own.
+
+#### Mouse
+
+Dragging a tiled window shows a translucent indicator of where it would land
+and drops it there when you let go: onto the edge of a pane splits that pane -
+or joins the split it is already part of, when the two run the same way - and
+onto the middle of a pane joins that pane's stack, creating one if it isn't
+stacked yet. Nothing re-tiles until you release, so the panes hold still while
+you aim.
+
+#### Taking a group to another screen or desktop
+
+There is no shortcut of its own for this. KDE's own **Window One Screen to the
+Left/Right** and **Window One Desktop to the Left/Right** move the focused
+window as they always have - and when a group is selected, the rest of it
+follows, arrangement intact, so a group of panes arrives laid out the way it
+left. With a single pane selected nothing follows and those shortcuts mean
+exactly what they always did. If the destination screen is running a different
+layout the windows still move; only their arrangement is lost.
+
+Split borders resize with the usual grow/shrink keys or the mouse. The arrangement
 persists while the script runs - including across minimize/restore, fullscreen,
 virtual desktop switches and switching to another layout and back - but is not
 saved across a KWin restart. Floating a window (`Meta + F`) releases its pane;

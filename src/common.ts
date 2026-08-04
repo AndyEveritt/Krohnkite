@@ -40,6 +40,13 @@ interface IShortcuts {
   getSplitHorizontal(): ShortcutHandler;
   getSplitVertical(): ShortcutHandler;
 
+  getGroupGrow(): ShortcutHandler;
+  getGroupShrink(): ShortcutHandler;
+
+  getToggleStack(): ShortcutHandler;
+  getStackNext(): ShortcutHandler;
+  getStackPrev(): ShortcutHandler;
+
   getSetMaster(): ShortcutHandler;
 
   getTileLayout(): ShortcutHandler;
@@ -318,9 +325,30 @@ interface IDriverContext {
     window: WindowClass,
     direction: Direction,
   ): boolean;
+  /* Group moves. The destination is resolved once and every window is sent to
+   * it, unlike the by-direction calls above: those recompute the neighbour
+   * from the current desktop, which walks further away with each window. */
+  moveWindowsToOutput(windows: WindowClass[], output: Output): boolean;
+  moveWindowsToVDesktop(
+    windows: WindowClass[],
+    vDesktop: VirtualDesktop,
+  ): boolean;
   positioningOverCapacityWindows(): void;
   setTimeout(func: () => void, timeout: number): void;
   showNotification(text: string): void;
+
+  /* Overlays that persist between arranges are collected per arrange:
+   * `beginOverlays` drops every registration, each applying layout re-registers
+   * under its own key, and `flushOverlays` draws whatever survived. A layout
+   * that stops being applied therefore stops being drawn, with no teardown of
+   * its own. The drop indicator is not part of that cycle: it belongs to a drag
+   * or a one-off flash, neither of which lines up with an arrange. */
+  beginOverlays(): void;
+  setStackBars(key: string, bars: IStackBar[]): void;
+  setSelectionOutline(key: string, rect: Rect | null): void;
+  flushOverlays(): void;
+  showDropIndicator(rect: Rect, duration?: number): void;
+  hideDropIndicator(): void;
 }
 
 interface ILayoutClass {
@@ -354,8 +382,27 @@ interface ILayout {
     window: WindowClass,
     workingArea: Rect,
   ): boolean;
+  /**
+   * Called once when a drag finishes, before the engine's own drop handling.
+   *
+   * A layout that only previews during `drag` - drawing a drop indicator
+   * rather than re-tiling under the cursor - does the actual move here.
+   *
+   * @returns true if the layout consumed the drop, which suppresses the
+   * engine's default swap-or-float behaviour.
+   */
+  dragOver?(ctx: EngineContext, window: WindowClass): boolean;
 
   toString(): string;
+}
+
+/** One stacked pane's tab strip, in screen coordinates. */
+interface IStackBar {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  tabs: { id: string; title: string; active: boolean }[];
 }
 
 interface IGaps {

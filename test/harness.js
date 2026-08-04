@@ -90,13 +90,38 @@ function createWorld(options) {
   let gap = settings.gap !== undefined ? settings.gap : 0;
   let clock = 1;
 
+  /** Whatever the layout last asked the driver to draw. */
+  const overlays = { bars: [], drop: null, outline: null, notifications: [] };
+  /** Stands in for the manual layout of a neighbouring output. */
+  const neighborLayout = new K.ManualTilingLayout(null);
+
   const ctx = {
     backend: "kwin",
     currentWindow: null,
     cursorPos: null,
     getWindowById: (id) => (windows.has(id) ? windows.get(id) : null),
-    showNotification() {},
+    showNotification(text) {
+      overlays.notifications.push(text);
+    },
     setTimeout() {},
+
+    setStackBars(key, bars) {
+      overlays.bars = bars;
+    },
+    setSelectionOutline(key, rect) {
+      overlays.outline =
+        rect === null ? null : [rect.x, rect.y, rect.width, rect.height];
+    },
+    showDropIndicator(rect, duration) {
+      overlays.drop = [rect.x, rect.y, rect.width, rect.height];
+    },
+    hideDropIndicator() {
+      overlays.drop = null;
+    },
+    highlight(rect) {
+      overlays.drop = [rect.x, rect.y, rect.width, rect.height];
+    },
+
   };
 
   /** Windows the engine would hand the layout: tiled, and not minimized. */
@@ -198,6 +223,7 @@ function createWorld(options) {
         },
         focusTime: clock++,
         minimized: false,
+        windowCaption: id,
       });
       ctx.currentWindow = windows.get(id);
       return windows.get(id);
@@ -243,6 +269,48 @@ function createWorld(options) {
       return consumed;
     },
 
+    /** Move the mouse over a point mid-drag, as onWindowDragging would. */
+    drag(id, point) {
+      ctx.cursorPos = point;
+      layout.drag(ctx, windows.get(id).geometry, windows.get(id), area);
+      return overlays.drop;
+    },
+
+    /** Release the drag, as onWindowMoveOver would. */
+    drop(id, arrange) {
+      const consumed = layout.dragOver(ctx, windows.get(id));
+      if (consumed) {
+        if (arrange) world.arrange();
+        else world.apply();
+      }
+      return consumed;
+    },
+
+    overlays: () => overlays,
+    neighbor: () => neighborLayout,
+
+    /**
+     * Models TilingEngine.followGroupMove: KWin has moved `id` to another
+     * screen, so the layout hands over the group it belonged to and the rest
+     * of that group is sent after it.
+     *
+     * @returns the ids that followed, or null when nothing did.
+     */
+    followMove(id, landed) {
+      const followerIds = layout.groupFollowerIds(id);
+      if (followerIds === null) return null;
+      /* The engine asks first and only takes once the window has actually
+         landed on another surface; `landed: false` models the early signal
+         that arrives while it is still here. */
+      if (landed === false) return null;
+      const subtree = layout.takeGroup(id);
+      if (subtree === null) return null;
+      world.close(id);
+      followerIds.forEach((followerId) => world.close(followerId));
+      neighborLayout.graft(subtree);
+      return followerIds;
+    },
+
     adjust(id, delta) {
       layout.adjust(area, tileables(), windows.get(id), delta, gap);
     },
@@ -285,20 +353,34 @@ function createWorld(options) {
   return world;
 }
 
-/** Leaf window ids of the layout's tree, in order. Reads private state on purpose. */
+/**
+ * Window ids held by the layout's tree, in order. A stacked pane contributes
+ * all of its members. Reads private state on purpose.
+ */
 function treeWindowIds(layout) {
   const out = [];
   const walk = (node) => {
     if (node === null || node === undefined) return;
-    if (node.windowId !== undefined) {
-      out.push(node.windowId);
+    if (node.windowIds !== undefined) {
+      node.windowIds.forEach((id) => out.push(id));
       return;
     }
-    walk(node.first);
-    walk(node.second);
+    node.children.forEach(walk);
   };
   walk(layout.root);
   return out;
+}
+
+/** The panes the layout last drew, as `{ rect, contentRect, ids }`. */
+function renderedPanes(layout) {
+  return layout.renderedLeaves
+    .filter((leaf) => leaf.rect !== null && leaf.renderedIds.length > 0)
+    .map((leaf) => ({
+      rect: leaf.rect,
+      contentRect: leaf.contentRect,
+      ids: leaf.renderedIds.slice(0),
+      isStack: leaf.isStack,
+    }));
 }
 
 /**
@@ -345,18 +427,37 @@ function findViolations(world, tiles) {
       );
   });
 
-  for (let i = 0; i < settled.length; i++)
-    for (let j = i + 1; j < settled.length; j++) {
-      const a = settled[i].geometry;
-      const b = settled[j].geometry;
+  /* Overlap and coverage are properties of the panes, not of the windows:
+   * every member of a stacked pane shares the same geometry on purpose. */
+  const panes = renderedPanes(world.layout);
+
+  panes.forEach((pane) => {
+    pane.ids.forEach((id) => {
+      const window = world.window(id);
+      if (window === undefined) return;
+      if (settled.indexOf(window) < 0) return;
+      if (!window.geometry.equals(pane.contentRect))
+        problems.push(
+          `${id} does not fill its pane: ${window.geometry} != ${pane.contentRect}`,
+        );
+    });
+  });
+
+  for (let i = 0; i < panes.length; i++)
+    for (let j = i + 1; j < panes.length; j++) {
+      const a = panes[i].rect;
+      const b = panes[j].rect;
       if (a.x < b.maxX && b.x < a.maxX && a.y < b.maxY && b.y < a.maxY)
-        problems.push(`${settled[i].id} overlaps ${settled[j].id}`);
+        problems.push(
+          `pane ${panes[i].ids.join("|")} overlaps ${panes[j].ids.join("|")}`,
+        );
     }
 
-  /* Without gaps the panes must account for every pixel of the screen. */
+  /* Without gaps the panes must account for every pixel of the screen. A
+   * stack's tab strip is part of its pane, so it counts as covered. */
   if (world.gap === 0 && settled.length > 0) {
-    const covered = settled.reduce(
-      (sum, w) => sum + w.geometry.width * w.geometry.height,
+    const covered = panes.reduce(
+      (sum, pane) => sum + pane.rect.width * pane.rect.height,
       0,
     );
     const total = world.width * world.height;
@@ -372,5 +473,6 @@ module.exports = {
   createWorld,
   makeRandom,
   treeWindowIds,
+  renderedPanes,
   findViolations,
 };

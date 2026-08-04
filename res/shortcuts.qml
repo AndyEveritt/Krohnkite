@@ -438,4 +438,54 @@ Item {
         text: "Krohnkite: Split Vertical - stacked (Manual Tiling layout)";
         sequence: "";
     }
+    function getGroupGrow() {
+        return groupGrow;
+    }
+    ShortcutHandler {
+        id: groupGrow;
+
+        name: "KrohnkiteGroupGrow";
+        text: "Krohnkite: Select More - grow the group selection (Manual Tiling layout)";
+        sequence: "";
+    }
+    function getGroupShrink() {
+        return groupShrink;
+    }
+    ShortcutHandler {
+        id: groupShrink;
+
+        name: "KrohnkiteGroupShrink";
+        text: "Krohnkite: Select Less - shrink the group selection (Manual Tiling layout)";
+        sequence: "";
+    }
+    function getToggleStack() {
+        return toggleStack;
+    }
+    ShortcutHandler {
+        id: toggleStack;
+
+        name: "KrohnkiteToggleStack";
+        text: "Krohnkite: Toggle Stack - tab the selection together (Manual Tiling layout)";
+        sequence: "";
+    }
+    function getStackNext() {
+        return stackNext;
+    }
+    ShortcutHandler {
+        id: stackNext;
+
+        name: "KrohnkiteStackNext";
+        text: "Krohnkite: Stack: Next Tab (Manual Tiling layout)";
+        sequence: "";
+    }
+    function getStackPrev() {
+        return stackPrev;
+    }
+    ShortcutHandler {
+        id: stackPrev;
+
+        name: "KrohnkiteStackPrev";
+        text: "Krohnkite: Stack: Previous Tab (Manual Tiling layout)";
+        sequence: "";
+    }
 }

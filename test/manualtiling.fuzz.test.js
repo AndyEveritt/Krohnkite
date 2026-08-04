@@ -47,6 +47,14 @@ const OPERATIONS = [
   "rotate",
   "move",
   "move",
+  "move",
+  "growSelection",
+  "shrinkSelection",
+  "toggleStack",
+  "cycleStack",
+  "dragDrop",
+  "dragDrop",
+  "followMove",
   "adjust",
   "gap",
 ];
@@ -122,6 +130,33 @@ function runSeed(seed, steps) {
         break;
       case "move":
         world.shortcut(`Swap${pick(DIRECTIONS)}`);
+        break;
+      case "growSelection":
+        world.shortcut("GroupGrow");
+        break;
+      case "shrinkSelection":
+        world.shortcut("GroupShrink");
+        break;
+      case "toggleStack":
+        world.shortcut("ToggleStack");
+        break;
+      case "cycleStack":
+        world.shortcut(pick(["StackNext", "StackPrev"]));
+        break;
+      case "dragDrop": {
+        /* Drop the focused window at a random point, the way the mouse would:
+           preview first, then release. */
+        if (world.ctx.currentWindow === null) break;
+        const id = world.ctx.currentWindow.id;
+        world.drag(id, [random(world.width), random(world.height)]);
+        world.drop(id);
+        break;
+      }
+      case "followMove":
+        /* KWin moved the focused window to another screen and its group went
+           with it, so this exercises a group vanishing from under the tree. */
+        if (world.ctx.currentWindow !== null)
+          world.followMove(world.ctx.currentWindow.id, true);
         break;
       case "adjust": {
         if (world.ctx.currentWindow === null) break;

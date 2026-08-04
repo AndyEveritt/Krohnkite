@@ -129,6 +129,22 @@ class TilingController {
     window: WindowClass,
     reason: keyof typeof ArrangeReason,
   ): void {
+    /* Let the layout place the window itself. A layout that draws a drop
+     * indicator instead of re-tiling under the cursor does the whole move
+     * here, on the drop, so it has to get first refusal - ahead of the
+     * swap-or-float handling below. */
+    const dropLayout = this.engine.layouts.getCurrentLayout(ctx.currentSurface);
+    if (
+      dropLayout.dragOver !== undefined &&
+      (window.state === WindowState.Dragging ||
+        window.state === WindowState.Tiled) &&
+      dropLayout.dragOver(new EngineContext(ctx, this.engine), window)
+    ) {
+      window.setState(WindowState.Tiled);
+      this.engine.arrange(ctx, reason, `${getMethodName()}:layoutDrop`);
+      return;
+    }
+
     /* swap window by dragging */
     if (window.state === WindowState.Dragging) {
       window.setState(WindowState.Tiled);
@@ -264,6 +280,13 @@ class TilingController {
   ): void {
     if (window) {
       if (comment === "unminimized") ctx.currentWindow = window;
+      /* KWin's own "one screen/desktop to the left" shortcuts land here. When
+       * a group is selected the layout hands the rest of it over to follow. */
+      if (
+        reason === "outputChangedCB" ||
+        reason === "windowDesktopsChangedCB"
+      )
+        this.engine.followGroupMove(ctx, window);
       const workingArea = window.surface.workingArea;
       if (window.floatGeometry.width > workingArea.width) {
         window.floatGeometry.width = workingArea.width;

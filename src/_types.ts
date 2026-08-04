@@ -45,6 +45,8 @@ const ArrangeReason = {
   windowMaximizeAboutChangeCB: "windowMaximizeAboutChangeCB",
   shortcutCB: "shortcutCB",
   shortcutLayoutCB: "shortcutLayoutCB",
+  migrateGroup: "migrateGroup",
+  stackBarCB: "stackBarCB",
 };
 type ArrangeReason = (typeof ArrangeReason)[keyof typeof ArrangeReason];
 
@@ -110,6 +112,16 @@ const Shortcut = {
 
   SplitHorizontal: "SplitHorizontal",
   SplitVertical: "SplitVertical",
+
+  /* Manual tiling: widen/narrow the subtree the directional moves act on. */
+  GroupGrow: "GroupGrow",
+  GroupShrink: "GroupShrink",
+
+  /* Manual tiling: tabbed panes. */
+  ToggleStack: "ToggleStack",
+  StackNext: "StackNext",
+  StackPrev: "StackPrev",
+
 
   ToggleDock: "ToggleDock",
 

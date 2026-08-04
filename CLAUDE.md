@@ -44,12 +44,39 @@ layout alone; its `arrange()` also models `arrangeScreen`'s `unfitGreater`/`unfi
 default to true, and that pass is what turns an undersized pane into a floating window, so
 layout behaviour has to be tested against it. **Keep that model in step with the engine.**
 
+`createWorld` also fakes the driver's overlays (`ctx.setStackBars`,
+`setSelectionOutline`, `show/hideDropIndicator`, `highlight`) into
+`world.overlays()`. `world.drag(id, point)` / `world.drop(id)` drive a mouse
+drag the way `onWindowDragging` / `onWindowMoveOver` do, and
+`world.followMove(id)` models `TilingEngine.followGroupMove` — the windows
+leave this surface and the subtree is handed to `world.neighbor()`, a second
+`ManualTilingLayout` standing in for the next output.
+
 - `*.spec.test.js` — specified behaviour, asserting exact pane geometry.
+- `*.cosmic.test.js` — stacks, group selection, directional moves, drops and
+  group hand-over. Note `findViolations` checks overlap and screen coverage
+  over *panes*, not windows: every member of a stacked pane shares one geometry
+  on purpose, and a stack's tab strip is part of its pane's area.
 - `*.unfit.test.js` — regressions for windows getting stranded outside the layout.
 - `*.fuzz.test.js` — seeded random operation sequences checked against `findViolations`
   (no duplicate/orphaned panes, nothing overlapping or outside the area, no pane below its
   window's minimum, exact screen coverage). Override with `KROHNKITE_FUZZ_SEEDS` /
   `KROHNKITE_FUZZ_STEPS`; failures print the seed, step and operation to reproduce.
+
+`ManualTilingLayout`'s move rules are a port of cosmic-comp's
+`TilingLayout::move_current_node` (`cosmic-comp/src/shell/layout/tiling/mod.rs`,
+~line 1507); its tree is **n-ary** for the same reason cosmic's is — `A | B | C`
+and `(A | B) | C` must stay distinguishable, since every later move treats them
+differently. Only one-child splits are flattened (`_cleanup`), never
+same-orientation nesting. Beware cosmic's orientation names are the opposite of
+this codebase's: cosmic's `Orientation::Vertical` divides *width* (panes side by
+side) and is what this layout calls `"horizontal"`. The directional move keys
+(`Shift*`/`Swap*`) are handled by the layout, not by the engine's own
+directional move, and there is no migrate shortcut: a group crosses to another
+screen or desktop by *following* the window KWin moved, via
+`TilingController.onWindowChanged` → `TilingEngine.followGroupMove` →
+`ManualTilingLayout.takeGroupFollowers`, which hands over the subtree to graft
+at the destination.
 
 `layoututils.test.js` covers the shared geometry helpers — `LayoutUtils.splitWeighted` and the
 `ILayoutPart` implementations built on it — since a change there moves every layout's geometry and
@@ -88,6 +115,27 @@ Layers, outermost first:
    `shortcuts.qml`, `dbus.qml`) and calls `new K.KWinDriver(api).main()`.
    [res/shortcuts.qml](res/shortcuts.qml) declares every `ShortcutHandler` with its default key
    sequence, [res/dbus.qml](res/dbus.qml) the `DBusCall`s, [res/popup.qml](res/popup.qml) the OSD.
+   Two more overlays exist for `ManualTilingLayout`: [res/dropindicator.qml](res/dropindicator.qml)
+   (drag target / group selection outline) and
+   [res/stackbars.qml](res/stackbars.qml), which pools [res/stackbar.qml](res/stackbar.qml)
+   — one clickable tab strip per stacked pane. Both are plain `Window`s, not
+   `PlasmaCore.Dialog`s like the OSD: a Dialog with no `visualParent` positions
+   *itself* (centred on the screen) and ignores the x/y you assign, and these
+   have to sit exactly over a pane. `Qt.ToolTip` keeps KWin from calling them
+   normal windows, which is what stops Krohnkite tiling its own overlays. Both are `Loader`s in
+   `main.qml` whose ids the driver reaches as globals, the same trick
+   `popupDialog` uses; declare any new one in [src/extern/global.d.ts](src/extern/global.d.ts).
+   `dropindicator.qml` is loaded twice: once filled as the drop indicator, once
+   hollow as the group-selection outline (`selectionOutline`).
+   Overlays that outlive a single call — the stack bars and the selection
+   outline — are collected per arrange: `TilingEngine.arrange` calls
+   `beginOverlays` / `flushOverlays` around the surface loop and each layout
+   re-registers under its own key inside `apply`, so a layout that stops being
+   applied stops being drawn without any teardown of its own. Keep the flush on
+   every early return out of `arrange`. The drop indicator is outside that
+   cycle: it belongs to a drag or a one-off flash, neither of which lines up
+   with an arrange. Adding a `.qml` file means adding it to
+   the `kwin-pkg` task's `cmds`/`sources`/`generates` in `taskfile.yaml` too.
 2. **Driver** — [src/driver/](src/driver/). `KWinDriver` ([kwindriver.ts](src/driver/kwindriver.ts))
    implements `IDriverContext`: it connects KWin signals, wraps every `KwinWindow` in a
    `WindowClass` via `WrapperMap`, and is the only place that talks to the KWin API.
@@ -172,7 +220,12 @@ layout runs. Dock config is parsed from free-form text config in
 
 **A layout**:
 1. New class in `src/layouts/` with `public static readonly id`, `description`, `apply()`, and
-   optionally `handleShortcut()`, `adjust()`, `drag()`.
+   optionally `handleShortcut()`, `adjust()`, `drag()`, `dragOver()`.
+   `drag()` is called repeatedly while a window is being dragged; `dragOver()`
+   once when it is dropped, ahead of the controller's own swap-or-float
+   handling, and returning true from it consumes the drop. A layout that
+   restructures on drop rather than under the cursor previews in `drag()` (by
+   drawing the drop indicator) and does the work in `dragOver()`.
 2. Add `[MyLayout, <isCapacity>]` to `layoutsList` in the `KWinConfig` constructor. Ordering and
    capacity come from config keys derived by convention: `unCapitalize(id) + "Order"` (0 = disabled)
    and, when `isCapacity`, `unCapitalize(id) + "Capacity"` — so add matching `config.xml`/`config.ui`

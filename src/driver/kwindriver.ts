@@ -124,6 +124,9 @@ class KWinDriver implements IDriverContext {
   private windowMap: WrapperMap<KwinWindow, WindowClass>;
   private entered: boolean;
   private _surfaceStore: KWinSurfaceStore;
+  /* Overlays registered by the layouts of the arrange in flight. */
+  private _pendingStackBars: { [key: string]: IStackBar[] };
+  private _pendingSelection: { [key: string]: Rect | null };
   private _isMetaMode: IKrohnkiteMeta;
 
   constructor(api: Api) {
@@ -143,6 +146,8 @@ class KWinDriver implements IDriverContext {
     );
     this.entered = false;
     this._surfaceStore = new KWinSurfaceStore(this.workspace);
+    this._pendingStackBars = {};
+    this._pendingSelection = {};
     this._isMetaMode = {
       state: false,
       lastPushed: 0,
@@ -537,6 +542,104 @@ class KWinDriver implements IDriverContext {
     if (CONFIG.notificationDuration > 0)
       popupDialog.showNotification(text, CONFIG.notificationDuration);
   }
+
+  //#region Overlays
+
+  /**
+   * Send every window to `output`, then re-tile once.
+   *
+   * The per-window `moveWindowToOutputDirection` is deliberately not reused in
+   * a loop: it re-derives the neighbour from each window's own output, so a
+   * group spread over two screens would scatter rather than gather.
+   */
+  public moveWindowsToOutput(
+    windows: WindowClass[],
+    output: Output,
+  ): boolean {
+    let moved = false;
+    windows.forEach((window) => {
+      if (this._moveWindowToOutput(window, output, undefined, true, false))
+        moved = true;
+    });
+    return moved;
+  }
+
+  /** Send every window to `vDesktop` and follow them there. */
+  public moveWindowsToVDesktop(
+    windows: WindowClass[],
+    vDesktop: VirtualDesktop,
+  ): boolean {
+    if (windows.length === 0) return false;
+    windows.forEach((window) => this._moveWinToVDesktop(window, vDesktop));
+    this.workspace.currentDesktop = vDesktop;
+    this._activate((windows[0].window as DriverWindow).window);
+    return true;
+  }
+
+  public beginOverlays(): void {
+    this._pendingStackBars = {};
+    this._pendingSelection = {};
+  }
+
+  public setStackBars(key: string, bars: IStackBar[]): void {
+    this._pendingStackBars[key] = bars;
+  }
+
+  public setSelectionOutline(key: string, rect: Rect | null): void {
+    this._pendingSelection[key] = rect;
+  }
+
+  public flushOverlays(): void {
+    const bars: IStackBar[] = [];
+    for (const key in this._pendingStackBars)
+      bars.push(...this._pendingStackBars[key]);
+    stackBars.render(bars, (windowId: string) => {
+      this._enter(() => {
+        const window = this.engine.windows.getWindowById(windowId);
+        if (window === null) return;
+        this.currentWindow = window;
+        this.engine.arrange(this, "stackBarCB", "stackBarTabClicked");
+      });
+    });
+
+    /* Only one selection can be current - it follows the focused window - so
+     * the first registered outline wins and the rest are nulls anyway. */
+    let outline: Rect | null = null;
+    for (const key in this._pendingSelection) {
+      const rect = this._pendingSelection[key];
+      if (rect !== null) {
+        outline = rect;
+        break;
+      }
+    }
+    if (outline !== null)
+      selectionOutline.showAt(
+        outline.x,
+        outline.y,
+        outline.width,
+        outline.height,
+        0,
+        false,
+      );
+    else selectionOutline.hideOverlay();
+  }
+
+  public showDropIndicator(rect: Rect, duration?: number): void {
+    dropIndicator.showAt(
+      rect.x,
+      rect.y,
+      rect.width,
+      rect.height,
+      duration !== undefined ? duration : 0,
+      true,
+    );
+  }
+
+  public hideDropIndicator(): void {
+    dropIndicator.hideOverlay();
+  }
+
+  //#endregion
 
   public metaPushed() {
     if (CONFIG.metaIsToggle) {
@@ -1186,6 +1289,11 @@ class KWinDriver implements IDriverContext {
       [() => this.shortcuts.getKrohnkiteMeta(), Shortcut.KrohnkiteMeta],
       [() => this.shortcuts.getSplitHorizontal(), Shortcut.SplitHorizontal],
       [() => this.shortcuts.getSplitVertical(), Shortcut.SplitVertical],
+      [() => this.shortcuts.getGroupGrow(), Shortcut.GroupGrow],
+      [() => this.shortcuts.getGroupShrink(), Shortcut.GroupShrink],
+      [() => this.shortcuts.getToggleStack(), Shortcut.ToggleStack],
+      [() => this.shortcuts.getStackNext(), Shortcut.StackNext],
+      [() => this.shortcuts.getStackPrev(), Shortcut.StackPrev],
     ];
 
     for (const [getHandler, shortcut] of shortcutPairs) {

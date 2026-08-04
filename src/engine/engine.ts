@@ -324,6 +324,9 @@ class TilingEngine {
         `#######Reason: ${reason}:${message} arrangeProcessID:${this.arrangeProcessId}########`,
       );
     }
+    /* Every layout that applies below re-registers its overlays; anything that
+     * doesn't apply this time round simply stops being drawn. */
+    ctx.beginOverlays();
     const surfaces = ctx.currentSurfaces;
     let screensData: ScreenData[] = [];
     surfaces.forEach((srf) => {
@@ -342,6 +345,7 @@ class TilingEngine {
           warning(
             `Method: ${getMethodName()}.Attempt to Check OverCapacityWindows during sending Process.`,
           );
+          ctx.flushOverlays();
           return;
         }
         warning(
@@ -364,6 +368,7 @@ class TilingEngine {
       ) {
         this.overCapacityWindows.activeWindow = ctx.currentWindow;
         ctx.positioningOverCapacityWindows();
+        ctx.flushOverlays();
         this.arrangeProcessId = null;
         return;
       }
@@ -372,6 +377,7 @@ class TilingEngine {
     screensData.forEach((screenData: ScreenData) => {
       this.arrangeScreen(ctx, screenData, reason, this.arrangeProcessId!);
     });
+    ctx.flushOverlays();
     this.arrangeProcessId = null;
   }
 
@@ -1096,6 +1102,65 @@ class TilingEngine {
    *
    * @returns True if the layout overrides the shortcut. False, otherwise.
    */
+  /**
+   * Take the rest of a group along when one of its windows has just been moved
+   * to another screen or virtual desktop.
+   *
+   * This is what makes KWin's own "one screen to the left" / "one desktop to
+   * the right" move a whole group when one is selected: the layout the window
+   * came from hands over the subtree, the other windows in it are sent after
+   * it, and the layout now in charge of the destination is given the
+   * arrangement so the group arrives laid out as it left.
+   *
+   * Does nothing unless a group is selected - a single window moves on its
+   * own, exactly as it always did.
+   */
+  public followGroupMove(ctx: IDriverContext, window: WindowClass): void {
+    const target = window.surface;
+
+    for (const layout of this.layouts.allCurrentLayouts()) {
+      if (!(layout instanceof ManualTilingLayout)) continue;
+      const followerIds = layout.groupFollowerIds(window.id);
+      if (followerIds === null) continue;
+
+      const followers: WindowClass[] = [];
+      followerIds.forEach((id) => {
+        const follower = this.windows.getWindowById(id);
+        if (follower !== null) followers.push(follower);
+      });
+      if (followers.length === 0) return;
+
+      /* Where the group still is. Moving a window to another screen also
+       * reassigns its virtual desktop, so this runs more than once per move
+       * and the first pass can arrive before the window has gone anywhere.
+       * Taking the group then would hand it back to the screen it is already
+       * on and leave the real move with nothing to take. */
+      const from = followers[0].surface;
+      const sameOutput = from.output.name === target.output.name;
+      const sameVDesktop = from.vDesktop.id === target.vDesktop.id;
+      if (sameOutput && sameVDesktop) return;
+
+      const subtree = layout.takeGroup(window.id);
+      if (subtree === null) return;
+
+      if (!sameOutput) ctx.moveWindowsToOutput(followers, target.output);
+      if (!sameVDesktop) ctx.moveWindowsToVDesktop(followers, target.vDesktop);
+
+      const destination = this.layouts.getCurrentLayout(target);
+      if (destination instanceof ManualTilingLayout)
+        destination.graft(subtree);
+
+      /* Sending a window to another output activates it once it lands, so the
+       * last follower to arrive would otherwise end up with the focus. Put it
+       * back on the window the user actually moved, after those moves have had
+       * their chance to finish. */
+      ctx.setTimeout(() => {
+        ctx.currentWindow = window;
+      }, this.SENDING_WINDOWS_MAX_WAIT_TIME);
+      return;
+    }
+  }
+
   public handleLayoutShortcut(
     ctx: IDriverContext,
     input: Shortcut,

@@ -10,7 +10,7 @@
 
 const test = require("node:test");
 const assert = require("node:assert");
-const { createWorld } = require("./harness");
+const { createWorld, findViolations } = require("./harness");
 
 /** The arrangement from the feature's worked example, ready for more steps. */
 function exampleWorld() {
@@ -359,35 +359,31 @@ test("commands refuse rather than pretend when they cannot act", (t) => {
   );
 });
 
-test("directional move swaps panes and leaves the structure alone", (t) => {
+test("the directional move keys move a window through the tree", (t) => {
   const world = exampleWorld();
   const before = world.snapshot();
   const beforeTree = world.tree();
 
+  assert.strictEqual(
+    beforeTree,
+    "ManualTilingLayout(H:0.50[A,V:0.50[H:0.50[B,C],H:0.50[D,E]]])",
+  );
+
   world.focus("A");
   assert.strictEqual(world.shortcut("SwapRight"), true);
-  const moved = world.snapshot();
-
-  const partner = Object.keys(before).find(
-    (id) => id !== "A" && String(moved[id]) === String(before.A),
-  );
-  assert.ok(partner !== undefined, "some window took A's pane");
-  assert.deepStrictEqual(
-    moved.A,
-    before[partner],
-    `and A took ${partner}'s in exchange`,
-  );
-  assert.ok(moved.A[0] > before.A[0], "the pane A moved into is to the right");
-  assert.notStrictEqual(beforeTree, world.tree(), "the occupants changed");
-
-  world.focus("A");
-  assert.strictEqual(world.shortcut("SwapLeft"), true);
   assert.strictEqual(
     world.tree(),
-    beforeTree,
-    "swapping back restores the tree",
+    "ManualTilingLayout(V:0.33,0.33,0.33[H:0.50[B,C],A,H:0.50[D,E]])",
+    "A moves into the group beside it - the shape of the arrangement changes," +
+      " which a swap of two panes' contents could never do",
   );
-  assert.deepStrictEqual(world.snapshot(), before);
+  assert.deepStrictEqual(
+    world.snapshot().A,
+    [0, 360, 1920, 360],
+    "and lands as a band between the two rows it went in between",
+  );
+  assert.notDeepStrictEqual(world.snapshot(), before);
+  assert.deepStrictEqual(findViolations(world), []);
 });
 
 test("a window with no neighbour in that direction defers to the engine", (t) => {

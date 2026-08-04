@@ -29,6 +29,32 @@ interface PopupDialog {
 }
 declare var popupDialog: PopupDialog;
 
+interface DropIndicator {
+  /**
+   * @param duration 0 leaves it up until `hide`.
+   * @param filled true for a landing area, false for an outline around
+   * something that is already on screen.
+   */
+  showAt(
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    duration: number,
+    filled: boolean,
+  ): void;
+  hideOverlay(): void;
+}
+declare var dropIndicator: DropIndicator;
+/** A second DropIndicator: the outline around the current group selection. */
+declare var selectionOutline: DropIndicator;
+
+interface StackBars {
+  /** Draw exactly these strips, reusing what is already on screen. */
+  render(bars: IStackBar[], onTabClicked: (windowId: string) => void): void;
+}
+declare var stackBars: StackBars;
+
 /* Common Javascript globals */
 declare let console: any;
 declare let setTimeout: any;

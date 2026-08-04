@@ -62,6 +62,9 @@ tasks:
       - cp res/popup.qml  {{.KWINPKG_DIR}}/contents/ui/popup.qml
       - cp res/shortcuts.qml  {{.KWINPKG_DIR}}/contents/ui/shortcuts.qml
       - cp res/dbus.qml  {{.KWINPKG_DIR}}/contents/ui/dbus.qml
+      - cp res/dropindicator.qml  {{.KWINPKG_DIR}}/contents/ui/dropindicator.qml
+      - cp res/stackbar.qml  {{.KWINPKG_DIR}}/contents/ui/stackbar.qml
+      - cp res/stackbars.qml  {{.KWINPKG_DIR}}/contents/ui/stackbars.qml
       - cp {{.NODE_SCRIPT}} {{.KWINPKG_DIR}}/contents/code/script.js
       - cp res/main.js   {{.KWINPKG_DIR}}/contents/code/main.js
       - cp res/config.xml  {{.KWINPKG_DIR}}/contents/config/main.xml
@@ -72,6 +75,9 @@ tasks:
       - res/popup.qml
       - res/shortcuts.qml
       - res/dbus.qml
+      - res/dropindicator.qml
+      - res/stackbar.qml
+      - res/stackbars.qml
       - "{{.NODE_SCRIPT}}"
       - res/main.js
       - res/config.xml
@@ -81,6 +87,9 @@ tasks:
       - "{{.KWINPKG_DIR}}/contents/ui/popup.qml"
       - "{{.KWINPKG_DIR}}/contents/ui/shortcuts.qml"
       - "{{.KWINPKG_DIR}}/contents/ui/dbus.qml"
+      - "{{.KWINPKG_DIR}}/contents/ui/dropindicator.qml"
+      - "{{.KWINPKG_DIR}}/contents/ui/stackbar.qml"
+      - "{{.KWINPKG_DIR}}/contents/ui/stackbars.qml"
       - "{{.KWINPKG_DIR}}/contents/code/script.js"
       - "{{.KWINPKG_DIR}}/contents/code/main.js"
       - "{{.KWINPKG_DIR}}/contents/config/config.xml"

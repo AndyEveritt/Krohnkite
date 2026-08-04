@@ -124,6 +124,18 @@ class LayoutStore {
     this.store = {};
   }
 
+  /**
+   * The layout in charge of every surface seen so far. Used by things that
+   * have to ask "does any layout know about this window" - a group following
+   * its window to another screen, for one - rather than working from the
+   * surface a window is on now, which has already changed by then.
+   */
+  public allCurrentLayouts(): ILayout[] {
+    const layouts: ILayout[] = [];
+    for (const key in this.store) layouts.push(this.store[key].currentLayout);
+    return layouts;
+  }
+
   public getCurrentLayout(srf: ISurface): ILayout {
     return srf.ignore
       ? FloatingLayout.instance
