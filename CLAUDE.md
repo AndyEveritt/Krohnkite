@@ -18,6 +18,7 @@ go-task test         # build-ts, then npm test
 go-task kwin-pkg     # assemble pkg/ tree (contents/{ui,code,config}, locale)
 go-task package      # zip pkg/ -> builds/krohnkite-<tag>[-branch]_<rev>.kwinscript
 go-task install      # package, then kpackagetool6 -u (upgrade) or -i (install)
+go-task reload       # kwin-pkg, then hot-swap into the running KWin (tools/reload.sh)
 go-task uninstall
 go-task clean        # rm pkg/, krohnkite.js, package-lock.json
 ```
@@ -89,10 +90,28 @@ leave a stack.
 `ILayoutPart` implementations built on it — since a change there moves every layout's geometry and
 none of the others have tests. It needs no `CONFIG`, unlike the layouts themselves.
 
-Verifying behaviour means installing and restarting the compositor. Per the README, config changes
-need a **reboot/session restart** — do *not* toggle the script off and on in System Settings, that
-starts multiple instances. [tools/autoinstall/](tools/autoinstall/) is a dev helper (systemd user
-service + watchdog) that auto-installs `.kwinscript` files dropped into a folder, e.g. in a VM.
+Verifying behaviour means getting the build into a running compositor. Never toggle the script off
+and on in System Settings to do that — the toggle does not reliably unload the old instance, so it
+ends up running two of them. That is what the README's "you will need to reboot" is about.
+
+`go-task reload` ([tools/reload.sh](tools/reload.sh)) is the fast loop: it drives
+`org.kde.KWin /Scripting` over D-Bus — `unloadScript krohnkite`, check `isScriptLoaded` is false,
+`loadDeclarativeScript <path> krohnkite`, `start` — so the swap is explicit and verified, and no
+session restart is needed. Two things it works around:
+
+- KWin's QML engine keeps compiled units keyed by **file URL** for the life of the process, so
+  reloading the installed package path re-runs the *old* code even after `kpackagetool6 -u`. Each
+  reload is therefore staged into a fresh `~/.cache/krohnkite-reload/<ns>/` directory (the same
+  trick the ancestral [tools/legacy/load-script_1.sh](tools/legacy/load-script_1.sh) used); the
+  last three are kept, since the running instance still reads from its own.
+- `KWinConfig` reads every setting once at construction, so a reload re-reads `[Script-krohnkite]`
+  in `kwinrc` too — config changes don't need a reboot either. The plugin name is passed to
+  `loadDeclarativeScript` because that is what KWin keys that config group on.
+
+Because it loads from the staged copy, `go-task reload` does not touch
+`~/.local/share/kwin/scripts/krohnkite` — run `go-task install` for a change that survives login.
+[tools/autoinstall/](tools/autoinstall/) is a dev helper (systemd user service + watchdog) that
+auto-installs `.kwinscript` files dropped into a folder, e.g. in a VM.
 
 Runtime debugging goes through `LOG?.send(...)`: enable log modules in the script's config, then
 read KSystemLog filtered on `krohnkite`. `Options -> Debug new Windows` dumps every window's

@@ -40,7 +40,7 @@ go-task test
 
 ## Look at me
 
-1. If you change the Krohnkite configuration, you will need to reboot. Do not toggle the script on and off, this will start multiple instances of it.
+1. If you change the Krohnkite configuration, you will need to reboot. Do not toggle the script on and off, this will start multiple instances of it. (If you build from the repository, `go-task reload` picks up configuration changes without a reboot — see [Reloading without a reboot](#reloading-without-a-reboot-development).)
 2. Delete unused KWin shortcuts you can use any D-Bus program which can invoke D-Bus methods. Service name -`org.kde.kglobalaccel` path - `/component/kwin` method - `org.kde.kglobalaccel.Component.cleanUp`. ArchLinux example:
 
 ```
@@ -112,6 +112,21 @@ uninstall package:
 ```
 go-task uninstall
 ```
+
+### Reloading without a reboot (development)
+
+If you are changing the sources, you do not have to restart the session for every build:
+
+```
+go-task reload
+```
+
+This rebuilds the package tree and hot-swaps the script in the running KWin through
+`org.kde.KWin /Scripting` (unload, verify it is gone, load again). It is safe in the way toggling
+the script in System Settings is not — the old instance is explicitly unloaded first — and it
+re-reads your configuration as well. Note that it runs the build from a staged copy under
+`~/.cache/krohnkite-reload/`, so run `go-task install` when you want the change to persist across
+logins.
 
 ## Settings
 

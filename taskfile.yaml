@@ -33,6 +33,12 @@ tasks:
     cmds:
       - "kpackagetool6 -t KWin/Script -s {{.PROJECT_NAME}} && kpackagetool6 -t KWin/Script -u {{.PACKAGE}} || kpackagetool6 -t KWin/Script -i {{.PACKAGE}}"
 
+  reload:
+    desc: "Rebuild and reload into the running KWin (no session restart)"
+    deps: [kwin-pkg]
+    cmds:
+      - "sh tools/reload.sh {{.KWINPKG_DIR}}"
+
   uninstall:
     cmds:
       - "kpackagetool6 -t KWin/Script -r  {{.PROJECT_NAME}}"
