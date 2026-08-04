@@ -249,10 +249,13 @@ fit - and the two explicit shortcuts are there for when you want to force it.
 
 #### Group selection
 
-`Select More` widens what the commands act on from the focused pane to the
-split around it, then to the split around that, and `Select Less` narrows it
-back down; the group stays outlined on screen for as long as it is selected,
-and its size is announced. The selection is dropped - and the outline comes
+`Select More` widens what the commands act on. A stacked pane is a group in its
+own right - several windows sharing one pane - so from inside a stack the first
+press selects the whole stack, which is what lets it be moved, or sent to
+another screen, as the one thing it looks like rather than shedding the focused
+tab. From there it widens to the split around it, then the split around that,
+and `Select Less` narrows it back down; the group stays outlined on screen for
+as long as it is selected, and its size is announced. The selection is dropped - and the outline comes
 down - the moment you focus a window outside it, so a command can never quietly
 apply to panes you have stopped looking at. `Move`, `Migrate` and
 `Toggle Stack` all act on the selection; split, unsplit and swap always act on

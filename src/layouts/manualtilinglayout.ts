@@ -234,6 +234,14 @@ class ManualTilingLayout implements ILayout {
    * it, so it can never quietly apply to something the user isn't looking at.
    */
   private selection: MTTree | null;
+  /**
+   * Whether the selection is a *group* rather than just the focused pane.
+   *
+   * Not the same as "the selection is a split": a stacked pane holds several
+   * windows, so it can be a group on its own, and until it is selected as one
+   * the commands treat it as the single pane it looks like.
+   */
+  private selectionGrown: boolean;
 
   /* State from the most recent apply(). adjust() and the shortcut handlers work
    * from these instead of their own arguments, so they always see exactly what
@@ -260,6 +268,7 @@ class ManualTilingLayout implements ILayout {
     this.instanceKey = `ManualTiling#${++mtInstanceSeq}`;
     this.root = null;
     this.selection = null;
+    this.selectionGrown = false;
     this.lastArea = null;
     this.lastGap = 0;
     this.lastRenderedIds = new Set<string>();
@@ -364,13 +373,15 @@ class ManualTilingLayout implements ILayout {
       (!this._isInTree(this.selection) ||
         (focused !== null && !this._contains(this.selection, focused)))
     )
-      this.selection = null;
+      this._select(null, false);
 
-    /* A selection of exactly one pane needs no outline: that is just the
-     * focused window, and KWin is already drawing a border around it. */
+    /* Only a group is outlined. A selection of one pane is just the focused
+     * window, and KWin is already drawing a border around that. */
     const selection = this.selection;
     const outline =
-      focused !== null && selection instanceof MTNode ? selection.rect : null;
+      focused !== null && this._hasGroup() && selection !== null
+        ? selection.rect
+        : null;
     ctx.setSelectionOutline(this.instanceKey, outline);
 
     const moved = this.pendingPreview;
@@ -505,7 +516,13 @@ class ManualTilingLayout implements ILayout {
     /* Which end of a split the direction points at. */
     const toStart = dir === "left" || dir === "up";
 
-    if (this._moveOutOfStack(ctx, selection, axis, toStart)) return true;
+    /* A stack selected as a group moves as the one pane it looks like;
+     * otherwise the focused tab is what moves, and it leaves the stack. */
+    if (
+      !this.selectionGrown &&
+      this._moveOutOfStack(ctx, selection, axis, toStart)
+    )
+      return true;
 
     const keep = this.selection;
     /* Where the selection is coming from. Every branch below puts it in its
@@ -670,7 +687,7 @@ class ManualTilingLayout implements ILayout {
       selection.add(current.id);
       return false;
     }
-    this.selection = moved;
+    this._select(moved, false);
     this._preview(moved);
     return true;
   }
@@ -697,12 +714,10 @@ class ManualTilingLayout implements ILayout {
     }
     this._cleanup();
 
-    this.selection =
-      keep !== null && this._isInTree(keep)
-        ? keep
-        : this._isInTree(moved)
-          ? moved
-          : null;
+    const grown = this.selectionGrown;
+    if (keep !== null && this._isInTree(keep)) this._select(keep, grown);
+    else if (this._isInTree(moved)) this._select(moved, grown);
+    else this._select(null, false);
     this._preview(moved);
     return true;
   }
@@ -969,16 +984,15 @@ class ManualTilingLayout implements ILayout {
     if (selection === null) return null;
 
     if (!this._detach(selection)) return null;
-    this.selection = null;
+    this._select(null, false);
     this._cleanup();
     return selection;
   }
 
   /** The selected group holding a window, if it is in one. */
-  private _groupOf(windowId: string): MTNode | null {
-    const selection = this.selection;
-    if (selection === null || !(selection instanceof MTNode)) return null;
-    if (!this._isInTree(selection)) return null;
+  private _groupOf(windowId: string): MTTree | null {
+    if (!this._hasGroup()) return null;
+    const selection = this.selection as MTTree;
 
     const leaf = this._findLeaf(windowId);
     if (leaf === null || !this._contains(selection, leaf)) return null;
@@ -1020,22 +1034,50 @@ class ManualTilingLayout implements ILayout {
     if (leaf === null) return null;
     if (
       this.selection !== null &&
-      this.selection !== leaf &&
       this._isInTree(this.selection) &&
       this._contains(this.selection, leaf)
     )
       return this.selection;
-    this.selection = leaf;
+    this._select(leaf, false);
     return leaf;
+  }
+
+  private _select(node: MTTree | null, grown: boolean): void {
+    this.selection = node;
+    this.selectionGrown = node !== null && grown;
+  }
+
+  /** Whether the commands are aimed at a group rather than one pane. */
+  private _hasGroup(): boolean {
+    return (
+      this.selection !== null &&
+      this.selectionGrown &&
+      this._isInTree(this.selection)
+    );
   }
 
   /** Widen the selection to the enclosing split. */
   private _growSelection(ctx: EngineContext): boolean {
     const selection = this._currentSelection(ctx);
     if (selection === null) return false;
+
+    /* A stack is several windows in one pane, so it is a group before the
+     * split around it is. Selecting it first is what lets it be moved - or
+     * sent to another screen - as the one thing it looks like, rather than
+     * the focused tab being pulled out of it. */
+    if (
+      !this.selectionGrown &&
+      selection instanceof MTLeaf &&
+      selection.renderedIds.length > 1
+    ) {
+      this._select(selection, true);
+      this._announceSelection(ctx, selection);
+      return true;
+    }
+
     const place = this._placeOf(selection);
     if (place === null) return false;
-    this.selection = place.parent;
+    this._select(place.parent, true);
     this._announceSelection(ctx, place.parent);
     /* Consumed, even though no pane moved: letting it fall through to the
      * engine would hand the key to whatever else answers to it. */
@@ -1045,16 +1087,32 @@ class ManualTilingLayout implements ILayout {
   /** Narrow the selection back towards the focused pane. */
   private _shrinkSelection(ctx: EngineContext): boolean {
     const selection = this._currentSelection(ctx);
-    if (selection === null || selection instanceof MTLeaf) return false;
+    if (selection === null) return false;
     const leaf = this._focusedRenderedLeaf(ctx);
     if (leaf === null) return false;
 
+    /* Back down to the single pane it looks like. */
+    if (selection instanceof MTLeaf) {
+      if (!this.selectionGrown) return false;
+      this._select(selection, false);
+      this._announceSelection(ctx, selection);
+      return true;
+    }
+
     let next: MTTree | null = null;
-    selection.children.forEach((child) => {
-      if (next === null && this._contains(child, leaf)) next = child;
-    });
+    for (const child of selection.children) {
+      if (this._contains(child, leaf)) {
+        next = child;
+        break;
+      }
+    }
     if (next === null) return false;
-    this.selection = next;
+
+    /* One step down is still a group if it is a split, or a stack - a stack
+     * holds more than one window however far down it sits. */
+    const stillAGroup =
+      next instanceof MTNode || next.renderedIds.length > 1;
+    this._select(next, stillAGroup);
     this._announceSelection(ctx, next);
     return true;
   }
@@ -1107,7 +1165,8 @@ class ManualTilingLayout implements ILayout {
         ? current.id
         : windowIds[0];
     if (!this._replaceNode(selection, stack)) return false;
-    this.selection = stack;
+    /* Still the same group, now living in one pane. */
+    this._select(stack, stack.renderedIds.length > 1 || this.selectionGrown);
     return true;
   }
 
@@ -1877,7 +1936,7 @@ class ManualTilingLayout implements ILayout {
   /** Remove a subtree, and any split it leaves with nothing in it. */
   private _detach(subtree: MTTree): boolean {
     if (this.selection !== null && this._contains(subtree, this.selection))
-      this.selection = null;
+      this._select(null, false);
     if (this.root === subtree) {
       this.root = null;
       return true;

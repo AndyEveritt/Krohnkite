@@ -251,6 +251,88 @@ test("the selection is dropped as soon as focus leaves it", (t) => {
   );
 });
 
+test("the group key selects a stack before the split around it", (t) => {
+  const world = createWorld();
+  world.open("A");
+  world.apply();
+  world.open("B");
+  world.apply();
+  world.focus("B");
+  world.shortcut("ToggleStack");
+  world.open("C");
+  world.apply();
+  assert.strictEqual(world.tree(), "ManualTilingLayout(H:0.50[A,[B|C]])");
+
+  world.shortcut("GroupGrow");
+  assert.deepStrictEqual(world.overlays().notifications.slice(-1), [
+    "2 windows selected",
+  ]);
+  assert.deepStrictEqual(
+    world.overlays().outline,
+    [960, 0, 960, 1080],
+    "the stack is outlined as a group of its own",
+  );
+
+  /* Moving now takes the stack whole, rather than pulling C out of it. */
+  assert.strictEqual(world.shortcut("SwapLeft"), true);
+  assert.strictEqual(
+    world.tree(),
+    "ManualTilingLayout(H:0.50[[B|C],A])",
+    "the stack crossed to the left intact",
+  );
+
+  /* And it can be handed to another screen as a unit. */
+  assert.deepStrictEqual(world.followMove("C", true), ["B"]);
+  assert.strictEqual(world.neighbor().toString(), "ManualTilingLayout([B|C])");
+});
+
+test("without grouping it, a move pulls the focused tab out of the stack", (t) => {
+  const world = createWorld();
+  world.open("A");
+  world.apply();
+  world.focus("A");
+  world.shortcut("ToggleStack");
+  world.open("B");
+  world.apply();
+  assert.strictEqual(world.tree(), "ManualTilingLayout([A|B])");
+
+  assert.strictEqual(world.shortcut("SwapRight"), true);
+  assert.strictEqual(
+    world.tree(),
+    "ManualTilingLayout(H:0.50[[A],B])",
+    "B leaves the stack, as it always did",
+  );
+});
+
+test("growing past a stack reaches the split around it", (t) => {
+  const world = createWorld();
+  world.open("A");
+  world.apply();
+  world.open("B");
+  world.apply();
+  world.focus("B");
+  world.shortcut("ToggleStack");
+  world.open("C");
+  world.apply();
+
+  world.shortcut("GroupGrow");
+  world.shortcut("GroupGrow");
+  assert.deepStrictEqual(world.overlays().notifications.slice(-1), [
+    "3 windows selected",
+  ]);
+
+  world.shortcut("GroupShrink");
+  assert.deepStrictEqual(world.overlays().notifications.slice(-1), [
+    "2 windows selected",
+  ]);
+  world.shortcut("GroupShrink");
+  assert.strictEqual(
+    world.overlays().outline,
+    null,
+    "and all the way back down to the pane, which needs no outline",
+  );
+});
+
 //#endregion
 
 //#region Move versus swap
