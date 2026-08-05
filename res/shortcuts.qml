@@ -488,4 +488,24 @@ Item {
         text: "Krohnkite: Stack: Previous Tab (Manual Tiling layout)";
         sequence: "";
     }
+    function getStackMoveNext() {
+        return stackMoveNext;
+    }
+    ShortcutHandler {
+        id: stackMoveNext;
+
+        name: "KrohnkiteStackMoveNext";
+        text: "Krohnkite: Stack: Move Tab Right (Manual Tiling layout)";
+        sequence: "";
+    }
+    function getStackMovePrev() {
+        return stackMovePrev;
+    }
+    ShortcutHandler {
+        id: stackMovePrev;
+
+        name: "KrohnkiteStackMovePrev";
+        text: "Krohnkite: Stack: Move Tab Left (Manual Tiling layout)";
+        sequence: "";
+    }
 }

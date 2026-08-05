@@ -1334,6 +1334,8 @@ class KWinDriver implements IDriverContext {
       [() => this.shortcuts.getToggleStack(), Shortcut.ToggleStack],
       [() => this.shortcuts.getStackNext(), Shortcut.StackNext],
       [() => this.shortcuts.getStackPrev(), Shortcut.StackPrev],
+      [() => this.shortcuts.getStackMoveNext(), Shortcut.StackMoveNext],
+      [() => this.shortcuts.getStackMovePrev(), Shortcut.StackMovePrev],
     ];
 
     for (const [getHandler, shortcut] of shortcutPairs) {

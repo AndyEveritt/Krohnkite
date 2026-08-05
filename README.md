@@ -213,6 +213,7 @@ shape it yourself:
 | Meta + Shift + H/J/K/L | Move through the tree (see below)  |
 | _unbound_ | Select More / Select Less (group selection) |
 | _unbound_ | Toggle Stack, Next Tab, Previous Tab        |
+| _unbound_ | Move Tab Left / Move Tab Right              |
 
 `Split` divides the focused window's pane and moves the nearest other window
 into the new half; everything else reflows to fill the gap that leaves. It
@@ -309,7 +310,11 @@ falls back to the default rather than drawing an invisible overlay.
 `Toggle Stack` collects everything in the selection into one pane where the
 windows share the space as tabs, with a strip along the top of the pane naming
 them; the active tab is highlighted and clicking a tab raises that window.
-`Next Tab` / `Previous Tab` cycle without the mouse, and the ordinary focus
+`Next Tab` / `Previous Tab` cycle without the mouse and `Move Tab Left` /
+`Move Tab Right` reorder the strip, carrying the focused tab one place along
+and trading places with the tab that was there. Members that are not on screen
+- minimized, or on another virtual desktop - keep their place in the order, so
+the strip does not rearrange itself when they come back. The ordinary focus
 keys treat the whole stack as one pane: they move focus off it in any
 direction, and moving focus *onto* it lands on the tab that is showing. While a pane is a stack,
 new windows join it as another tab instead of splitting it - so a stack stays a

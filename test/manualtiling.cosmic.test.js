@@ -159,6 +159,79 @@ test("cycling a stack raises and focuses the next member", (t) => {
   assert.strictEqual(plain.shortcut("StackNext"), false);
 });
 
+test("moving a tab reorders the strip without changing the focus", (t) => {
+  const world = createWorld();
+  world.open("A");
+  world.apply();
+  world.shortcut("ToggleStack");
+  world.open("B");
+  world.apply();
+  world.open("C");
+  world.apply();
+
+  const tabs = () => world.overlays().bars[0].tabs.map((tab) => tab.id);
+  assert.deepStrictEqual(tabs(), ["A", "B", "C"]);
+
+  world.focus("B");
+  assert.strictEqual(world.shortcut("StackMovePrev"), true);
+  assert.deepStrictEqual(tabs(), ["B", "A", "C"]);
+  assert.strictEqual(
+    world.ctx.currentWindow.id,
+    "B",
+    "the tab moves, the focus stays on it",
+  );
+
+  assert.strictEqual(world.shortcut("StackMovePrev"), true);
+  assert.deepStrictEqual(
+    tabs(),
+    ["C", "A", "B"],
+    "past the front it wraps, trading places with the last tab",
+  );
+
+  world.focus("A");
+  assert.strictEqual(world.shortcut("StackMoveNext"), true);
+  assert.deepStrictEqual(tabs(), ["C", "B", "A"]);
+
+  /* Nothing to reorder in a pane holding one window. */
+  const plain = pairWorld();
+  assert.strictEqual(plain.shortcut("StackMoveNext"), false);
+});
+
+test("a tab keeps its place relative to members that are not on screen", (t) => {
+  const world = createWorld();
+  world.open("A");
+  world.apply();
+  world.shortcut("ToggleStack");
+  world.open("B");
+  world.apply();
+  world.open("C");
+  world.apply();
+
+  /* B is in the middle of the strip but not rendered, so moving C past A must
+     step over it rather than swap with it. */
+  world.minimize("B");
+  world.apply();
+  assert.deepStrictEqual(
+    world.overlays().bars[0].tabs.map((tab) => tab.id),
+    ["A", "C"],
+  );
+
+  world.focus("C");
+  assert.strictEqual(world.shortcut("StackMovePrev"), true);
+  assert.deepStrictEqual(
+    world.overlays().bars[0].tabs.map((tab) => tab.id),
+    ["C", "A"],
+  );
+
+  world.restore("B");
+  world.apply();
+  assert.deepStrictEqual(
+    world.overlays().bars[0].tabs.map((tab) => tab.id),
+    ["C", "B", "A"],
+    "B is where it always was - second - with A and C swapped around it",
+  );
+});
+
 test("unstacking fans the members back out into splits", (t) => {
   const world = createWorld();
   world.open("A");

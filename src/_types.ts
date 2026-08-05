@@ -121,6 +121,9 @@ const Shortcut = {
   ToggleStack: "ToggleStack",
   StackNext: "StackNext",
   StackPrev: "StackPrev",
+  /* ... and reordering the tab strip itself, rather than moving through it. */
+  StackMoveNext: "StackMoveNext",
+  StackMovePrev: "StackMovePrev",
 
 
   ToggleDock: "ToggleDock",

@@ -524,6 +524,11 @@ class ManualTilingLayout implements ILayout {
       case Shortcut.StackPrev:
         return this._cycleStack(ctx, -1);
 
+      case Shortcut.StackMoveNext:
+        return this._moveTab(ctx, 1);
+      case Shortcut.StackMovePrev:
+        return this._moveTab(ctx, -1);
+
       default:
         return false;
     }
@@ -1282,6 +1287,37 @@ class ManualTilingLayout implements ILayout {
 
     leaf.activeId = next;
     ctx.currentWindow = window;
+    return true;
+  }
+
+  /**
+   * Move the focused window one place along its stack's tab strip.
+   *
+   * The step is taken in *rendered* order and applied by swapping the two ids
+   * in `windowIds`: a member that isn't on screen - minimized, or on another
+   * virtual desktop - keeps its place in the real order, so tabs don't jump
+   * over invisible windows and nothing is reordered behind the user's back.
+   * Like `_cycleStack`, the ends wrap - off the front is a trade with the
+   * last tab, which keeps this a swap in every case and so keeps the rest of
+   * the strip still.
+   */
+  private _moveTab(ctx: EngineContext, step: -1 | 1): boolean {
+    const leaf = this._focusedRenderedLeaf(ctx);
+    if (leaf === null || leaf.renderedIds.length < 2) return false;
+
+    const current = ctx.currentWindow;
+    const index = current !== null ? leaf.renderedIds.indexOf(current.id) : -1;
+    if (index < 0) return false;
+
+    const from = leaf.windowIds.indexOf(leaf.renderedIds[index]);
+    const to = leaf.windowIds.indexOf(
+      leaf.renderedIds[wrapIndex(index + step, leaf.renderedIds.length)],
+    );
+    if (from < 0 || to < 0 || from === to) return false;
+
+    const moved = leaf.windowIds[from];
+    leaf.windowIds[from] = leaf.windowIds[to];
+    leaf.windowIds[to] = moved;
     return true;
   }
 

@@ -46,6 +46,8 @@ interface IShortcuts {
   getToggleStack(): ShortcutHandler;
   getStackNext(): ShortcutHandler;
   getStackPrev(): ShortcutHandler;
+  getStackMoveNext(): ShortcutHandler;
+  getStackMovePrev(): ShortcutHandler;
 
   getSetMaster(): ShortcutHandler;
 
