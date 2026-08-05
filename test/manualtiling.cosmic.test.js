@@ -434,6 +434,60 @@ test("move rule 1: a split across the way you are going turns to face it", (t) =
     [960, 0, 480, 1080],
     "and the preview flashes where it landed",
   );
+  assert.deepStrictEqual(
+    world.overlays().group,
+    [960, 0, 960, 1080],
+    "with the group it landed in outlined around it",
+  );
+  assert.deepStrictEqual(findViolations(world), []);
+});
+
+test("a move that joins a group outlines the group it became part of", (t) => {
+  const world = threeWorld();
+
+  /* A is on the left, B over C on the right. Pushing A right takes it into
+   * the pair, which is the whole arrangement once A's old half closes up. */
+  world.focus("A");
+  assert.strictEqual(world.shortcut("SwapRight"), true);
+  assert.strictEqual(
+    world.tree(),
+    "ManualTilingLayout(V:0.33,0.33,0.33[B,A,C])",
+  );
+  assert.deepStrictEqual(
+    world.overlays().drop,
+    [0, 360, 1920, 360],
+    "the flash is A's new pane",
+  );
+  assert.deepStrictEqual(
+    world.overlays().group,
+    [0, 0, 1920, 1080],
+    "and the outline is the column it is now one of, not just that pane",
+  );
+  assert.deepStrictEqual(findViolations(world), []);
+});
+
+test("moving into a stack outlines the stack it joined", (t) => {
+  const world = threeWorld();
+
+  world.focus("C");
+  assert.strictEqual(world.shortcut("ToggleStack"), true);
+  assert.strictEqual(
+    world.tree(),
+    "ManualTilingLayout(H:0.50[A,V:0.50[B,[C]]])",
+  );
+
+  world.focus("B");
+  assert.strictEqual(world.shortcut("SwapDown"), true);
+  assert.strictEqual(
+    world.tree(),
+    "ManualTilingLayout(H:0.50[A,[C|B]])",
+    "B becomes a tab of the stack below it",
+  );
+  assert.deepStrictEqual(
+    world.overlays().group,
+    [960, 0, 960, 1080],
+    "and the stack it disappeared into is outlined",
+  );
   assert.deepStrictEqual(findViolations(world), []);
 });
 
@@ -672,6 +726,16 @@ test("dropping on the middle of a pane stacks the two windows", (t) => {
     A: [0, BAR, 1920, 1080 - BAR],
     B: [0, BAR, 1920, 1080 - BAR],
   });
+  assert.strictEqual(
+    world.overlays().drop,
+    null,
+    "the drag's own indicator goes away on drop",
+  );
+  assert.deepStrictEqual(
+    world.overlays().group,
+    [0, 0, 1920, 1080],
+    "and the stack B joined is outlined instead",
+  );
   assert.deepStrictEqual(findViolations(world), []);
 });
 

@@ -350,6 +350,7 @@ interface IDriverContext {
   flushOverlays(): void;
   showDropIndicator(rect: Rect, duration?: number): void;
   hideDropIndicator(): void;
+  showGroupIndicator(rect: Rect, duration?: number): void;
 }
 
 interface ILayoutClass {

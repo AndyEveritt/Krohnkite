@@ -71,6 +71,28 @@ Item {
         }
     }
 
+    /* Same component again, hollow and short-lived: it flashes around the
+     * group a window has just been moved into. Separate from the selection
+     * outline because both can be up at once - the moved window's group is not
+     * always the group the commands are aimed at. */
+    Loader {
+        id: groupIndicator
+        source: "dropindicator.qml"
+
+        onStatusChanged: {
+            if (status === Loader.Error)
+                console.log("KROHNKITE: group indicator failed to load");
+        }
+
+        function showAt(x, y, width, height, duration, filled, accentColor) {
+            if (this.item) this.item.showAt(x, y, width, height, duration, filled, accentColor);
+        }
+
+        function hideOverlay() {
+            if (this.item) this.item.hideOverlay();
+        }
+    }
+
     Loader {
         id: stackBars
         source: "stackbars.qml"

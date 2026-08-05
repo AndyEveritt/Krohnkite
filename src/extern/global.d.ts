@@ -49,6 +49,8 @@ interface DropIndicator {
 declare var dropIndicator: DropIndicator;
 /** A second DropIndicator: the outline around the current group selection. */
 declare var selectionOutline: DropIndicator;
+/** A third DropIndicator: flashed around the group a move just landed in. */
+declare var groupIndicator: DropIndicator;
 
 interface StackBars {
   /** Draw exactly these strips, reusing what is already on screen. */

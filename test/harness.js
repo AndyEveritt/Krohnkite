@@ -92,7 +92,13 @@ function createWorld(options) {
   let clock = 1;
 
   /** Whatever the layout last asked the driver to draw. */
-  const overlays = { bars: [], drop: null, outline: null, notifications: [] };
+  const overlays = {
+    bars: [],
+    drop: null,
+    outline: null,
+    group: null,
+    notifications: [],
+  };
   /** Stands in for the manual layout of a neighbouring output. */
   const neighborLayout = new K.ManualTilingLayout(null);
 
@@ -118,6 +124,11 @@ function createWorld(options) {
     },
     hideDropIndicator() {
       overlays.drop = null;
+    },
+    /* A flash, like the drop indicator: nothing takes it down, it times out.
+     * The test reads whatever the last move put up. */
+    showGroupIndicator(rect, duration) {
+      overlays.group = [rect.x, rect.y, rect.width, rect.height];
     },
     highlight(rect) {
       overlays.drop = [rect.x, rect.y, rect.width, rect.height];

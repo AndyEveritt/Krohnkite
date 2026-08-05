@@ -86,6 +86,14 @@ class EngineContext {
   }
 
   /**
+   * Outline the group a window has just been moved into, so a move that lands
+   * inside a split or joins a stack says which one it went into.
+   */
+  public showGroupIndicator(rect: Rect, duration?: number) {
+    this.drvctx.showGroupIndicator(rect, duration);
+  }
+
+  /**
    * Outline the group the layout's commands are currently aimed at, or null
    * for none. Stays up until the layout says otherwise.
    */
