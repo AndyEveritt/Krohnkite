@@ -34,7 +34,16 @@ class EngineContext {
     return srf.output.name, srf.activity, srf.vDesktop.name;
   }
 
-  constructor(private drvctx: IDriverContext, private engine: TilingEngine) {}
+  /**
+   * @param overlaysSuppressed when true, the persistent overlays this context
+   * registers (stack bars, selection outline) are dropped instead of being
+   * drawn - a screen showing a fullscreen window gets nothing painted over it.
+   */
+  constructor(
+    private drvctx: IDriverContext,
+    private engine: TilingEngine,
+    private overlaysSuppressed: boolean = false,
+  ) {}
 
   public setTimeout(func: () => void, timeout: number): void {
     this.drvctx.setTimeout(func, timeout);
@@ -67,6 +76,7 @@ class EngineContext {
 
   /** Register this layout's stack tab strips for the current arrange. */
   public setStackBars(key: string, bars: IStackBar[]) {
+    if (this.overlaysSuppressed) return;
     this.drvctx.setStackBars(key, bars);
   }
 
@@ -98,6 +108,7 @@ class EngineContext {
    * for none. Stays up until the layout says otherwise.
    */
   public setSelectionOutline(key: string, rect: Rect | null) {
+    if (this.overlaysSuppressed) return;
     this.drvctx.setSelectionOutline(key, rect);
   }
 

@@ -592,6 +592,16 @@ class TilingEngine {
   }
 
   /**
+   * True if any of these windows is natively fullscreen.
+   *
+   * A fullscreen window covers its whole screen, so the layout's persistent
+   * overlays - stack bars, selection outline - must not be drawn on top of it.
+   */
+  public static hasFullscreenWindow(windows: WindowClass[]): boolean {
+    return windows.some((win) => win.state === WindowState.NativeFullscreen);
+  }
+
+  /**
    * Arrange tiles on a screen.
    */
   public arrangeScreen(
@@ -643,7 +653,11 @@ class TilingEngine {
       );
 
     if (tileablesLen > 0) {
-      let engineCtx = new EngineContext(ctx, this);
+      let engineCtx = new EngineContext(
+        ctx,
+        this,
+        TilingEngine.hasFullscreenWindow(screenData.visibles),
+      );
       function layoutApply() {
         screenData.layout.apply(
           engineCtx,
@@ -1211,7 +1225,15 @@ class TilingEngine {
     ctx.currentSurfaces.forEach((srf) => {
       const layout = this.layouts.getCurrentLayout(srf);
       if (layout.refreshOverlays)
-        layout.refreshOverlays(new EngineContext(ctx, this));
+        layout.refreshOverlays(
+          new EngineContext(
+            ctx,
+            this,
+            TilingEngine.hasFullscreenWindow(
+              this.windows.getVisibleWindows(srf),
+            ),
+          ),
+        );
     });
     ctx.flushOverlays();
   }
