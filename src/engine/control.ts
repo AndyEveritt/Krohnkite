@@ -12,6 +12,25 @@
  * In short, this class is just a bunch of event handling methods.
  */
 
+/**
+ * The shortcuts whose whole job is to move the focus elsewhere. Matched after
+ * `onShortcut`'s meta and dwm remapping, so the aliases are resolved by then.
+ */
+const FOCUS_SHORTCUTS: Shortcut[] = [
+  Shortcut.FocusNext,
+  Shortcut.FocusPrev,
+  Shortcut.FocusUp,
+  Shortcut.FocusDown,
+  Shortcut.FocusLeft,
+  Shortcut.FocusRight,
+  Shortcut.MetaFocusUp,
+  Shortcut.MetaFocusDown,
+  Shortcut.MetaFocusLeft,
+  Shortcut.MetaFocusRight,
+  Shortcut.DWMLeft,
+  Shortcut.DWMRight,
+];
+
 class TilingController {
   public engine: TilingEngine;
   private isDragging: boolean;
@@ -366,6 +385,14 @@ class TilingController {
       }
     }
 
+    /* Looking somewhere else ends whatever the layout's commands were aimed
+     * at - a group selection outlives the pane it started from, so it has to
+     * be dropped here rather than left for the layout to notice. Done before
+     * the focus actually moves, so the layout still sees where it came from. */
+    const selectionCleared =
+      FOCUS_SHORTCUTS.indexOf(input) >= 0 &&
+      this.engine.clearLayoutSelection(ctx);
+
     let currentCapacity: number | null;
     const window = ctx.currentWindow;
     if (
@@ -395,32 +422,34 @@ class TilingController {
     }
 
     switch (input) {
+      /* Focusing needs no re-tiling of its own, but a dropped selection has
+       * an outline still on screen, and only an arrange takes it down. */
       case Shortcut.FocusNext:
         this.engine.focusOrder(ctx, +1);
-        isArrangeNeeded = false;
+        isArrangeNeeded = selectionCleared;
         break;
       case Shortcut.FocusPrev:
         this.engine.focusOrder(ctx, -1);
-        isArrangeNeeded = false;
+        isArrangeNeeded = selectionCleared;
         break;
 
       case Shortcut.MetaFocusUp:
       case Shortcut.FocusUp:
-        isArrangeNeeded = this.engine.focusDir(ctx, "up");
+        isArrangeNeeded = this.engine.focusDir(ctx, "up") || selectionCleared;
         break;
       case Shortcut.MetaFocusDown:
       case Shortcut.FocusDown:
-        isArrangeNeeded = this.engine.focusDir(ctx, "down");
+        isArrangeNeeded = this.engine.focusDir(ctx, "down") || selectionCleared;
         break;
       case Shortcut.MetaFocusLeft:
       case Shortcut.DWMLeft:
       case Shortcut.FocusLeft:
-        isArrangeNeeded = this.engine.focusDir(ctx, "left");
+        isArrangeNeeded = this.engine.focusDir(ctx, "left") || selectionCleared;
         break;
       case Shortcut.MetaFocusRight:
       case Shortcut.DWMRight:
       case Shortcut.FocusRight:
-        isArrangeNeeded = this.engine.focusDir(ctx, "right");
+        isArrangeNeeded = this.engine.focusDir(ctx, "right") || selectionCleared;
         break;
 
       case Shortcut.GrowWidth:

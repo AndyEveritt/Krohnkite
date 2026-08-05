@@ -378,6 +378,15 @@ interface ILayout {
     gap: number,
   ): void;
   handleShortcut?(ctx: EngineContext, input: Shortcut, data?: any): boolean;
+  /**
+   * Drop whatever the layout's commands are currently aimed at, because the
+   * user is about to look somewhere else. Called by the controller on the
+   * focus shortcuts, ahead of the focus change itself.
+   *
+   * @returns true if that changed anything the user can see, so the caller
+   * knows an arrange is worth it.
+   */
+  clearSelection?(): boolean;
   drag?(
     ctx: EngineContext,
     draggingRect: Rect,

@@ -281,6 +281,19 @@ function createWorld(options) {
       return consumed;
     },
 
+    /**
+     * Models TilingController.onShortcut's handling of the focus keys: the
+     * layout is told to drop its selection before the focus moves.
+     *
+     * @returns true if that was worth an arrange, as the controller uses it.
+     */
+    focusShortcut(id) {
+      const cleared = layout.clearSelection();
+      world.focus(id);
+      if (cleared) world.apply();
+      return cleared;
+    },
+
     /** Move the mouse over a point mid-drag, as onWindowDragging would. */
     drag(id, point) {
       ctx.cursorPos = point;

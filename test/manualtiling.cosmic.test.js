@@ -251,6 +251,40 @@ test("the selection is dropped as soon as focus leaves it", (t) => {
   );
 });
 
+test("a focus shortcut clears the selection, even inside the group", (t) => {
+  const world = createWorld();
+  world.open("A");
+  world.apply();
+  world.open("B");
+  world.apply();
+  world.open("C");
+  world.apply();
+
+  world.focus("C");
+  world.shortcut("GroupGrow", true);
+  assert.notStrictEqual(world.overlays().outline, null, "B and C are outlined");
+
+  /* B is inside the selection, so the outline would survive focus moving
+     there - the focus key is what ends it. */
+  assert.strictEqual(
+    world.focusShortcut("B"),
+    true,
+    "dropping a group is worth an arrange",
+  );
+  assert.strictEqual(world.overlays().outline, null);
+  assert.strictEqual(
+    world.shortcut("GroupShrink"),
+    false,
+    "the selection is back to B's own pane",
+  );
+
+  assert.strictEqual(
+    world.focusShortcut("A"),
+    false,
+    "with no group up there is nothing to redraw",
+  );
+});
+
 test("the group key selects a stack before the split around it", (t) => {
   const world = createWorld();
   world.open("A");

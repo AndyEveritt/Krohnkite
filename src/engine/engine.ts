@@ -1172,6 +1172,19 @@ class TilingEngine {
     return false;
   }
   /**
+   * Tell the current layout that focus is about to move, so it can drop any
+   * selection it is holding.
+   *
+   * @returns True if that changed something drawn, so the caller should
+   * arrange even when the focus change itself needs no re-tiling.
+   */
+  public clearLayoutSelection(ctx: IDriverContext): boolean {
+    const layout = this.layouts.getCurrentLayout(ctx.currentSurface);
+    if (layout.clearSelection) return layout.clearSelection();
+    return false;
+  }
+
+  /**
    * Let the docked window override shortcut.
    *
    * @returns True if the layout overrides the shortcut. False, otherwise.

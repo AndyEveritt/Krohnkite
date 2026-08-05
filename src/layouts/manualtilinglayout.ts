@@ -529,6 +529,23 @@ class ManualTilingLayout implements ILayout {
     }
   }
 
+  /**
+   * Forget the selection, because focus is moving.
+   *
+   * A group is a deliberate, temporary aim - "these panes, for the next
+   * command" - so wandering off with the focus keys ends it, even when focus
+   * lands on another member of the same group. _renderOverlays only drops a
+   * selection focus has left entirely, which would keep the group alive for
+   * moves the user has stopped thinking about.
+   */
+  public clearSelection(): boolean {
+    /* Only a group is worth an arrange: a single-pane selection draws nothing
+     * of its own and _currentSelection rebuilds it from focus anyway. */
+    const wasGroup = this._hasGroup();
+    this._select(null, false);
+    return wasGroup;
+  }
+
   public toString(): string {
     return `ManualTilingLayout(${this._describe(this.root)})`;
   }
