@@ -429,15 +429,15 @@ test("move rule 1: a split across the way you are going turns to face it", (t) =
     C: [960, 0, 480, 1080],
     B: [1440, 0, 480, 1080],
   });
-  assert.deepStrictEqual(
+  assert.strictEqual(
     world.overlays().drop,
-    [960, 0, 480, 1080],
-    "and the preview flashes where it landed",
+    null,
+    "the pane itself is not flashed - KWin already borders the focused window",
   );
   assert.deepStrictEqual(
     world.overlays().group,
     [960, 0, 960, 1080],
-    "with the group it landed in outlined around it",
+    "only the group it landed in is highlighted",
   );
   assert.deepStrictEqual(findViolations(world), []);
 });
@@ -453,15 +453,11 @@ test("a move that joins a group outlines the group it became part of", (t) => {
     world.tree(),
     "ManualTilingLayout(V:0.33,0.33,0.33[B,A,C])",
   );
-  assert.deepStrictEqual(
-    world.overlays().drop,
-    [0, 360, 1920, 360],
-    "the flash is A's new pane",
-  );
+  assert.strictEqual(world.overlays().drop, null);
   assert.deepStrictEqual(
     world.overlays().group,
     [0, 0, 1920, 1080],
-    "and the outline is the column it is now one of, not just that pane",
+    "the highlight is the column it is now one of, not just its own pane",
   );
   assert.deepStrictEqual(findViolations(world), []);
 });

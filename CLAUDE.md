@@ -157,8 +157,9 @@ Layers, outermost first:
    `popupDialog` uses; declare any new one in [src/extern/global.d.ts](src/extern/global.d.ts).
    `dropindicator.qml` is loaded three times: once filled as the drop indicator,
    once hollow as the group-selection outline (`selectionOutline`), and once
-   hollow as `groupIndicator`, flashed around the group a window has just been
-   moved into. Separate overlays because more than one can be up at once.
+   filled as `groupIndicator`, flashed over the group a window has just been
+   moved into (the moved window itself is not flashed - KWin already borders
+   the focused window). Separate overlays because more than one can be up at once.
    Overlays that outlive a single call — the stack bars and the selection
    outline — are collected per arrange: `TilingEngine.arrange` calls
    `beginOverlays` / `flushOverlays` around the surface loop and each layout

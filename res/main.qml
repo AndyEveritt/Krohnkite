@@ -71,10 +71,10 @@ Item {
         }
     }
 
-    /* Same component again, hollow and short-lived: it flashes around the
-     * group a window has just been moved into. Separate from the selection
-     * outline because both can be up at once - the moved window's group is not
-     * always the group the commands are aimed at. */
+    /* Same component again, filled and short-lived: it flashes over the group
+     * a window has just been moved into. Separate from the selection outline
+     * because both can be up at once - the moved window's group is not always
+     * the group the commands are aimed at. */
     Loader {
         id: groupIndicator
         source: "dropindicator.qml"

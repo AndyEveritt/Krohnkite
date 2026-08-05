@@ -646,10 +646,10 @@ class KWinDriver implements IDriverContext {
   }
 
   /**
-   * Outline the group a window has just been moved into. Hollow, because the
-   * group is already on screen - filling it would wash out the very windows it
-   * is meant to point at - and on its own overlay, so it can sit inside the
-   * drop indicator's flash without either replacing the other.
+   * Highlight the group a window has just been moved into: outlined and
+   * washed over, the same as a drop target, so a move that lands in a group
+   * reaching well beyond the window itself is obvious. On its own overlay
+   * rather than the drop indicator's, since a drag can have both up at once.
    */
   public showGroupIndicator(rect: Rect, duration?: number): void {
     groupIndicator.showAt(
@@ -658,7 +658,7 @@ class KWinDriver implements IDriverContext {
       rect.width,
       rect.height,
       duration !== undefined ? duration : 0,
-      false,
+      true,
       CONFIG.overlayColor,
     );
   }

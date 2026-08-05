@@ -264,7 +264,7 @@ class ManualTilingLayout implements ILayout {
    * Where it landed isn't known until the next render, which is why this is
    * held rather than drawn.
    */
-  private pendingPreview: { node: MTTree; pane: boolean } | null;
+  private pendingPreview: { node: MTTree } | null;
 
   constructor(capacity?: number | null) {
     this.capacity = capacity !== undefined ? capacity : null;
@@ -389,22 +389,21 @@ class ManualTilingLayout implements ILayout {
 
     const preview = this.pendingPreview;
     this.pendingPreview = null;
-    if (preview !== null) this._flashMove(ctx, preview.node, preview.pane);
+    if (preview !== null) this._flashMove(ctx, preview.node);
   }
 
   /**
-   * Flash where a move landed and outline the group it landed in.
+   * Flash the group a move landed in.
    *
-   * The two are separate overlays because they say different things: the fill
-   * is the pane the window now has, the outline is the split or stack it has
-   * become a member of - which is the part a move through the tree makes hard
-   * to see, since the window can end up next to panes it has nothing to do
-   * with and inside a group that reaches well beyond it.
+   * Only the group, not the pane the window itself ended up in: KWin already
+   * draws a border around the focused window, so flashing it again says
+   * nothing. The group is the part a move through the tree makes hard to see,
+   * since the window can end up next to panes it has nothing to do with and
+   * inside a split or stack that reaches well beyond it.
    */
-  private _flashMove(ctx: EngineContext, moved: MTTree, pane: boolean): void {
+  private _flashMove(ctx: EngineContext, moved: MTTree): void {
     const landed = this._landedNode(moved);
     if (landed === null || landed.rect === null) return;
-    if (pane) ctx.showDropIndicator(landed.rect, MT_PREVIEW_DURATION);
 
     const group = this._groupAround(landed);
     if (group !== null && group.rect !== null)
@@ -780,18 +779,9 @@ class ManualTilingLayout implements ILayout {
     return true;
   }
 
-  /**
-   * Flash where a move landed, once the next render knows where that is.
-   *
-   * @param pane whether the pane itself is flashed as well as the group it
-   * landed in. False for a drop, which has been showing that pane under the
-   * cursor for the whole drag already.
-   */
-  private _preview(moved: MTTree, pane?: boolean): void {
-    this.pendingPreview = {
-      node: moved,
-      pane: pane === undefined ? true : pane,
-    };
+  /** Flash where a move landed, once the next render knows where that is. */
+  private _preview(moved: MTTree): void {
+    this.pendingPreview = { node: moved };
   }
 
   /** The next pane of a split that is actually on screen, in a direction. */
@@ -1357,7 +1347,7 @@ class ManualTilingLayout implements ILayout {
       target.leaf.isStack = true;
       target.leaf.add(window.id);
       this._cleanup();
-      this._preview(target.leaf, false);
+      this._preview(target.leaf);
       return true;
     }
 
@@ -1374,7 +1364,7 @@ class ManualTilingLayout implements ILayout {
     if (place !== null && place.parent.orientation === axis) {
       place.parent.insert(moved, movedFirst ? place.index : place.index + 1);
       this._cleanup();
-      this._preview(moved, false);
+      this._preview(moved);
       return true;
     }
 
@@ -1386,7 +1376,7 @@ class ManualTilingLayout implements ILayout {
       ),
     );
     this._cleanup();
-    if (replaced) this._preview(moved, false);
+    if (replaced) this._preview(moved);
     return replaced;
   }
 
