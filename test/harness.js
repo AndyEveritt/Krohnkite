@@ -282,6 +282,20 @@ function createWorld(options) {
     },
 
     /**
+     * Models TilingController.onWindowFocused: KWin has focused a window
+     * without Krohnkite asking, and the layout decides whether that leaves an
+     * overlay stale. Nothing else arranges on a bare focus change.
+     *
+     * @returns true if it asked for an arrange, as the controller uses it.
+     */
+    externalFocus(id) {
+      world.focus(id);
+      const stale = layout.focusChanged(id);
+      if (stale) world.apply();
+      return stale;
+    },
+
+    /**
      * Models TilingController.onShortcut's handling of the focus keys: the
      * layout is told to drop its selection before the focus moves.
      *

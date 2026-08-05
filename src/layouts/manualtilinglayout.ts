@@ -551,6 +551,34 @@ class ManualTilingLayout implements ILayout {
     return wasGroup;
   }
 
+  /**
+   * Whether a focus change that came from outside - a click, Alt+Tab, an
+   * application raising its own window - has left an overlay stale.
+   *
+   * `apply` keeps the tab strip and the group outline in step with the focus,
+   * but nothing arranges on a bare focus change, so without this a window
+   * raised behind another tab of its own stack goes on showing whichever tab
+   * was active before.
+   */
+  public focusChanged(windowId: string): boolean {
+    const leaf = this._findLeaf(windowId);
+    if (leaf === null) return false;
+
+    /* The stack it belongs to is showing somebody else as the active tab. */
+    if (
+      leaf.renderedIds.length > 1 &&
+      leaf.renderedIds.indexOf(windowId) >= 0 &&
+      leaf.activeId !== windowId
+    )
+      return true;
+
+    /* Focus has left the outlined group, which _renderOverlays takes down. */
+    const selection = this.selection;
+    return (
+      this._hasGroup() && selection !== null && !this._contains(selection, leaf)
+    );
+  }
+
   public toString(): string {
     return `ManualTilingLayout(${this._describe(this.root)})`;
   }
@@ -1189,8 +1217,7 @@ class ManualTilingLayout implements ILayout {
 
     /* One step down is still a group if it is a split, or a stack - a stack
      * holds more than one window however far down it sits. */
-    const stillAGroup =
-      next instanceof MTNode || next.renderedIds.length > 1;
+    const stillAGroup = next instanceof MTNode || next.renderedIds.length > 1;
     this._select(next, stillAGroup);
     this._announceSelection(ctx, next);
     return true;
@@ -1450,7 +1477,12 @@ class ManualTilingLayout implements ILayout {
   private _dropZone(rect: Rect, [x, y]: [number, number]): MTDropZone {
     const horizontal = (x - rect.x) / rect.width;
     const vertical = (y - rect.y) / rect.height;
-    const nearest = Math.min(horizontal, 1 - horizontal, vertical, 1 - vertical);
+    const nearest = Math.min(
+      horizontal,
+      1 - horizontal,
+      vertical,
+      1 - vertical,
+    );
     if (nearest > MT_DROP_EDGE) return "center";
     if (nearest === horizontal) return "left";
     if (nearest === 1 - horizontal) return "right";
@@ -1863,9 +1895,7 @@ class ManualTilingLayout implements ILayout {
     if (deficit === 0) return lengths;
 
     /* Take the shortfall from the panes with the most to spare first. */
-    const order = lengths
-      .map((_, i) => i)
-      .sort((a, b) => slack[b] - slack[a]);
+    const order = lengths.map((_, i) => i).sort((a, b) => slack[b] - slack[a]);
     for (const i of order) {
       if (deficit === 0) break;
       const take = Math.min(slack[i], deficit);
@@ -2078,9 +2108,7 @@ class ManualTilingLayout implements ILayout {
     if (this.root instanceof MTNode && this.root.length === 0) this.root = null;
   }
 
-  private _collapseOnce(
-    tree: MTTree,
-  ): { node: MTNode; child: MTTree } | null {
+  private _collapseOnce(tree: MTTree): { node: MTNode; child: MTTree } | null {
     if (tree instanceof MTLeaf) return null;
     if (tree.length === 1) return { node: tree, child: tree.children[0] };
     for (const child of tree.children) {
@@ -2101,9 +2129,9 @@ class ManualTilingLayout implements ILayout {
     const total = tree.weights.reduce((sum, weight) => sum + weight, 0);
     /* Two panes are described by the first one's share, as they always have
      * been; more than two need all of them. */
-    const shares = (
-      tree.length === 2 ? [tree.weights[0]] : tree.weights
-    ).map((weight) => (total > 0 ? weight / total : 0).toFixed(2));
+    const shares = (tree.length === 2 ? [tree.weights[0]] : tree.weights).map(
+      (weight) => (total > 0 ? weight / total : 0).toFixed(2),
+    );
     const children = tree.children.map((child) => this._describe(child));
     return `${axis}:${shares.join(",")}[${children.join(",")}]`;
   }

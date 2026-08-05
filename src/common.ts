@@ -389,6 +389,15 @@ interface ILayout {
    * knows an arrange is worth it.
    */
   clearSelection?(): boolean;
+  /**
+   * Something outside Krohnkite has focused a window - a click, Alt+Tab, or an
+   * application raising one of its own.
+   *
+   * @returns true if the layout draws something that is now out of date, so
+   * the caller knows to arrange. Layouts that draw nothing per-focus say
+   * nothing here: focusing is not a reason to re-tile on its own.
+   */
+  focusChanged?(windowId: string): boolean;
   drag?(
     ctx: EngineContext,
     draggingRect: Rect,

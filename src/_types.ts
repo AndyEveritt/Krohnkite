@@ -47,6 +47,7 @@ const ArrangeReason = {
   shortcutLayoutCB: "shortcutLayoutCB",
   migrateGroup: "migrateGroup",
   stackBarCB: "stackBarCB",
+  windowFocusedCB: "windowFocusedCB",
 };
 type ArrangeReason = (typeof ArrangeReason)[keyof typeof ArrangeReason];
 

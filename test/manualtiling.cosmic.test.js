@@ -159,6 +159,55 @@ test("cycling a stack raises and focuses the next member", (t) => {
   assert.strictEqual(plain.shortcut("StackNext"), false);
 });
 
+test("a stack raised from outside redraws its strip", (t) => {
+  const world = createWorld();
+  world.open("A");
+  world.apply();
+  world.shortcut("ToggleStack");
+  world.open("B");
+  world.apply();
+
+  const active = () =>
+    world.overlays().bars[0].tabs.filter((tab) => tab.active).map((t) => t.id);
+  assert.deepStrictEqual(active(), ["B"]);
+
+  /* An application raising its own window - a link opening a browser tab -
+     focuses A behind B's tab, and nothing else would re-tile. */
+  assert.strictEqual(world.externalFocus("A"), true);
+  assert.deepStrictEqual(active(), ["A"]);
+
+  assert.strictEqual(
+    world.externalFocus("A"),
+    false,
+    "focusing the tab already on top leaves nothing to redraw",
+  );
+
+  /* An ordinary pane draws no strip, so its focus changes cost nothing. */
+  const plain = pairWorld();
+  assert.strictEqual(plain.externalFocus("A"), false);
+});
+
+test("a group outlined when focus is taken away lets go of it", (t) => {
+  const world = createWorld();
+  world.open("A");
+  world.apply();
+  world.open("B");
+  world.apply();
+  world.open("C");
+  world.apply();
+
+  world.focus("C");
+  world.shortcut("GroupGrow", true);
+  assert.notStrictEqual(world.overlays().outline, null);
+
+  assert.strictEqual(
+    world.externalFocus("A"),
+    true,
+    "A is outside the group, so its outline is stale",
+  );
+  assert.strictEqual(world.overlays().outline, null);
+});
+
 test("moving a tab reorders the strip without changing the focus", (t) => {
   const world = createWorld();
   world.open("A");

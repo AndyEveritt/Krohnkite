@@ -1147,8 +1147,7 @@ class TilingEngine {
       if (!sameVDesktop) ctx.moveWindowsToVDesktop(followers, target.vDesktop);
 
       const destination = this.layouts.getCurrentLayout(target);
-      if (destination instanceof ManualTilingLayout)
-        destination.graft(subtree);
+      if (destination instanceof ManualTilingLayout) destination.graft(subtree);
 
       /* Sending a window to another output activates it once it lands, so the
        * last follower to arrive would otherwise end up with the focus. Put it
@@ -1181,6 +1180,21 @@ class TilingEngine {
   public clearLayoutSelection(ctx: IDriverContext): boolean {
     const layout = this.layouts.getCurrentLayout(ctx.currentSurface);
     if (layout.clearSelection) return layout.clearSelection();
+    return false;
+  }
+
+  /**
+   * Tell the layout a window was focused from outside.
+   *
+   * @returns True if that leaves something it draws out of date, so the
+   * caller should arrange.
+   */
+  public layoutFocusChanged(ctx: IDriverContext, window: WindowClass): boolean {
+    /* The window's own surface, not the current one: a click can focus a
+     * window on another output, and it is that output's layout drawing the
+     * strip in question. */
+    const layout = this.layouts.getCurrentLayout(window.surface);
+    if (layout.focusChanged) return layout.focusChanged(window.id);
     return false;
   }
 

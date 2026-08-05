@@ -301,10 +301,7 @@ class TilingController {
       if (comment === "unminimized") ctx.currentWindow = window;
       /* KWin's own "one screen/desktop to the left" shortcuts land here. When
        * a group is selected the layout hands the rest of it over to follow. */
-      if (
-        reason === "outputChangedCB" ||
-        reason === "windowDesktopsChangedCB"
-      )
+      if (reason === "outputChangedCB" || reason === "windowDesktopsChangedCB")
         this.engine.followGroupMove(ctx, window);
       const workingArea = window.surface.workingArea;
       if (window.floatGeometry.width > workingArea.width) {
@@ -327,6 +324,13 @@ class TilingController {
 
   public onWindowFocused(ctx: IDriverContext, window: WindowClass) {
     window.focusTime = getTime();
+
+    /* Focus arriving from outside - a click, Alt+Tab, an application raising
+     * one of its own windows - re-tiles nothing, so nothing would redraw the
+     * overlays that follow the focus. Arrange only when the layout says one
+     * of them is now wrong, or every focus change would cost a full pass. */
+    if (this.engine.layoutFocusChanged(ctx, window))
+      this.engine.arrange(ctx, "windowFocusedCB", getMethodName());
   }
 
   public onDesktopsChanged(ctx: IDriverContext, window: WindowClass) {
@@ -449,7 +453,8 @@ class TilingController {
       case Shortcut.MetaFocusRight:
       case Shortcut.DWMRight:
       case Shortcut.FocusRight:
-        isArrangeNeeded = this.engine.focusDir(ctx, "right") || selectionCleared;
+        isArrangeNeeded =
+          this.engine.focusDir(ctx, "right") || selectionCleared;
         break;
 
       case Shortcut.GrowWidth:
