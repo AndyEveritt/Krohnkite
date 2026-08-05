@@ -284,14 +284,15 @@ function createWorld(options) {
     /**
      * Models TilingController.onWindowFocused: KWin has focused a window
      * without Krohnkite asking, and the layout decides whether that leaves an
-     * overlay stale. Nothing else arranges on a bare focus change.
+     * overlay stale. Redrawing them is all that happens - no arrange, so no
+     * window is committed.
      *
-     * @returns true if it asked for an arrange, as the controller uses it.
+     * @returns true if it asked for a redraw, as the controller uses it.
      */
     externalFocus(id) {
       world.focus(id);
       const stale = layout.focusChanged(id);
-      if (stale) world.apply();
+      if (stale) layout.refreshOverlays(ctx);
       return stale;
     },
 

@@ -1187,7 +1187,7 @@ class TilingEngine {
    * Tell the layout a window was focused from outside.
    *
    * @returns True if that leaves something it draws out of date, so the
-   * caller should arrange.
+   * caller should redraw the overlays.
    */
   public layoutFocusChanged(ctx: IDriverContext, window: WindowClass): boolean {
     /* The window's own surface, not the current one: a click can focus a
@@ -1196,6 +1196,24 @@ class TilingEngine {
     const layout = this.layouts.getCurrentLayout(window.surface);
     if (layout.focusChanged) return layout.focusChanged(window.id);
     return false;
+  }
+
+  /**
+   * Redraw what the layouts draw on top of the tiles, without re-tiling.
+   *
+   * The same begin/flush cycle `arrange` runs, and for the same reason: every
+   * layout on screen re-registers, so one that no longer draws anything stops
+   * being drawn. What it does not do is touch a single window - no geometry
+   * goes to KWin, so nothing on screen moves.
+   */
+  public refreshOverlays(ctx: IDriverContext): void {
+    ctx.beginOverlays();
+    ctx.currentSurfaces.forEach((srf) => {
+      const layout = this.layouts.getCurrentLayout(srf);
+      if (layout.refreshOverlays)
+        layout.refreshOverlays(new EngineContext(ctx, this));
+    });
+    ctx.flushOverlays();
   }
 
   /**

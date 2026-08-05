@@ -338,6 +338,18 @@ class ManualTilingLayout implements ILayout {
       if (!placed.has(tileable.id)) tileable.state = WindowState.Floating;
     });
 
+    this.refreshOverlays(ctx);
+  }
+
+  /**
+   * Re-register everything this layout draws, from the last render.
+   *
+   * Split out of `apply` so a focus change can redraw the overlays without an
+   * arrange: re-tiling would commit every window's geometry to KWin again,
+   * which is both pointless when nothing has moved and visible as a flicker.
+   * Everything here reads the rects the last render left on the tree.
+   */
+  public refreshOverlays(ctx: EngineContext): void {
     /* The tab on top is whichever member has the focus. A stack raises no
      * windows of its own - they all share the pane, and the one KWin last
      * activated is the one on show - so the strip has to follow focus rather

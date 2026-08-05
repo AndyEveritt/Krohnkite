@@ -173,8 +173,14 @@ test("a stack raised from outside redraws its strip", (t) => {
 
   /* An application raising its own window - a link opening a browser tab -
      focuses A behind B's tab, and nothing else would re-tile. */
+  const before = world.snapshot();
   assert.strictEqual(world.externalFocus("A"), true);
   assert.deepStrictEqual(active(), ["A"]);
+  assert.deepStrictEqual(
+    world.snapshot(),
+    before,
+    "only the overlay is redrawn - no window is re-tiled",
+  );
 
   assert.strictEqual(
     world.externalFocus("A"),

@@ -398,6 +398,12 @@ interface ILayout {
    * nothing here: focusing is not a reason to re-tile on its own.
    */
   focusChanged?(windowId: string): boolean;
+  /**
+   * Re-register the layout's overlays from its last render, without touching
+   * any window. Called instead of an arrange when only what is drawn on top
+   * of the tiles has gone stale.
+   */
+  refreshOverlays?(ctx: EngineContext): void;
   drag?(
     ctx: EngineContext,
     draggingRect: Rect,

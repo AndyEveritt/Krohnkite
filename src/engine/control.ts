@@ -327,10 +327,11 @@ class TilingController {
 
     /* Focus arriving from outside - a click, Alt+Tab, an application raising
      * one of its own windows - re-tiles nothing, so nothing would redraw the
-     * overlays that follow the focus. Arrange only when the layout says one
-     * of them is now wrong, or every focus change would cost a full pass. */
+     * overlays that follow the focus. Redraw them alone rather than arranging:
+     * an arrange commits every window's geometry to KWin again, and that is
+     * visible as a flicker even when the numbers are unchanged. */
     if (this.engine.layoutFocusChanged(ctx, window))
-      this.engine.arrange(ctx, "windowFocusedCB", getMethodName());
+      this.engine.refreshOverlays(ctx);
   }
 
   public onDesktopsChanged(ctx: IDriverContext, window: WindowClass) {
