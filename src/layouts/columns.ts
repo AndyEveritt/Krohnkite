@@ -11,7 +11,7 @@ class ColumnsLayout implements ILayout {
   public readonly capacity?: number | null;
   private direction: windRose;
   private _columns: ColumnLayout[];
-  private columnsConfiguration: number[] | null;
+  private _columnsConfiguration: number[] | null;
 
   public get description(): string {
     return "Columns";
@@ -21,12 +21,17 @@ class ColumnsLayout implements ILayout {
     return this._columns;
   }
 
+  public get columnsConfiguration(): number[] {
+    if (this._columnsConfiguration === null) return [];
+    return this._columnsConfiguration;
+  }
+
   constructor(capacity?: number | null) {
     this.capacity = capacity !== undefined ? capacity : null;
     this.parts = [new ColumnLayout()];
     this._columns = [];
     this.direction = new windRose(CONFIG.columnsLayoutInitialAngle);
-    this.columnsConfiguration = null;
+    this._columnsConfiguration = null;
   }
 
   public adjust(
@@ -86,8 +91,8 @@ class ColumnsLayout implements ILayout {
     area: Rect,
     gap: number,
   ): void {
-    if (this.columnsConfiguration === null)
-      this.columnsConfiguration = this.getDefaultConfig(ctx);
+    if (this._columnsConfiguration === null)
+      this._columnsConfiguration = this.getDefaultConfig(ctx);
     this.arrangeTileables(ctx, tileables);
     if (this.columns.length === 0) return;
     let weights: Array<number>;
@@ -157,7 +162,7 @@ class ColumnsLayout implements ILayout {
       let column: ColumnLayout;
       if (
         CONFIG.columnsLimitColumns &&
-        this.columnsConfiguration &&
+        this.columnsConfiguration.length > 0 &&
         this.parts.length >= this.columnsConfiguration.length
       ) {
         column = this.parts[0];
@@ -191,7 +196,7 @@ class ColumnsLayout implements ILayout {
       let column: ColumnLayout;
       if (
         CONFIG.columnsLimitColumns &&
-        this.columnsConfiguration &&
+        this.columnsConfiguration.length > 0 &&
         this.parts.length >= this.columnsConfiguration.length
       ) {
         column = this.parts[this.parts.length - 1];
@@ -315,7 +320,7 @@ class ColumnsLayout implements ILayout {
       : this.columns.length;
 
     if (
-      this.columnsConfiguration !== null &&
+      this.columnsConfiguration.length > 0 &&
       tileableIds.size > 0 &&
       newWindows.length > 0 &&
       this.columnsConfiguration.length > colsLength
@@ -383,7 +388,10 @@ class ColumnsLayout implements ILayout {
    * Adjusts column weights to follow the user given configuration.
    */
   private applyColumnWeights() {
-    if (this.columnsConfiguration && this.columnsConfiguration[0] !== 0) {
+    if (
+      this.columnsConfiguration.length > 0 &&
+      this.columnsConfiguration[0] !== 0
+    ) {
       const columnsList = CONFIG.columnsLimitColumns
         ? this.parts
         : this.columns;
@@ -404,11 +412,11 @@ class ColumnsLayout implements ILayout {
     const currentWindow = ctx.currentWindow;
     const currentWindowId = currentWindow !== null ? currentWindow.id : null;
     const activeColumnId =
-      CONFIG.columnsLimitColumns && this.columnsConfiguration
+      CONFIG.columnsLimitColumns && this.columnsConfiguration.length > 0
         ? this.getPartsId(currentWindowId)
         : this.getColumnId(currentWindowId);
     const columnList =
-      CONFIG.columnsLimitColumns && this.columnsConfiguration
+      CONFIG.columnsLimitColumns && this.columnsConfiguration.length > 0
         ? this.parts
         : this.columns;
 
@@ -418,11 +426,12 @@ class ColumnsLayout implements ILayout {
       activeColumnId === null ||
       (columnList[activeColumnId].windowIds.size < 2 &&
         (activeColumnId === columnList.length - 1 || columnList.length < 2)) ||
-      (this.columnsConfiguration &&
+      (this.columnsConfiguration.length > 0 &&
         activeColumnId === columnList.length - 1 &&
         columnList.length >= this.columnsConfiguration.length)
-    )
+    ) {
       return false;
+    }
 
     let targetColumn: ColumnLayout;
     const column = columnList[activeColumnId];
@@ -459,11 +468,11 @@ class ColumnsLayout implements ILayout {
     const currentWindow = ctx.currentWindow;
     const currentWindowId = currentWindow !== null ? currentWindow.id : null;
     const activeColumnId =
-      CONFIG.columnsLimitColumns && this.columnsConfiguration
+      CONFIG.columnsLimitColumns && this.columnsConfiguration.length > 0
         ? this.getPartsId(currentWindowId)
         : this.getColumnId(currentWindowId);
     const columnList =
-      CONFIG.columnsLimitColumns && this.columnsConfiguration
+      CONFIG.columnsLimitColumns && this.columnsConfiguration.length > 0
         ? this.parts
         : this.columns;
 
@@ -473,11 +482,12 @@ class ColumnsLayout implements ILayout {
       activeColumnId === null ||
       (columnList[activeColumnId].windowIds.size < 2 &&
         (activeColumnId === 0 || columnList.length < 2)) ||
-      (this.columnsConfiguration &&
+      (this.columnsConfiguration.length > 0 &&
         activeColumnId === 0 &&
         columnList.length >= this.columnsConfiguration.length)
-    )
+    ) {
       return false;
+    }
 
     let targetColumn: ColumnLayout;
     const column = columnList[activeColumnId];
