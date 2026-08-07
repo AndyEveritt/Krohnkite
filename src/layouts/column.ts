@@ -4,12 +4,9 @@
     SPDX-License-Identifier: MIT
 */
 
-type positionType = "single" | "left" | "middle" | "right";
-
 class ColumnLayout implements ILayout {
   public static readonly id = "Column";
   public readonly classID = ColumnLayout.id;
-  public position: positionType;
   public windowIds: Set<string>;
   public renderedWindowsIds: Array<string>;
   public renderedWindowsRects: Array<Rect>;
@@ -29,7 +26,6 @@ class ColumnLayout implements ILayout {
   }
 
   constructor() {
-    this.position = "single";
     this.weight = 1.0;
     this.parts = new RotateLayoutPart(new StackLayoutPart());
     this.windowIds = new Set();

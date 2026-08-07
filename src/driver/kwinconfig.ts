@@ -47,6 +47,8 @@ class KWinConfig implements IConfig {
   public columnsLayoutInitialAngle: string;
   public columnsBalanced: boolean;
   public columnsLayerConf: string[];
+  public columnsApplyConfOnNewColumns: boolean;
+  public columnsLimitColumns: boolean;
   public stairReverse: boolean;
   public layoutOrder: string[];
   public layoutFactories: { [key: string]: () => ILayout };
@@ -174,6 +176,11 @@ class KWinConfig implements IConfig {
       KWIN.readConfig("columnsLayerConf", ""),
       ",",
     );
+    this.columnsApplyConfOnNewColumns = KWIN.readConfig(
+      "columnsApplyConfOnNewColumns",
+      false,
+    );
+    this.columnsLimitColumns = KWIN.readConfig("columnsLimitColumns", false);
     this.stairReverse = KWIN.readConfig("stairReverse", false);
 
     const layoutsList = [
