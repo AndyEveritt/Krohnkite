@@ -95,6 +95,14 @@
 	    <label>Columns layout default configuration.</label>
         <default></default>
     </entry>
+    <entry name="columnsApplyConfOnNewColumns" type="Bool">
+	    <label>Apply the "Config" to newly added columns.</label>
+        <default>false</default>
+    </entry>
+    <entry name="columnsLimitColumns" type="Bool">
+	    <label>Limit the maximum number of columns in the columns layout according to the "Config".</label>
+        <default>false</default>
+    </entry>
 
     <entry name="spreadLayoutOrder" type="Int">
 	    <label> Spread layout order</label>

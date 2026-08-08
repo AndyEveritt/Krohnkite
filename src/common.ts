@@ -80,6 +80,8 @@ interface IConfig {
   columnsLayoutInitialAngle: string;
   columnsBalanced: boolean;
   columnsLayerConf: string[];
+  columnsApplyConfOnNewColumns: boolean;
+  columnsLimitColumns: boolean;
   stairReverse: boolean;
   layoutOrder: string[];
   layoutFactories: { [key: string]: () => ILayout };

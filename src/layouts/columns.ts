@@ -11,7 +11,7 @@ class ColumnsLayout implements ILayout {
   public readonly capacity?: number | null;
   private direction: windRose;
   private _columns: ColumnLayout[];
-  private columnsConfiguration: number[] | null;
+  private _columnsConfiguration: number[] | null;
 
   public get description(): string {
     return "Columns";
@@ -21,12 +21,17 @@ class ColumnsLayout implements ILayout {
     return this._columns;
   }
 
+  public get columnsConfiguration(): number[] {
+    if (this._columnsConfiguration === null) return [];
+    return this._columnsConfiguration;
+  }
+
   constructor(capacity?: number | null) {
     this.capacity = capacity !== undefined ? capacity : null;
     this.parts = [new ColumnLayout()];
     this._columns = [];
     this.direction = new windRose(CONFIG.columnsLayoutInitialAngle);
-    this.columnsConfiguration = null;
+    this._columnsConfiguration = null;
   }
 
   public adjust(
@@ -86,8 +91,8 @@ class ColumnsLayout implements ILayout {
     area: Rect,
     gap: number,
   ): void {
-    if (this.columnsConfiguration === null)
-      this.columnsConfiguration = this.getDefaultConfig(ctx);
+    if (this._columnsConfiguration === null)
+      this._columnsConfiguration = this.getDefaultConfig(ctx);
     this.arrangeTileables(ctx, tileables);
     if (this.columns.length === 0) return;
     let weights: Array<number>;
@@ -134,11 +139,11 @@ class ColumnsLayout implements ILayout {
       (this.columns.length === 1 && this.columns[0].windowIds.size === 1)
     )
       return false;
-    let columnId = this.getColumnId(window);
-    let windowId = window.id;
+    const columnId = this.getColumnId(window);
+    const windowId = window.id;
 
     // Handle drag to the primary edge of the screen
-    // Creates a new column at the beginning and moves the window to it
+    // Creates a new column at the beginning or reuses a hidden one and moves the window to it
     if (
       ((this.direction.north &&
         workingArea.isTopZone(cursorOrActivationPoint)) ||
@@ -154,13 +159,25 @@ class ColumnsLayout implements ILayout {
       )
     ) {
       if (columnId !== null) this.columns[columnId].windowIds.delete(windowId);
-      const column = this.insertColumn(true);
+      let column: ColumnLayout;
+      if (
+        CONFIG.columnsLimitColumns &&
+        this.columnsConfiguration.length > 0 &&
+        this.parts.length >= this.columnsConfiguration.length
+      ) {
+        column = this.parts[0];
+      } else {
+        column = this.insertColumn(true);
+        if (CONFIG.columnsApplyConfOnNewColumns) {
+          this.applyColumnWeights();
+        }
+      }
       column.windowIds.add(windowId);
       return true;
     }
 
     // Handle drag to the secondary edge of the screen
-    // Creates a new column at the end and moves the window to it
+    // Creates a new column at the end or reuses a hidden one and moves the window to it
     if (
       ((this.direction.north &&
         workingArea.isBottomZone(cursorOrMiddlePoint)) ||
@@ -176,7 +193,19 @@ class ColumnsLayout implements ILayout {
       )
     ) {
       if (columnId !== null) this.columns[columnId].windowIds.delete(windowId);
-      const column = this.insertColumn(false);
+      let column: ColumnLayout;
+      if (
+        CONFIG.columnsLimitColumns &&
+        this.columnsConfiguration.length > 0 &&
+        this.parts.length >= this.columnsConfiguration.length
+      ) {
+        column = this.parts[this.parts.length - 1];
+      } else {
+        column = this.insertColumn(false);
+        if (CONFIG.columnsApplyConfOnNewColumns) {
+          this.applyColumnWeights();
+        }
+      }
       column.windowIds.add(windowId);
       return true;
     }
@@ -285,31 +314,28 @@ class ColumnsLayout implements ILayout {
       }
       tileableIds.add(tileable.id);
     });
+
+    const colsLength = CONFIG.columnsLimitColumns
+      ? this.parts.length
+      : this.columns.length;
+
     if (
-      this.columnsConfiguration !== null &&
+      this.columnsConfiguration.length > 0 &&
       tileableIds.size > 0 &&
       newWindows.length > 0 &&
-      this.columnsConfiguration.length > this.columns.length
+      this.columnsConfiguration.length > colsLength
     ) {
       let new_columns_length =
-        this.columnsConfiguration.length - this.columns.length >
-        newWindows.length
+        this.columnsConfiguration.length - colsLength > newWindows.length
           ? newWindows.length
-          : this.columnsConfiguration.length - this.columns.length;
+          : this.columnsConfiguration.length - colsLength;
       for (let i = 0; i < new_columns_length; i++) {
         let winId = newWindows.shift();
         if (winId === undefined) continue;
         let column = this.insertColumn(false);
         column.windowIds.add(winId);
       }
-      this.applyColumnsPosition();
-      if (this.columnsConfiguration[0] !== 0) {
-        let sumWeights = this.columnsConfiguration.reduce((a, b) => a + b, 0);
-        for (let i = 0; i < this.columns.length; i++) {
-          this.columns[i].weight =
-            (this.columnsConfiguration[i] / sumWeights) * this.columns.length;
-        }
-      }
+      this.applyColumnWeights();
     }
 
     if (CONFIG.columnsBalanced) {
@@ -334,24 +360,21 @@ class ColumnsLayout implements ILayout {
     this.applyColumnsPosition();
   }
 
-  private getColumnId(t: WindowClass): number | null {
-    for (var i = 0; i < this.columns.length; i++) {
-      if (this.columns[i].windowIds.has(t.id)) return i;
+  private getColumnId(t: WindowClass | string | null): number | null {
+    if (t !== null) {
+      const windowId = typeof t === "string" ? t : t.id;
+      for (let i = 0; i < this.columns.length; i++) {
+        if (this.columns[i].windowIds.has(windowId)) return i;
+      }
     }
     return null;
   }
 
-  private getPartsId(t: WindowClass): number | null {
-    for (var i = 0; i < this.parts.length; i++) {
-      if (this.parts[i].windowIds.has(t.id)) return i;
-    }
-    return null;
-  }
-
-  private getCurrentColumnId(currentWindowId: string | null): number | null {
-    if (currentWindowId !== null) {
-      for (const [i, column] of this.columns.entries()) {
-        if (column.windowIds.has(currentWindowId)) return i;
+  private getPartsId(t: WindowClass | string | null): number | null {
+    if (t !== null) {
+      const windowId = typeof t === "string" ? t : t.id;
+      for (let i = 0; i < this.parts.length; i++) {
+        if (this.parts[i].windowIds.has(windowId)) return i;
       }
     }
     return null;
@@ -359,14 +382,28 @@ class ColumnsLayout implements ILayout {
 
   private applyColumnsPosition() {
     this._columns = this.parts.filter((column) => !column.isEmpty());
-    const columnsLength = this.columns.length;
-    if (columnsLength === 1) {
-      this.columns[0].position = "single";
-    } else if (columnsLength > 1) {
-      this.columns[0].position = "left";
-      this.columns[columnsLength - 1].position = "right";
-      for (let i = 1; i < columnsLength - 1; i++) {
-        this.columns[i].position = "middle";
+  }
+
+  /**
+   * Adjusts column weights to follow the user given configuration.
+   */
+  private applyColumnWeights() {
+    if (
+      this.columnsConfiguration.length > 0 &&
+      this.columnsConfiguration[0] !== 0
+    ) {
+      const columnsList = CONFIG.columnsLimitColumns
+        ? this.parts
+        : this.columns;
+      const sumWeights = this.columnsConfiguration.reduce((a, b) => a + b, 0);
+
+      for (
+        let i = 0;
+        i < columnsList.length && i < this.columnsConfiguration.length;
+        i++
+      ) {
+        columnsList[i].weight =
+          (this.columnsConfiguration[i] / sumWeights) * columnsList.length;
       }
     }
   }
@@ -374,31 +411,41 @@ class ColumnsLayout implements ILayout {
   private toColumnWithBiggerIndex(ctx: EngineContext): boolean {
     const currentWindow = ctx.currentWindow;
     const currentWindowId = currentWindow !== null ? currentWindow.id : null;
-    const activeColumnId = this.getCurrentColumnId(currentWindowId);
+    const activeColumnId =
+      CONFIG.columnsLimitColumns && this.columnsConfiguration.length > 0
+        ? this.getPartsId(currentWindowId)
+        : this.getColumnId(currentWindowId);
+    const columnList =
+      CONFIG.columnsLimitColumns && this.columnsConfiguration.length > 0
+        ? this.parts
+        : this.columns;
 
     if (
       currentWindow === null ||
       currentWindowId === null ||
       activeColumnId === null ||
-      (this.columns[activeColumnId].size < 2 &&
-        (this.columns[activeColumnId].position === "right" ||
-          this.columns[activeColumnId].position === "single"))
-    )
+      (columnList[activeColumnId].windowIds.size < 2 &&
+        (activeColumnId === columnList.length - 1 || columnList.length < 2)) ||
+      (this.columnsConfiguration.length > 0 &&
+        activeColumnId === columnList.length - 1 &&
+        columnList.length >= this.columnsConfiguration.length)
+    ) {
       return false;
+    }
 
     let targetColumn: ColumnLayout;
-    const column = this.columns[activeColumnId];
+    const column = columnList[activeColumnId];
     const center =
       column.renderedWindowsRects[
         column.renderedWindowsIds.indexOf(currentWindowId)
       ].center;
     column.windowIds.delete(currentWindowId);
 
-    if (column.position === "single" || column.position === "right") {
+    if (activeColumnId === columnList.length - 1) {
       targetColumn = this.insertColumn(false);
       targetColumn.windowIds.add(currentWindowId);
     } else {
-      targetColumn = this.columns[activeColumnId + 1];
+      targetColumn = columnList[activeColumnId + 1];
       targetColumn.windowIds.add(currentWindowId);
     }
     let idOnTarget: string | null;
@@ -420,31 +467,41 @@ class ColumnsLayout implements ILayout {
   private toColumnWithSmallerIndex(ctx: EngineContext): boolean {
     const currentWindow = ctx.currentWindow;
     const currentWindowId = currentWindow !== null ? currentWindow.id : null;
-    const activeColumnId = this.getCurrentColumnId(currentWindowId);
+    const activeColumnId =
+      CONFIG.columnsLimitColumns && this.columnsConfiguration.length > 0
+        ? this.getPartsId(currentWindowId)
+        : this.getColumnId(currentWindowId);
+    const columnList =
+      CONFIG.columnsLimitColumns && this.columnsConfiguration.length > 0
+        ? this.parts
+        : this.columns;
 
     if (
       currentWindow === null ||
       currentWindowId === null ||
       activeColumnId === null ||
-      (this.columns[activeColumnId].windowIds.size < 2 &&
-        (this.columns[activeColumnId].position === "left" ||
-          this.columns[activeColumnId].position === "single"))
-    )
+      (columnList[activeColumnId].windowIds.size < 2 &&
+        (activeColumnId === 0 || columnList.length < 2)) ||
+      (this.columnsConfiguration.length > 0 &&
+        activeColumnId === 0 &&
+        columnList.length >= this.columnsConfiguration.length)
+    ) {
       return false;
+    }
 
     let targetColumn: ColumnLayout;
-    const column = this.columns[activeColumnId];
+    const column = columnList[activeColumnId];
     const center =
       column.renderedWindowsRects[
         column.renderedWindowsIds.indexOf(currentWindowId)
       ].center;
     column.windowIds.delete(currentWindowId);
 
-    if (column.position === "single" || column.position === "left") {
+    if (activeColumnId === 0) {
       targetColumn = this.insertColumn(true);
       targetColumn.windowIds.add(currentWindowId);
     } else {
-      targetColumn = this.columns[activeColumnId - 1];
+      targetColumn = columnList[activeColumnId - 1];
       targetColumn.windowIds.add(currentWindowId);
     }
     let idOnTarget: string | null;
@@ -466,7 +523,7 @@ class ColumnsLayout implements ILayout {
   private toUpOrLeft(ctx: EngineContext): boolean {
     let currentWindow = ctx.currentWindow;
     let currentWindowId = currentWindow !== null ? currentWindow.id : null;
-    let activeColumnId = this.getCurrentColumnId(currentWindowId);
+    let activeColumnId = this.getColumnId(currentWindowId);
 
     if (
       currentWindow === null ||
@@ -485,7 +542,7 @@ class ColumnsLayout implements ILayout {
   private toBottomOrRight(ctx: EngineContext): boolean {
     let currentWindow = ctx.currentWindow;
     let currentWindowId = currentWindow !== null ? currentWindow.id : null;
-    let activeColumnId = this.getCurrentColumnId(currentWindowId);
+    let activeColumnId = this.getColumnId(currentWindowId);
 
     if (
       currentWindow === null ||
