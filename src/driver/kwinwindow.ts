@@ -4,6 +4,10 @@
 
     SPDX-License-Identifier: MIT
 */
+type DriverFloatConfig = PartialWithRequired<
+  IFloatWindow,
+  "shouldFloat" | "auto" | "width" | "height" | "leftIndent" | "topIndent"
+>;
 
 class DriverWindow implements IDriverWindow {
   public static generateID(w: KwinWindow) {
@@ -13,22 +17,27 @@ class DriverWindow implements IDriverWindow {
   public get isActive(): boolean {
     return this.window.active;
   }
-
   public get fullScreen(): boolean {
     return this.window.fullScreen;
   }
-
+  public get floatGeometry(): Rect {
+    if (this._floatGeometry === null) {
+      this._floatGeometry = this._getInitFloatGeometry();
+    }
+    return this._floatGeometry;
+  }
+  public set floatGeometry(value: Rect) {
+    this._floatGeometry = value;
+  }
   public get geometry(): Rect {
     return toRect(this.window.frameGeometry);
   }
-
   public get windowClassName(): string {
     return this.window.resourceClass;
   }
   public get windowCaption(): string {
     return this.window.caption;
   }
-
   public get shouldIgnore(): boolean {
     if (this.window.deleted) return true;
     return (
@@ -37,10 +46,9 @@ class DriverWindow implements IDriverWindow {
       this.isIgnoredByConfig
     );
   }
-
   public get shouldFloat(): boolean {
     return (
-      this.isFloatByConfig ||
+      this.floatConfig.shouldFloat ||
       (CONFIG.floatSkipPager && this.window.skipPager) ||
       this.window.modal ||
       this.window.transient ||
@@ -49,12 +57,13 @@ class DriverWindow implements IDriverWindow {
         (this.window.dialog || this.window.splash || this.window.utility))
     );
   }
-
   public maximized: boolean;
   public get minimized(): boolean {
     return this.window.minimized;
   }
-
+  public get nativeFloatGeometry(): Rect {
+    return this._nativeFloatGeometry;
+  }
   public get surface(): ISurface {
     let activity;
     let vDesktop;
@@ -82,7 +91,6 @@ class DriverWindow implements IDriverWindow {
       vDesktop,
     );
   }
-
   /* The window's live output, or the active screen when that output is an
    * already-destroyed wrapper. During a hotplug/resume flurry a still-alive
    * window can briefly reference a destroyed output before KWin reassigns
@@ -93,7 +101,6 @@ class DriverWindow implements IDriverWindow {
   private get resolvedOutput(): Output {
     return resolveWindowOutput(this.workspace, this.window);
   }
-
   public set surface(srf: ISurface) {
     const ksrf = srf as KWinSurface;
 
@@ -104,7 +111,6 @@ class DriverWindow implements IDriverWindow {
     if (this.window.activities[0] !== ksrf.activity)
       this.window.activities = [ksrf.activity];
   }
-
   public get minSize(): ISize {
     return {
       width: this.window.minSize.width,
@@ -117,14 +123,22 @@ class DriverWindow implements IDriverWindow {
       height: this.window.maxSize.height,
     };
   }
+  public get srfTime() {
+    if (this._srfTime.time === null) this._srfTime.time = getTime();
+    return this._srfTime.time;
+  }
+
   public readonly window: KwinWindow;
   public readonly id: string;
-
+  public isCommittedEver: boolean;
+  public floatConfig: DriverFloatConfig;
+  private _srfTime: { time: number | null; srfId: string | null };
   private readonly workspace: Workspace;
-  private readonly isFloatByConfig: boolean;
   private readonly isIgnoredByConfig: boolean;
   private readonly _surfaceStore: KWinSurfaceStore;
+  private _floatGeometry: Rect | null;
   private _movePointerToCenter: { isMove: boolean; time: number };
+  private _nativeFloatGeometry: Rect;
   private noBorderManaged: boolean;
   private noBorderOriginal: boolean;
 
@@ -135,15 +149,20 @@ class DriverWindow implements IDriverWindow {
   ) {
     this.workspace = workspace;
     this._surfaceStore = surfaceStore;
+    this._srfTime = { time: null, srfId: null };
     this._movePointerToCenter = {
       isMove: false,
       time: 0,
     };
     this.window = window;
+    this.isCommittedEver = false;
+    this._nativeFloatGeometry = toRect(window.frameGeometry);
+    this._floatGeometry = null;
     this.id = DriverWindow.generateID(window);
     this.maximized = false;
     this.noBorderManaged = false;
     this.noBorderOriginal = window.noBorder;
+    this.floatConfig = this._getFloatConfig(window);
     this.isIgnoredByConfig =
       DriverWindow.isContain(KWINCONFIG.ignoreClass, window.resourceClass) ||
       DriverWindow.isContain(KWINCONFIG.ignoreClass, window.resourceName) ||
@@ -151,18 +170,12 @@ class DriverWindow implements IDriverWindow {
       DriverWindow.isContain(KWINCONFIG.ignoreRole, window.windowRole) ||
       (KWINCONFIG.tileNothing &&
         DriverWindow.isContain(KWINCONFIG.tilingClass, window.resourceClass));
-    this.isFloatByConfig =
-      DriverWindow.isContain(KWINCONFIG.floatingClass, window.resourceClass) ||
-      DriverWindow.isContain(KWINCONFIG.floatingClass, window.resourceName) ||
-      matchWords(this.window.caption, KWINCONFIG.floatingTitle) >= 0;
   }
-
   public moveMouseToFocus() {
     const time = getTime();
     this._movePointerToCenter.isMove = this.isActive;
     this._movePointerToCenter.time = time;
   }
-
   public commit(
     ctx: IDriverContext,
     geometry?: Rect,
@@ -269,11 +282,9 @@ class DriverWindow implements IDriverWindow {
       }
     }
   }
-
   public toString(): string {
     return `${debugWin(this.window)}`;
   }
-
   public visible(srf: ISurface): boolean {
     const ksrf = srf as KWinSurface;
     return (
@@ -286,11 +297,67 @@ class DriverWindow implements IDriverWindow {
       this.resolvedOutput === ksrf.output
     );
   }
+  public updateSrfTime(srfId: string): void {
+    if (srfId !== this._srfTime.srfId) {
+      this._srfTime.srfId = srfId;
+      this._srfTime.time = getTime();
+    }
+  }
+  private _getFloatConfig(window: KwinWindow): DriverFloatConfig {
+    const configs = CONFIG.floatConfig.config;
+    const defaults: DriverFloatConfig = {
+      shouldFloat: false,
+      auto: false,
+      width: this._nativeFloatGeometry.width,
+      height: this._nativeFloatGeometry.height,
+      leftIndent: { value: this._nativeFloatGeometry.x, unit: "px" },
+      topIndent: { value: this._nativeFloatGeometry.y, unit: "px" },
+    };
+    if (!configs || configs.length === 0) return defaults;
 
-  //#region Private Methods
+    for (const cfg of configs) {
+      if (cfg.class) {
+        const classes = cfg.class
+          .split(",")
+          .map((c) => c.trim())
+          .filter((c) => c !== "");
+        if (classes.length > 0) {
+          if (
+            !DriverWindow.isContain(classes, window.resourceClass) &&
+            !DriverWindow.isContain(classes, window.resourceName)
+          )
+            continue;
+        }
+      }
+
+      if (cfg.title) {
+        if (!DriverWindow.isContain([cfg.title], window.caption)) continue;
+      }
+
+      return {
+        shouldFloat: cfg.shouldFloat,
+        auto: cfg.auto,
+        width: cfg.width ?? this._nativeFloatGeometry.width,
+        height: cfg.height ?? this._nativeFloatGeometry.height,
+        leftIndent: cfg.leftIndent ?? {
+          value: this._nativeFloatGeometry.x,
+          unit: "px",
+        },
+        topIndent: cfg.topIndent ?? {
+          value: this._nativeFloatGeometry.y,
+          unit: "px",
+        },
+      };
+    }
+
+    return defaults;
+  }
   public static isContain(filterList: string[], s: string): boolean {
     for (let filterWord of filterList) {
-      if (filterWord[0] === "[" && filterWord[filterWord.length - 1] === "]") {
+      if (
+        filterWord.startsWith("[") &&
+        filterWord[filterWord.length - 1] === "]"
+      ) {
         if (
           s
             .toLowerCase()
@@ -321,49 +388,105 @@ class DriverWindow implements IDriverWindow {
 
     return new Rect(geometry.x, geometry.y, width, height);
   }
-
-  public getInitFloatGeometry(): Rect {
+  public _getInitFloatGeometry(): Rect {
     /* resolvedOutput, not window.output: this runs from the arrange path
      * (floatGeometry), where a fallback window may still hold a destroyed
      * output whose .geometry read would throw and abort the arrange. */
     let outputGeometry = this.resolvedOutput.geometry;
-    if (CONFIG.floatInit === null) {
+    if (CONFIG.floatConfig === null) {
       return toRect(outputGeometry);
     }
-    let width, height, x, y: number;
-    width = outputGeometry.width * (CONFIG.floatInit.windowWidth / 100);
-    height = outputGeometry.height * (CONFIG.floatInit.windowHeight / 100);
-    x = outputGeometry.x + outputGeometry.width / 2 - width / 2;
-    y = outputGeometry.y + outputGeometry.height / 2 - height / 2;
-    if (
-      this.window.minSize.width > outputGeometry.width ||
-      this.window.minSize.height > outputGeometry.height
-    ) {
-      width = this.window.minSize.width;
-      height = this.window.minSize.height;
-      x = outputGeometry.x;
-      y = outputGeometry.y;
-    } else if (
-      !this.window.resizeable ||
-      this.window.maxSize.width < width ||
-      this.window.maxSize.height < height
-    ) {
-      width = this.window.maxSize.width;
-      height = this.window.maxSize.height;
+
+    const cfg = this.floatConfig;
+    const nativeW = this._nativeFloatGeometry.width;
+    const nativeH = this._nativeFloatGeometry.height;
+    const nativeX = this._nativeFloatGeometry.x;
+    const nativeY = this._nativeFloatGeometry.y;
+
+    const cfgWidth = cfg.width ?? nativeW;
+    const cfgHeight = cfg.height ?? nativeH;
+    const defaultLeft: IndentValue = { value: nativeX, unit: "px" };
+    const defaultTop: IndentValue = { value: nativeY, unit: "px" };
+    const cfgLeft = cfg.leftIndent ?? defaultLeft;
+    const cfgTop = cfg.topIndent ?? defaultTop;
+
+    const hasCustomWidth = cfg.width !== null && cfg.width !== nativeW;
+    const hasCustomHeight = cfg.height !== null && cfg.height !== nativeH;
+    const hasCustomLeft =
+      cfg.leftIndent !== null &&
+      (cfg.leftIndent.value !== nativeX || cfg.leftIndent.unit !== "px");
+    const hasCustomTop =
+      cfg.topIndent !== null &&
+      (cfg.topIndent.value !== nativeY || cfg.topIndent.unit !== "px");
+
+    let width = hasCustomWidth
+      ? cfgWidth
+      : CONFIG.floatConfig.isNativeSizeOverride
+        ? outputGeometry.width * (CONFIG.floatConfig.floatWidth / 100)
+        : nativeW;
+    let height = hasCustomHeight
+      ? cfgHeight
+      : CONFIG.floatConfig.isNativeSizeOverride
+        ? outputGeometry.height * (CONFIG.floatConfig.floatHeight / 100)
+        : nativeH;
+
+    let x: number;
+    let y: number;
+
+    if (hasCustomLeft) {
+      if (cfgLeft.unit === "%") {
+        x = outputGeometry.x + outputGeometry.width * (cfgLeft.value / 100);
+      } else {
+        x = cfgLeft.value;
+      }
+    } else if (hasCustomWidth) {
       x = outputGeometry.x + outputGeometry.width / 2 - width / 2;
+    } else {
+      x = outputGeometry.x + outputGeometry.width / 2 - width / 2;
+    }
+
+    if (hasCustomTop) {
+      if (cfgTop.unit === "%") {
+        y = outputGeometry.y + outputGeometry.height * (cfgTop.value / 100);
+      } else {
+        y = cfgTop.value;
+      }
+    } else if (hasCustomHeight) {
       y = outputGeometry.y + outputGeometry.height / 2 - height / 2;
     } else {
-      if (CONFIG.floatInit.randomize) {
+      y = outputGeometry.y + outputGeometry.height / 2 - height / 2;
+    }
+
+    if (!this.window.resizeable) {
+      if (this.window.maxSize.width < width) {
+        x = x + (width - this.window.maxSize.width) / 2;
+        width = this.window.maxSize.width;
+      }
+
+      if (this.window.maxSize.height < height) {
+        y = y + (height - this.window.maxSize.height) / 2;
+        height = this.window.maxSize.height;
+      }
+    } else {
+      if (this.window.minSize.width > outputGeometry.width) {
+        width = this.window.minSize.width;
+        x = outputGeometry.x;
+      }
+      if (this.window.minSize.height > outputGeometry.height) {
+        height = this.window.minSize.height;
+        y = outputGeometry.y;
+      }
+      if (CONFIG.floatConfig.randomize) {
         x =
           x +
           getRandomInt(
-            (x - outputGeometry.x) * (CONFIG.floatInit.randomWidth / 100),
+            (x - outputGeometry.x) * (CONFIG.floatConfig.randomWidth / 100),
             true,
           );
         y =
           y +
           getRandomInt(
-            (y - outputGeometry.y) * (CONFIG.floatInit.randomHeight / 100),
+            (y - outputGeometry.y) * (CONFIG.floatConfig.randomHeight / 100),
             true,
           );
       }

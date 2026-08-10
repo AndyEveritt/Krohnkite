@@ -126,12 +126,6 @@ interface IConfig {
   ignoreClass: string[];
   ignoreTitle: string[];
   ignoreRole: string[];
-
-  floatingClass: string[];
-  floatingTitle: string[];
-  floatDefault: boolean;
-  floatUtility: boolean;
-
   ignoreActivity: string[];
   ignoreScreen: string[];
   ignoreVDesktop: string[];
@@ -139,6 +133,10 @@ interface IConfig {
   tilingClass: string[];
 
   screenDefaultLayout: string[];
+  //Float
+  floatConfig: IFloatWindowsConfig;
+  floatAsDefault: boolean;
+  floatUtility: boolean;
 
   //Dock
   dockOrder: [number, number, number, number];
@@ -160,8 +158,6 @@ interface IConfig {
   //Options
   tiledWindowsLayer: WindowLayer;
   floatedWindowsLayer: WindowLayer;
-
-  floatInit: IFloatInit | null;
 
   soleWindowDefaultProps: ISoleWindowProps;
   soleWindowOutputOverride: { [outputName: string]: ISoleWindowProps };
@@ -191,18 +187,22 @@ interface IKrohnkiteMeta {
 
 interface IDriverWindow {
   readonly fullScreen: boolean;
+  floatGeometry: Rect;
   readonly geometry: Readonly<Rect>;
   readonly id: string;
   readonly windowClassName: string;
   readonly windowCaption: string;
+  readonly nativeFloatGeometry: Rect;
   readonly maximized: boolean;
   readonly minimized: boolean;
   readonly shouldIgnore: boolean;
   readonly shouldFloat: boolean;
   readonly minSize: ISize;
   readonly maxSize: ISize;
-
+  readonly srfTime: number;
   surface: ISurface;
+  floatConfig: DriverFloatConfig;
+  isCommittedEver: boolean;
 
   commit(
     ctx: IDriverContext,
@@ -210,7 +210,7 @@ interface IDriverWindow {
     noBorder?: boolean,
     windowLayer?: WindowLayer,
   ): void;
-  getInitFloatGeometry(): Rect;
+  updateSrfTime(srfId: string): void;
   moveMouseToFocus(): void;
   visible(srf: ISurface): boolean;
 }
@@ -231,7 +231,6 @@ interface IWindowClass {
   readonly windowClassName: string;
   readonly windowCaption: string;
   readonly minimized: boolean;
-  readonly srfTime: number;
   state: WindowState;
   surface: ISurface;
   weight: number;
@@ -376,14 +375,6 @@ interface ILogModules {
 
 interface ILogFilters {
   winClass?: string[] | null;
-}
-
-interface IFloatInit {
-  windowWidth: number;
-  windowHeight: number;
-  randomize: boolean;
-  randomWidth: number;
-  randomHeight: number;
 }
 
 // Globals

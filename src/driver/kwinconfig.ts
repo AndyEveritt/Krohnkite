@@ -22,18 +22,186 @@ const winTypesCfg = [
   WinTypes.float | WinTypes.docked,
   WinTypes.special,
 ];
-
 interface ISortedLayouts {
   order: number;
   layoutClass: ILayoutClass;
   isCapacity: boolean;
 }
-
 interface ISoleWindowProps {
   width: number;
   height: number;
   noGaps: boolean;
   noBorders: boolean;
+}
+interface IFloatWindowsConfig {
+  isNativeSizeOverride: boolean;
+  floatWidth: number;
+  floatHeight: number;
+  randomize: boolean;
+  randomWidth: number;
+  randomHeight: number;
+  config: IFloatWindow[];
+}
+type IndentValue = {
+  value: number;
+  unit: "px" | "%";
+};
+interface IFloatWindow {
+  class: string;
+  title: string;
+  shouldFloat: boolean;
+  auto: boolean;
+  width: number | null;
+  height: number | null;
+  leftIndent: IndentValue | null;
+  topIndent: IndentValue | null;
+}
+
+function isValidConfigKey(key: string): key is ConfigVariables {
+  return key in ConfigVariables;
+}
+
+function parseFloatConfig(lines: string[]): IFloatWindow[] {
+  const result: IFloatWindow[] = [];
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed) continue;
+    if (trimmed.startsWith("#")) continue;
+
+    const parts = trimmed.split(":");
+    const classList = parts[0].trim();
+    if (classList) {
+      const rawParts = classList.split(",");
+      const classes = rawParts.map((c) => c.trim()).filter((c) => c !== "");
+      if (classes.length < rawParts.length) {
+        warning(`parseFloatConfig: empty class name in list "${classList}"`);
+        continue;
+      }
+    }
+
+    let title = "";
+    let paramsStr = "";
+    if (parts.length === 2) {
+      paramsStr = parts[1];
+    } else if (parts.length === 3) {
+      title = parts[1];
+      paramsStr = parts[2];
+    } else if (parts.length > 3) {
+      warning(`parseFloatConfig: invalid format in "${trimmed}"`);
+      continue;
+    }
+
+    const entry: IFloatWindow = {
+      class: classList,
+      title,
+      shouldFloat: true,
+      auto: false,
+      width: null,
+      height: null,
+      leftIndent: null,
+      topIndent: null,
+    };
+
+    if (paramsStr) {
+      const params = separate(paramsStr, ",");
+      for (const param of params) {
+        const eqIdx = param.indexOf("=");
+        const key =
+          eqIdx >= 0
+            ? param.slice(0, eqIdx).trim().toLowerCase()
+            : param.trim().toLowerCase();
+        const rawVal =
+          eqIdx >= 0
+            ? param
+                .slice(eqIdx + 1)
+                .trim()
+                .toLowerCase()
+            : "";
+        switch (key) {
+          case "shouldfloat":
+          case "f":
+            entry.shouldFloat = rawVal === "true" || rawVal === "1";
+            break;
+          case "auto":
+          case "a":
+            entry.auto = rawVal === "true" || rawVal === "1";
+            break;
+          case "width":
+          case "w": {
+            const w = parseNumber(rawVal, false);
+            if (w instanceof Err) {
+              warning(`parseFloatConfig: invalid width "${rawVal}"`);
+            } else {
+              const vw = validateNumber(w, 1, 100);
+              if (vw instanceof Err) {
+                warning(`parseFloatConfig: width out of range: ${rawVal}`);
+              } else {
+                entry.width = vw;
+              }
+            }
+            break;
+          }
+          case "height":
+          case "h": {
+            const h = parseNumber(rawVal, false);
+            if (h instanceof Err) {
+              warning(`parseFloatConfig: invalid height "${rawVal}"`);
+            } else {
+              const vh = validateNumber(h, 1, 100);
+              if (vh instanceof Err) {
+                warning(`parseFloatConfig: height out of range: ${rawVal}`);
+              } else {
+                entry.height = vh;
+              }
+            }
+            break;
+          }
+          case "leftindent":
+          case "li":
+          case "left": {
+            let unit: "px" | "%" = "px";
+            let numStr = rawVal;
+            if (rawVal.endsWith("%")) {
+              unit = "%";
+              numStr = rawVal.slice(0, -1);
+            } else if (rawVal.endsWith("px")) {
+              numStr = rawVal.slice(0, -2);
+            }
+            const l = parseNumber(numStr, true);
+            if (l instanceof Err) {
+              warning(`parseFloatConfig: invalid left indent "${rawVal}"`);
+            } else {
+              entry.leftIndent = { value: l, unit };
+            }
+            break;
+          }
+          case "topindent":
+          case "ti":
+          case "top": {
+            let unit: "px" | "%" = "px";
+            let numStr = rawVal;
+            if (rawVal.endsWith("%")) {
+              unit = "%";
+              numStr = rawVal.slice(0, -1);
+            } else if (rawVal.endsWith("px")) {
+              numStr = rawVal.slice(0, -2);
+            }
+            const t = parseNumber(numStr, true);
+            if (t instanceof Err) {
+              warning(`parseFloatConfig: invalid top indent "${rawVal}"`);
+            } else {
+              entry.topIndent = { value: t, unit };
+            }
+            break;
+          }
+          default:
+            warning(`parseFloatConfig: unknown param "${key}"`);
+        }
+      }
+    }
+    result.push(entry);
+  }
+  return result;
 }
 
 class KWinConfig implements IConfig {
@@ -97,19 +265,21 @@ class KWinConfig implements IConfig {
   public ignoreClass: string[];
   public ignoreTitle: string[];
   public ignoreRole: string[];
-
-  public floatingClass: string[];
-  public floatingTitle: string[];
-  public floatDefault: boolean;
-  public floatUtility: boolean;
-
   public ignoreActivity: string[];
   public ignoreScreen: string[];
   public ignoreVDesktop: string[];
   public tileNothing: boolean;
   public tilingClass: string[];
-
   public screenDefaultLayout: string[];
+  /*
+   * Float
+   * */
+  // public floatingClass: string[];
+  // public floatingTitle: string[];
+  public floatConfig: IFloatWindowsConfig;
+  public floatAsDefault: boolean;
+  public floatUtility: boolean;
+
   /*
    * Dock
    * */
@@ -136,8 +306,6 @@ class KWinConfig implements IConfig {
 
   public soleWindowDefaultProps: ISoleWindowProps;
   public soleWindowOutputOverride: { [outputName: string]: ISoleWindowProps };
-
-  floatInit: IFloatInit | null;
 
   public unfitGreater: boolean;
   public unfitLess: boolean;
@@ -212,8 +380,8 @@ class KWinConfig implements IConfig {
     // Define the config mapping (cleaner and easier to maintain)
     const directionConfigs: {
       direction: Direction;
-      screenKey: string;
-      vDesktopKey: string;
+      screenKey: keyof typeof ConfigVariables;
+      vDesktopKey: keyof typeof ConfigVariables;
       defaultOrder: number;
     }[] = [
       {
@@ -371,12 +539,6 @@ class KWinConfig implements IConfig {
     );
     this.ignoreTitle = separate(KWIN.readConfig("ignoreTitle", ""), ",");
     this.ignoreRole = separate(KWIN.readConfig("ignoreRole", "quake"), ",");
-
-    this.floatingClass = separate(KWIN.readConfig("floatingClass", ""), ",");
-    this.floatingTitle = separate(KWIN.readConfig("floatingTitle", ""), ",");
-    this.floatDefault = KWIN.readConfig("floatDefault", false);
-    this.floatUtility = KWIN.readConfig("floatUtility", true);
-
     this.ignoreActivity = separate(KWIN.readConfig("ignoreActivity", ""), ",");
     this.ignoreScreen = separate(KWIN.readConfig("ignoreScreen", ""), ",");
     this.ignoreVDesktop = separate(KWIN.readConfig("ignoreVDesktop", ""), ",");
@@ -387,7 +549,48 @@ class KWinConfig implements IConfig {
       KWIN.readConfig("screenDefaultLayout", ""),
       ",",
     );
-
+    //***************************
+    //****************** Float
+    //***************************
+    // this.floatingClass = separate(KWIN.readConfig("floatingClass", ""), ",");
+    // this.floatingTitle = separate(KWIN.readConfig("floatingTitle", ""), ",");
+    this.floatConfig = {
+      isNativeSizeOverride: KWIN.readConfig("floatDefaultSizeEnable", false),
+      floatWidth: validateNumberWithDefault(
+        KWIN.readConfig("floatDefaultWidth", 50),
+        50,
+        "floatInitWindowWidth",
+        1,
+        100,
+      ),
+      floatHeight: validateNumberWithDefault(
+        KWIN.readConfig("floatDefaultHeight", 50),
+        50,
+        "floatInitWindowHeight",
+        1,
+        100,
+      ),
+      randomize: KWIN.readConfig("floatRandomEnable", true),
+      randomWidth: validateNumberWithDefault(
+        KWIN.readConfig("floatRandomWidth", 15),
+        15,
+        "floatRandomWidth",
+        1,
+        100,
+      ),
+      randomHeight: validateNumberWithDefault(
+        KWIN.readConfig("floatRandomHeight", 15),
+        15,
+        "floatRandomHeight",
+        1,
+        100,
+      ),
+      config: parseFloatConfig(
+        separate(KWIN.readConfig("floatConfig", ""), "\n"),
+      ),
+    };
+    this.floatAsDefault = KWIN.readConfig("floatAsDefault", false);
+    this.floatUtility = KWIN.readConfig("floatUtility", true);
     //***************************
     //****************** Dock
     //***************************
@@ -454,45 +657,6 @@ class KWinConfig implements IConfig {
       KWIN.readConfig("soleWindowOutputOverride", ""),
       this.soleWindowDefaultProps,
     );
-
-    if (KWIN.readConfig("floatEnable", true)) {
-      let windowWidth = validateNumberWithDefault(
-        KWIN.readConfig("floatInitWindowWidth", 50),
-        50,
-        "floatInitWindowWidth",
-        1,
-        100,
-      );
-      let windowHeight = validateNumberWithDefault(
-        KWIN.readConfig("floatInitWindowHeight", 50),
-        50,
-        "floatInitWindowHeight",
-        1,
-        100,
-      );
-      let randomize = KWIN.readConfig("floatRandomize", true);
-      let randomWidth = validateNumberWithDefault(
-        KWIN.readConfig("floatRandomWidth", 15),
-        15,
-        "floatRandomWidth",
-        1,
-        100,
-      );
-      let randomHeight = validateNumberWithDefault(
-        KWIN.readConfig("floatRandomHeight", 15),
-        15,
-        "floatRandomHeight",
-        1,
-        100,
-      );
-      this.floatInit = {
-        windowHeight,
-        windowWidth,
-        randomHeight,
-        randomWidth,
-        randomize,
-      };
-    } else this.floatInit = null;
 
     this.unfitGreater = KWIN.readConfig("unfitGreater", true);
     this.unfitLess = KWIN.readConfig("unfitLess", true);
@@ -619,7 +783,13 @@ class KWinConfig implements IConfig {
   ): ISortedLayouts[] {
     let sortedLayouts: ISortedLayouts[] = [];
     for (const [idx, [layoutClass, isCapacity]] of layoutsList.entries()) {
-      let orderConfigKey = `${unCapitalize(layoutClass.id)}Order`;
+      const orderConfigKey = `${unCapitalize(layoutClass.id)}Order`;
+      if (!isValidConfigKey(orderConfigKey)) {
+        warning(
+          `kwinconfig: unrecognized config key "${orderConfigKey}" for layout ${layoutClass.id}, skipping layout order`,
+        );
+        continue;
+      }
       let validatedOrder = validateNumber(
         KWIN.readConfig(orderConfigKey, idx + 1),
         0,
@@ -660,9 +830,16 @@ class KWinConfig implements IConfig {
     [key: string]: () => ILayout;
   } {
     let layoutFactories: { [key: string]: () => ILayout } = {};
-    sortedLayouts.forEach(({ layoutClass, isCapacity }) => {
+    for (const { layoutClass, isCapacity } of sortedLayouts) {
       if (isCapacity) {
         const capacityConfigKey = `${unCapitalize(layoutClass.id)}Capacity`;
+        if (!isValidConfigKey(capacityConfigKey)) {
+          warning(
+            `kwinconfig: unrecognized config key "${capacityConfigKey}" for layout ${layoutClass.id}, skipping capacity config`,
+          );
+          layoutFactories[layoutClass.id] = () => new layoutClass(null);
+          continue;
+        }
         let capacity = validateNumber(
           KWIN.readConfig(capacityConfigKey, 99),
           0,
@@ -681,7 +858,7 @@ class KWinConfig implements IConfig {
       } else {
         layoutFactories[layoutClass.id] = () => new layoutClass();
       }
-    });
+    }
     return layoutFactories;
   }
 

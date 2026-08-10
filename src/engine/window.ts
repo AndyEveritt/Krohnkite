@@ -14,21 +14,15 @@ class WindowClass implements IWindowClass {
       state === WindowState.TiledAfloat
     );
   }
-
   public static isTiledState(state: WindowState): boolean {
     return state === WindowState.Tiled || state === WindowState.Maximized;
   }
-
   public static isFloatingState(state: WindowState): boolean {
     return state === WindowState.Floating || state === WindowState.TiledAfloat;
   }
-
   public static isDockedState(state: WindowState): boolean {
     return state === WindowState.Docked;
   }
-
-  public readonly id: string;
-  public readonly window: IDriverWindow;
 
   public get actualGeometry(): Readonly<Rect> {
     return this.window.geometry;
@@ -46,9 +40,6 @@ class WindowClass implements IWindowClass {
   /** If this window is ***already*** tiled, thus a part of the current layout. */
   public get isTiled(): boolean {
     return WindowClass.isTiledState(this.state);
-  }
-  public get isNew(): boolean {
-    return this._srfTime.srfId === null;
   }
   /** If this window is floating, thus its geometry is not tightly managed. */
   public get isFloating(): boolean {
@@ -99,7 +90,7 @@ class WindowClass implements IWindowClass {
       WindowClass.isTileableState(value)
     )
       /* save the current geometry before leaving floating state */
-      this._floatGeometry = this.actualGeometry;
+      this.floatGeometry = this.actualGeometry;
 
     this.internalState = value;
   }
@@ -135,53 +126,43 @@ class WindowClass implements IWindowClass {
     return this.window.windowCaption;
   }
   public get floatGeometry(): Rect {
-    if (this._floatGeometry === null) {
-      this._floatGeometry = this.window.getInitFloatGeometry();
-    }
-    return this._floatGeometry;
+    return this.window.floatGeometry;
   }
   public set floatGeometry(value: Rect) {
-    this._floatGeometry = value;
-  }
-  public get srfTime() {
-    if (this._srfTime.time === null) this._srfTime.time = getTime();
-    return this._srfTime.time;
+    this.window.floatGeometry = value;
   }
 
+  public readonly id: string;
+  public readonly window: IDriverWindow;
   public dock: Dock | null;
   public geometry: Rect;
   public focusTime: number;
   public isSendingToOutput: boolean;
 
-  private _srfTime: { time: number | null; srfId: string | null };
   private internalState: WindowState;
   private shouldCommitFloat: boolean;
   private weightMap: { [key: string]: number };
   private _minSize: ISize;
   private _maxSize: ISize;
-  private _nativeFloatGeometry: Readonly<Rect>;
-  private _floatGeometry: Rect | null;
 
   constructor(window: IDriverWindow) {
     this.id = window.id;
     this.window = window;
 
     this.geometry = window.geometry;
-    this._nativeFloatGeometry = this.geometry.clone();
     this.focusTime = 0;
     this.isSendingToOutput = false;
     this.internalState = WindowState.Unmanaged;
     this.shouldCommitFloat = this.shouldFloat;
-    this._floatGeometry =
-      this.shouldCommitFloat || CONFIG.floatInit === null
-        ? this.geometry
-        : null;
+    // this._floatGeometry =
+    //   this.shouldCommitFloat || CONFIG.floatConfig === null
+    //     ? this.geometry
+    //     : null;
     this.weightMap = {};
     this.dock = null;
 
     this._minSize = window.minSize;
     this._maxSize = window.maxSize;
-    this._srfTime = { time: null, srfId: null };
   }
 
   public toString(): string {
@@ -189,6 +170,7 @@ class WindowClass implements IWindowClass {
   }
 
   public commit(ctx: IDriverContext, noBorders?: boolean) {
+    if (!this.window.isCommittedEver) this.window.isCommittedEver = true;
     const state = this.state;
     LOG?.send(
       LogModules.arrangeScreen,
@@ -258,15 +240,6 @@ class WindowClass implements IWindowClass {
           CONFIG.tiledWindowsLayer,
         );
         break;
-    }
-  }
-
-  public updateSrfTime(srfId: string): void {
-    if (this._srfTime.time !== null && srfId === null)
-      this._srfTime.srfId = srfId;
-    else if (srfId !== this._srfTime.srfId) {
-      this._srfTime.srfId = srfId;
-      this._srfTime.time = getTime();
     }
   }
 

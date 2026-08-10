@@ -79,10 +79,6 @@
 	    <label>How many tiles can a layout contain before windows start floating or moving to another screen</label>
         <default>0</default>
     </entry>
-    <entry name="enableColumnsLayout" type="Bool">
-	    <label>Enable/disable Columns layout</label>
-        <default>true</default>
-    </entry>
     <entry name="columnsLayoutInitialRotationAngle" type="String">
 	    <label>Columns layout initial rotation angle</label>
         <default>0</default>
@@ -269,10 +265,11 @@
         <default>true</default>
     </entry>
 
-    <entry name="directionalKeyDwm" type="Bool">
-	    <label>Up, Down, Left, and Right shortcut behaves like dwm</label>
-        <default>false</default>
-    </entry>
+    <!-- check if DirectionalKeyFocus -->
+    <!-- <entry name="directionalKeyDwm" type="Bool"> -->
+    <!--  <label>Up, Down, Left, and Right shortcut behaves like dwm</label> -->
+    <!--     <default>false</default> -->
+    <!-- </entry> -->
 
     <entry name="directionalKeyFocus" type="Bool">
 	    <label>Up, Down, Left, and Right shortcut moves focus</label>
@@ -349,26 +346,6 @@
         <default>quake</default>
     </entry>
 
-    <entry name="floatingClass" type="String">
-	    <label>Float windows with certain classes(comma-separated list)</label>
-        <default></default>
-    </entry>
-
-    <entry name="floatingTitle" type="String">
-	    <label>Float windows with certain string in title(comma-separated list)</label>
-        <default></default>
-    </entry>
-
-    <entry name="floatDefault" type="Bool">
-	    <label>by default all new windows become floating</label>
-        <default>false</default>
-    </entry>
-
-    <entry name="floatUtility" type="Bool">
-	    <label>Automatically float utility windows (Dialog, Splash, Utility)</label>
-        <default>true</default>
-    </entry>
-
     <entry name="ignoreActivity" type="String">
 	    <label>Do not apply tiling on some activities(comma-separated list of activity names)</label>
         <default></default>
@@ -396,6 +373,57 @@
 
     <entry name="screenDefaultLayout" type="String">
 	    <label>Assigning number of layout to screen(output) by default</label>
+        <default></default>
+    </entry>
+      <!-- ***************************** -->
+      <!-- *************Float*********** -->
+      <!-- ***************************** -->
+    <entry name="floatDefaultSizeEnable" type="Bool">
+      <label>Will Krohnkite override native window float size</label>
+        <default>false</default>
+    </entry>
+    <entry name="floatDefaultWidth" type="Int">
+	    <label>The initial width of a floating window in percent of the screen width.</label>
+        <default>50</default>
+    </entry>
+    <entry name="floatDefaultHeight" type="Int">
+	    <label>The initial height of a floating window in percent of the screen height.</label>
+        <default>50</default>
+    </entry>
+    <entry name="floatRandomEnable" type="Bool">
+      <label>Randomize the initial position of floating window.</label>
+        <default>true</default>
+    </entry>
+    <entry name="floatRandomWidth" type="Int">
+	    <label>Percentage of the range from the left border of the screen to the window placed in the center of the screen.Determines the randomization spread.</label>
+        <default>15</default>
+    </entry>
+    <entry name="floatRandomHeight" type="Int">
+	    <label>Percentage of the range from the top of the screen to the window placed in the center of the screen.Determines the randomization spread.</label>
+        <default>15</default>
+    </entry>
+    <entry name="floatAsDefault" type="Bool">
+	    <label>by default all new windows become floating</label>
+        <default>false</default>
+    </entry>
+
+    <entry name="floatUtility" type="Bool">
+	    <label>Automatically float utility windows (Dialog, Splash, Utility)</label>
+        <default>true</default>
+    </entry>
+    <!-- TODO: will be removed from Krohnkite Settings>Float>ByClass and ByTitle -->
+    <entry name="floatingClass" type="String">
+     <label>Float windows with certain classes(comma-separated list)</label>
+        <default></default>
+    </entry>
+
+    <entry name="floatingTitle" type="String">
+     <label>Float windows with certain string in title(comma-separated list)</label>
+        <default></default>
+    </entry>
+    <!-- ############# -->
+    <entry name="floatConfig" type="String">
+	    <label>Override default screen gaps</label>
         <default></default>
     </entry>
 
@@ -527,30 +555,6 @@
         <default></default>
     </entry>
 
-    <entry name="floatEnable" type="Bool">
-      <label>Will Krohnkite control the float windows initial size</label>
-        <default>true</default>
-    </entry>
-    <entry name="floatInitWindowWidth" type="Int">
-	    <label>The initial width of a floating window in percent of the screen width.</label>
-        <default>50</default>
-    </entry>
-    <entry name="floatInitWindowHeight" type="Int">
-	    <label>The initial height of a floating window in percent of the screen height.</label>
-        <default>50</default>
-    </entry>
-    <entry name="floatRandomize" type="Bool">
-      <label>Randomize the initial position of floating window.</label>
-        <default>true</default>
-    </entry>
-    <entry name="floatRandomWidth" type="Int">
-	    <label>Percentage of the range from the left border of the screen to the window placed in the center of the screen.Determines the randomization spread.</label>
-        <default>15</default>
-    </entry>
-    <entry name="floatRandomHeight" type="Int">
-	    <label>Percentage of the range from the top of the screen to the window placed in the center of the screen.Determines the randomization spread.</label>
-        <default>15</default>
-    </entry>
 
     <entry name="unfitGreater" type="Bool">
       <label>If enable make all windows floating if they minimum size to large for tile</label>

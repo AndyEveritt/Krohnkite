@@ -529,9 +529,12 @@ class TilingEngine {
   private getTileables(srf: ISurface): ScreenData {
     let visibles = this.windows.getVisibleWindows(srf);
     visibles.forEach((window) => {
-      if (window.state === WindowState.Undecided) {
+      window.window.updateSrfTime(srf.id);
+      if (!window.window.isCommittedEver && window.window.floatConfig.auto) {
+        window.state = WindowState.Floating;
+      } else if (window.state === WindowState.Undecided) {
         window.state =
-          window.shouldFloat || CONFIG.floatDefault
+          window.shouldFloat || CONFIG.floatAsDefault
             ? WindowState.Floating
             : WindowState.Tiled;
       }
@@ -546,8 +549,7 @@ class TilingEngine {
     let tileables = this.windows.getVisibleTileables(srf);
     const newWindowsIdxs: number[] = [];
     for (const [i, tileable] of tileables.entries()) {
-      if (tileable.isNew) newWindowsIdxs.push(i);
-      tileable.updateSrfTime(srf.id);
+      if (!tileable.window.isCommittedEver) newWindowsIdxs.push(i);
     }
     if (
       CONFIG.newWindowPosition !== "last" &&
@@ -579,7 +581,9 @@ class TilingEngine {
     let overCapacity: WindowClass[];
     if (capacity !== null && tileables.length > capacity) {
       const excess = tileables.length - capacity;
-      const sorted = [...tileables].sort((a, b) => a.srfTime - b.srfTime);
+      const sorted = [...tileables].sort(
+        (a, b) => a.window.srfTime - b.window.srfTime,
+      );
 
       if (!CONFIG.srfIsMoveOldestWindows) {
         // Move newest: last `excess` from sorted copy
