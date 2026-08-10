@@ -459,9 +459,14 @@ class KWinConfig implements IConfig {
     //***************************
     this.adjustLayout = KWIN.readConfig("adjustLayout", true);
     this.adjustLayoutLive = KWIN.readConfig("adjustLayoutLive", true);
-    this.directionalKeyMode = KWIN.readConfig("directionalKeyFocus", true)
-      ? "focus"
-      : "dwm";
+    this.directionalKeyMode =
+      validateNumberWithDefault(
+        KWIN.readConfig("directionalKeyMode", 0),
+        0,
+        "directionalKeyMode",
+      ) === 0
+        ? "focus"
+        : "dwm";
 
     this.focusNormalCfg =
       winTypesCfg[

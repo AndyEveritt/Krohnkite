@@ -115,7 +115,7 @@ const ConfigVariables = {
   /* Behavior */
   adjustLayout: "adjustLayout",
   adjustLayoutLive: "adjustLayoutLive",
-  directionalKeyFocus: "directionalKeyFocus",
+  directionalKeyMode: "directionalKeyMode",
   focusNormal: "focusNormal",
   focusMeta: "focusMeta",
   focusMoveScreensNormal: "focusMoveScreensNormal",

@@ -265,15 +265,9 @@
         <default>true</default>
     </entry>
 
-    <!-- check if DirectionalKeyFocus -->
-    <!-- <entry name="directionalKeyDwm" type="Bool"> -->
-    <!--  <label>Up, Down, Left, and Right shortcut behaves like dwm</label> -->
-    <!--     <default>false</default> -->
-    <!-- </entry> -->
-
-    <entry name="directionalKeyFocus" type="Bool">
-	    <label>Up, Down, Left, and Right shortcut moves focus</label>
-        <default>true</default>
+    <entry name="directionalKeyMode" type="Int">
+     <label>Up, Down, Left, and Right shortcut behaves like focus or dwm</label>
+        <default>0</default>
     </entry>
 
     <entry name="focusNormal" type="Int">
