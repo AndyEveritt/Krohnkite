@@ -22,6 +22,7 @@ interface IRelocationWindows {
   toOutputs: WrapperMap<Output, WindowClass[]>;
   toVDesktops: WrapperMap<VirtualDesktop, WindowClass[]>;
   activeWindow: WindowClass | null;
+  direction: Direction | null;
 
   clear(): void;
 }
@@ -72,6 +73,8 @@ class RelocationWindows implements IRelocationWindows {
   public toOutputs: WrapperMap<Output, WindowClass[]>;
   public toVDesktops: WrapperMap<VirtualDesktop, WindowClass[]>;
   public activeWindow: WindowClass | null;
+  public direction: Direction | null;
+
   constructor() {
     this.isSending = false;
     this.startTime = 0;
@@ -85,6 +88,7 @@ class RelocationWindows implements IRelocationWindows {
     );
 
     this.activeWindow = null;
+    this.direction = null;
   }
   public clear() {
     for (const windows of this.toOutputs) {
@@ -95,6 +99,7 @@ class RelocationWindows implements IRelocationWindows {
     this.toOutputs.clear();
     this.toVDesktops.clear();
     this.activeWindow = null;
+    this.direction = null;
   }
 }
 /**
@@ -102,7 +107,7 @@ class RelocationWindows implements IRelocationWindows {
  */
 class TilingEngine {
   // max time for waiting KWin to move relocated windows to outputs calling KWin func sendClientToScreen() and to Virtual Desktops
-  SENDING_WINDOWS_MAX_WAIT_TIME = 100;
+  static SENDING_WINDOWS_MAX_WAIT_TIME = 100;
 
   public layouts: LayoutStore;
   public windows: WindowStore;
@@ -336,7 +341,7 @@ class TilingEngine {
         const time = getTime();
         if (
           time - this.relocationWindows.startTime <
-          this.SENDING_WINDOWS_MAX_WAIT_TIME
+          TilingEngine.SENDING_WINDOWS_MAX_WAIT_TIME
         ) {
           warning(
             `Method: ${getMethodName()}.Attempt to Check OverCapacityWindows during sending Process.`,
@@ -993,11 +998,80 @@ class TilingEngine {
    * @param dir which direction
    */
   private _moveFloat(ctx: IDriverContext, window: WindowClass, dir: Direction) {
+    function isRelocationReady(): boolean {
+      if (relocation.isSending) {
+        if (
+          getTime() - relocation.startTime <=
+          TilingEngine.SENDING_WINDOWS_MAX_WAIT_TIME
+        ) {
+          warning(
+            `${getMethodName()} Relocation windows in process. relocationWindows.isSending=${relocation.isSending}`,
+          );
+          return false;
+        } else {
+          warning(
+            `${getMethodName()} Relocation windows with startTime:${relocation.startTime} was canceled.`,
+          );
+          relocation.clear();
+        }
+      }
+      return true;
+    }
+    function floatRelocation(target: "toOutput" | "toVDesktop"): boolean {
+      const neighbor =
+        target === "toOutput"
+          ? ctx.getNeighborOutput(dir, srcOutput)
+          : ctx.getNeighborVDesktop(dir);
+      if (neighbor === null) return false;
+      if (!isRelocationReady()) return false;
+      const winArr =
+        target === "toOutput"
+          ? relocation.toOutputs.add(neighbor as Output)
+          : relocation.toVDesktops.add(neighbor as VirtualDesktop);
+      winArr.push(window);
+      return true;
+    }
+    const relocation = this.relocationWindows;
+    const srcOutput = window.surface.output;
     const srf = window.surface;
+    const srfRect = srf.workingArea;
+
+    const geometry = window.actualGeometry;
+    let x = geometry.x;
+    let y = geometry.y;
+    if (
+      (x === srfRect.x && dir === "left") ||
+      (x === srfRect.maxX - geometry.width && dir === "right") ||
+      (y === srfRect.y && dir === "up") ||
+      (y === srfRect.maxY - geometry.height && dir === "down")
+    ) {
+      if (
+        (ctx.isMetaMode
+          ? CONFIG.focusMoveScreensMeta
+          : CONFIG.focusMoveScreensNormal) &&
+        floatRelocation("toOutput")
+      ) {
+        this.relocationWindows.activeWindow = window;
+        this.relocationWindows.direction = dir;
+        ctx.relocateWindows();
+        return;
+      }
+      if (
+        (ctx.isMetaMode
+          ? CONFIG.focusMoveVDesktopsMeta
+          : CONFIG.focusMoveVDesktopsNormal) &&
+        floatRelocation("toVDesktop")
+      ) {
+        this.relocationWindows.activeWindow = window;
+        this.relocationWindows.direction = dir;
+        ctx.relocateWindows();
+      }
+      return;
+    }
 
     // TODO: configurable step size?
-    const hStepSize = srf.workingArea.width * 0.05;
-    const vStepSize = srf.workingArea.height * 0.05;
+    const hStepSize = srfRect.width * 0.05;
+    const vStepSize = srfRect.height * 0.05;
 
     let hStep, vStep;
     switch (dir) {
@@ -1015,10 +1089,15 @@ class TilingEngine {
         break;
     }
 
-    const geometry = window.actualGeometry;
-    const x = geometry.x + hStepSize * hStep;
-    const y = geometry.y + vStepSize * vStep;
+    x = geometry.x + hStepSize * hStep;
+    y = geometry.y + vStepSize * vStep;
 
+    if (x < srfRect.x) x = srfRect.x;
+    else if (x + geometry.width > srfRect.maxX)
+      x = srfRect.maxX - geometry.width;
+    if (y < srfRect.y) y = srfRect.y;
+    else if (y + geometry.height > srfRect.maxY)
+      y = srfRect.maxY - geometry.height;
     if (CONFIG.movePointerOnFocus) {
       window.moveMouseToFocus();
     }

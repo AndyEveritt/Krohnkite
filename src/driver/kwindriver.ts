@@ -593,7 +593,7 @@ class KWinDriver implements IDriverContext {
 
     this.setTimeout(
       forcedArrangeScreen,
-      this.engine.SENDING_WINDOWS_MAX_WAIT_TIME,
+      TilingEngine.SENDING_WINDOWS_MAX_WAIT_TIME,
     );
     return true;
   }
@@ -635,6 +635,48 @@ class KWinDriver implements IDriverContext {
   private _relocateWindowsProcessFinish(reason: keyof typeof ArrangeReason) {
     if (this.engine.relocationWindows.activeWindow !== null)
       this.currentWindow = this.engine.relocationWindows.activeWindow;
+    /*move float window to the edge of the new screen*/
+    if (this.engine.relocationWindows.direction !== null) {
+      let win: WindowClass;
+      if (this.engine.relocationWindows.totalNumWinsPrepareToOutput === 1) {
+        win = this.engine.relocationWindows.toOutputs.entries()[0]?.[1]?.[0];
+      } else if (
+        this.engine.relocationWindows.totalNumWinsPrepareToVDesktop === 1
+      ) {
+        win = this.engine.relocationWindows.toVDesktops.entries()[0]?.[1]?.[0];
+      } else {
+        warning(
+          `${getMethodName()}. there is Direction assign but toOutputs or toVDesktops arrays length not equals one`,
+        );
+        return;
+      }
+      if (win) {
+        const srfRect = win.surface.workingArea;
+        const winGeom = win.actualGeometry;
+        let newX = winGeom.x;
+        let newY = winGeom.y;
+        switch (this.engine.relocationWindows.direction) {
+          case "left":
+            newX = srfRect.maxX - winGeom.width;
+            break;
+          case "right":
+            newX = srfRect.x;
+            break;
+          case "up":
+            newY = srfRect.maxY - winGeom.height;
+            break;
+          case "down":
+            newY = srfRect.y;
+            break;
+        }
+        win.forceSetGeometry(
+          this,
+          new Rect(newX, newY, winGeom.width, winGeom.height),
+        );
+      }
+      this.engine.relocationWindows.clear();
+      return;
+    }
     this.engine.relocationWindows.clear();
     try {
       this.control.engine.arrange(this, reason);
