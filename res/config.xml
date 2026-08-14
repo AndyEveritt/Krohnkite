@@ -396,6 +396,14 @@
 	    <label>Percentage of the range from the top of the screen to the window placed in the center of the screen.Determines the randomization spread.</label>
         <default>15</default>
     </entry>
+    <entry name="floatSizeStepWidth" type="Int">
+	    <label>What percentage of the screen width will the floating window expand or contract by each time the keyboard shortcut is pressed?</label>
+        <default>6</default>
+    </entry>
+    <entry name="floatSizeStepHeight" type="Int">
+	    <label>What percentage of the screen height will the floating window expand or contract by each time the keyboard shortcut is pressed?</label>
+        <default>4</default>
+    </entry>
     <entry name="floatAsDefault" type="Bool">
 	    <label>by default all new windows become floating</label>
         <default>false</default>

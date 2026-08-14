@@ -131,12 +131,12 @@ interface IConfig {
   ignoreVDesktop: string[];
   tileNothing: boolean;
   tilingClass: string[];
-
   screenDefaultLayout: string[];
+
   //Float
-  floatConfig: IFloatWindowsConfig;
   floatAsDefault: boolean;
   floatUtility: boolean;
+  floatConfig: IFloatWindowsConfig;
 
   //Dock
   dockOrder: [number, number, number, number];

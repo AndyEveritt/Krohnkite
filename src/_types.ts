@@ -5,10 +5,12 @@
     SPDX-License-Identifier: MIT
 */
 
+type NonNullableProps<T> = { [K in keyof T]: NonNullable<T[K]> };
 type PartialWithRequired<T, K extends keyof T> = Partial<T> &
   Required<Pick<T, K>>;
 type percentType = number;
 type Direction = "up" | "down" | "left" | "right";
+// TODO: DELETE Position type
 type Position = "left" | "middle" | "right" | "upper" | "bottom" | "single";
 function getOppositeDirection(direction: Direction): Direction {
   switch (direction) {
@@ -145,6 +147,8 @@ const ConfigVariables = {
   floatRandomEnable: "floatRandomEnable",
   floatRandomWidth: "floatRandomWidth",
   floatRandomHeight: "floatRandomHeight",
+  floatSizeStepWidth: "floatSizeStepWidth",
+  floatSizeStepHeight: "floatSizeStepHeight",
   floatAsDefault: "floatAsDefault",
   floatUtility: "floatUtility",
   //TODO: will be removed

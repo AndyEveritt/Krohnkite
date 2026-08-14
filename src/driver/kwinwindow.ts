@@ -4,9 +4,18 @@
 
     SPDX-License-Identifier: MIT
 */
-type DriverFloatConfig = PartialWithRequired<
-  IFloatWindow,
-  "shouldFloat" | "auto" | "width" | "height" | "leftIndent" | "topIndent"
+type DriverFloatConfig = NonNullableProps<
+  PartialWithRequired<
+    IFloatWindow,
+    | "shouldFloat"
+    | "auto"
+    | "width"
+    | "height"
+    | "leftIndent"
+    | "topIndent"
+    | "stepWidth"
+    | "stepHeight"
+  >
 >;
 
 class DriverWindow implements IDriverWindow {
@@ -312,6 +321,8 @@ class DriverWindow implements IDriverWindow {
       height: this._nativeFloatGeometry.height,
       leftIndent: { value: this._nativeFloatGeometry.x, unit: "px" },
       topIndent: { value: this._nativeFloatGeometry.y, unit: "px" },
+      stepWidth: CONFIG.floatConfig.sizeStepWidth,
+      stepHeight: CONFIG.floatConfig.sizeStepHeight,
     };
     if (!configs || configs.length === 0) return defaults;
 
@@ -347,6 +358,8 @@ class DriverWindow implements IDriverWindow {
           value: this._nativeFloatGeometry.y,
           unit: "px",
         },
+        stepWidth: cfg.stepWidth ?? CONFIG.floatConfig.sizeStepWidth,
+        stepHeight: cfg.stepHeight ?? CONFIG.floatConfig.sizeStepHeight,
       };
     }
 

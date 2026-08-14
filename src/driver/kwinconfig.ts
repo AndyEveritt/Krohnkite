@@ -40,6 +40,8 @@ interface IFloatWindowsConfig {
   randomize: boolean;
   randomWidth: number;
   randomHeight: number;
+  sizeStepWidth: number;
+  sizeStepHeight: number;
   config: IFloatWindow[];
 }
 type IndentValue = {
@@ -55,6 +57,8 @@ interface IFloatWindow {
   height: number | null;
   leftIndent: IndentValue | null;
   topIndent: IndentValue | null;
+  stepWidth: number | null;
+  stepHeight: number | null;
 }
 
 function isValidConfigKey(key: string): key is ConfigVariables {
@@ -100,6 +104,8 @@ function parseFloatConfig(lines: string[]): IFloatWindow[] {
       height: null,
       leftIndent: null,
       topIndent: null,
+      stepWidth: null,
+      stepHeight: null,
     };
 
     if (paramsStr) {
@@ -194,6 +200,38 @@ function parseFloatConfig(lines: string[]): IFloatWindow[] {
             }
             break;
           }
+          case "stepwidth":
+          case "sw": {
+            const sw = parseNumber(rawVal, false);
+            if (sw instanceof Err) {
+              warning(`parseFloatConfig: invalid step width "${rawVal}"`);
+            } else {
+              const vsw = validateNumber(sw, 0, 100);
+              if (vsw instanceof Err) {
+                warning(`parseFloatConfig: step width out of range: ${rawVal}`);
+              } else {
+                entry.stepWidth = vsw;
+              }
+            }
+            break;
+          }
+          case "stepheight":
+          case "sh": {
+            const sh = parseNumber(rawVal, false);
+            if (sh instanceof Err) {
+              warning(`parseFloatConfig: invalid step height "${rawVal}"`);
+            } else {
+              const vsh = validateNumber(sh, 0, 100);
+              if (vsh instanceof Err) {
+                warning(
+                  `parseFloatConfig: step height out of range: ${rawVal}`,
+                );
+              } else {
+                entry.stepHeight = vsh;
+              }
+            }
+            break;
+          }
           default:
             warning(`parseFloatConfig: unknown param "${key}"`);
         }
@@ -276,9 +314,9 @@ class KWinConfig implements IConfig {
    * */
   // public floatingClass: string[];
   // public floatingTitle: string[];
-  public floatConfig: IFloatWindowsConfig;
   public floatAsDefault: boolean;
   public floatUtility: boolean;
+  public floatConfig: IFloatWindowsConfig;
 
   /*
    * Dock
@@ -588,6 +626,20 @@ class KWinConfig implements IConfig {
         15,
         "floatRandomHeight",
         1,
+        100,
+      ),
+      sizeStepWidth: validateNumberWithDefault(
+        KWIN.readConfig("floatSizeStepWidth", 6),
+        6,
+        "floatSizeStepWidth",
+        0,
+        100,
+      ),
+      sizeStepHeight: validateNumberWithDefault(
+        KWIN.readConfig("floatSizeStepHeight", 4),
+        4,
+        "floatSizeStepHeight",
+        0,
         100,
       ),
       config: parseFloatConfig(

@@ -191,9 +191,10 @@ class TilingEngine {
   ) {
     const srf = window.surface;
 
-    // TODO: configurable step size?
-    const hStepSize = srf.workingArea.width * 0.05;
-    const vStepSize = srf.workingArea.height * 0.05;
+    const hStepSize =
+      (srf.workingArea.width * window.window.floatConfig.stepWidth) / 100;
+    const vStepSize =
+      (srf.workingArea.height * window.window.floatConfig.stepHeight) / 100;
 
     let hStep, vStep;
     switch (dir) {
@@ -1069,9 +1070,10 @@ class TilingEngine {
       return;
     }
 
-    // TODO: configurable step size?
-    const hStepSize = srfRect.width * 0.05;
-    const vStepSize = srfRect.height * 0.05;
+    const hStepSize =
+      (srfRect.width * window.window.floatConfig.stepWidth) / 100;
+    const vStepSize =
+      (srfRect.height * window.window.floatConfig.stepHeight) / 100;
 
     let hStep, vStep;
     switch (dir) {
