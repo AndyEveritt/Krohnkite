@@ -33,6 +33,25 @@ class WindowStore {
       this.list.splice(after ? destIdx : destIdx - 1, 0, srcWin);
     }
   }
+  public moveGroup(
+    windows: WindowClass[],
+    destWin: WindowClass,
+    after?: boolean,
+  ) {
+    const removed: WindowClass[] = [];
+    for (const win of windows) {
+      const idx = this.list.indexOf(win);
+      if (idx >= 0) removed.push(this.list.splice(idx, 1)[0]);
+    }
+    if (removed.length === 0) return;
+    const destIdx = this.list.indexOf(destWin);
+    if (destIdx === -1) {
+      this.list.push(...removed);
+      return;
+    }
+    this.list.splice(after ? destIdx + 1 : destIdx, 0, ...removed);
+  }
+
   public getWindowById(id: string): WindowClass | null {
     let idx = this.list.map((w) => w.id).indexOf(id);
     return idx < 0 ? null : this.list[idx];

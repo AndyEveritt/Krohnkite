@@ -553,24 +553,20 @@ class TilingEngine {
       LOG.print(LogModules.arrangeScreen, "visibles", mes);
     }
     let tileables = this.windows.getVisibleTileables(srf);
-    const newWindowsIdxs: number[] = [];
-    for (const [i, tileable] of tileables.entries()) {
-      if (!tileable.window.isCommittedEver) newWindowsIdxs.push(i);
-    }
+    const newWins = tileables.filter((t) => !t.window.isCommittedEver);
     if (
       CONFIG.newWindowPosition !== "last" &&
-      newWindowsIdxs.length > 0 &&
+      newWins.length > 0 &&
       tileables.length > 1
     ) {
-      const newWins: WindowClass[] = [];
-      for (let i = newWindowsIdxs.length - 1; i >= 0; i--) {
-        newWins.push(tileables.splice(newWindowsIdxs[i], 1)[0]);
-      }
-      newWins.reverse();
-      if (CONFIG.newWindowPosition === "first") {
-        tileables.unshift(...newWins);
-      } else {
-        tileables.splice(1, 0, ...newWins);
+      const anchor = tileables.find((t) => t.window.isCommittedEver);
+      if (anchor) {
+        this.windows.moveGroup(
+          newWins,
+          anchor,
+          CONFIG.newWindowPosition === "second",
+        );
+        tileables = this.windows.getVisibleTileables(srf);
       }
     }
     let layout = this.layouts.getCurrentLayout(srf);
