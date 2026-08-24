@@ -539,10 +539,9 @@ class TilingEngine {
       if (!window.window.isCommittedEver && window.window.floatConfig.auto) {
         window.state = WindowState.Floating;
       } else if (window.state === WindowState.Undecided) {
-        window.state =
-          window.shouldFloat || CONFIG.floatAsDefault
-            ? WindowState.Floating
-            : WindowState.Tiled;
+        window.state = window.shouldFloat
+          ? WindowState.Floating
+          : WindowState.Tiled;
       }
     });
     if (LOG?.isModuleOn(LogModules.arrangeScreen)) {

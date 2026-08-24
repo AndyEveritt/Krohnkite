@@ -316,7 +316,7 @@ class DriverWindow implements IDriverWindow {
     const configs = CONFIG.floatConfig.config;
     const defaults: DriverFloatConfig = {
       shouldFloat: false,
-      auto: false,
+      auto: CONFIG.floatAsDefault,
       width: this._nativeFloatGeometry.width,
       height: this._nativeFloatGeometry.height,
       leftIndent: { value: this._nativeFloatGeometry.x, unit: "px" },
