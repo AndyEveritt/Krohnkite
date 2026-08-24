@@ -178,7 +178,7 @@ class DriverWindow implements IDriverWindow {
       matchWords(this.window.caption, KWINCONFIG.ignoreTitle) >= 0 ||
       DriverWindow.isContain(KWINCONFIG.ignoreRole, window.windowRole) ||
       (KWINCONFIG.tileNothing &&
-        DriverWindow.isContain(KWINCONFIG.tilingClass, window.resourceClass));
+        !DriverWindow.isContain(KWINCONFIG.tilingClass, window.resourceClass));
   }
   public moveMouseToFocus() {
     const time = getTime();
