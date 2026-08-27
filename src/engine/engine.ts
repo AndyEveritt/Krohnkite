@@ -893,7 +893,7 @@ class TilingEngine {
    * Focus a neighbor at the given direction.
    */
   public focusDir(ctx: IDriverContext, dir: Direction): boolean {
-    let winTypes = ctx.isMetaMode ? CONFIG.focusMetaCfg : CONFIG.focusNormalCfg;
+    let winTypes = ctx.isRegister ? CONFIG.focusMetaCfg : CONFIG.focusNormalCfg;
     if (winTypes === WinTypes.special) {
       return ctx.focusSpecial(dir);
     }
@@ -906,8 +906,8 @@ class TilingEngine {
     }
     if (surfaceWin === false) surfaceWin = null;
     if (
-      (!ctx.isMetaMode && CONFIG.focusMoveScreensNormal) ||
-      (ctx.isMetaMode && CONFIG.focusMoveScreensMeta)
+      (!ctx.isRegister && CONFIG.focusMoveScreensNormal) ||
+      (ctx.isRegister && CONFIG.focusMoveScreensMeta)
     ) {
       const result = ctx.focusOutput(surfaceWin, dir, winTypes);
       if (result) {
@@ -919,8 +919,8 @@ class TilingEngine {
     }
 
     if (
-      (!ctx.isMetaMode && CONFIG.focusMoveVDesktopsNormal) ||
-      (ctx.isMetaMode && CONFIG.focusMoveVDesktopsMeta)
+      (!ctx.isRegister && CONFIG.focusMoveVDesktopsNormal) ||
+      (ctx.isRegister && CONFIG.focusMoveVDesktopsMeta)
     ) {
       return ctx.focusVDesktop(surfaceWin, dir, winTypes);
     }
@@ -956,7 +956,7 @@ class TilingEngine {
       return true;
     }
     if (
-      ctx.isMetaMode
+      ctx.isRegister
         ? CONFIG.focusMoveScreensMeta
         : CONFIG.focusMoveScreensNormal
     ) {
@@ -980,7 +980,7 @@ class TilingEngine {
       }
     }
     if (
-      ctx.isMetaMode
+      ctx.isRegister
         ? CONFIG.focusMoveVDesktopsMeta
         : CONFIG.focusMoveVDesktopsNormal
     )
@@ -1042,7 +1042,7 @@ class TilingEngine {
       (y === srfRect.maxY - geometry.height && dir === "down")
     ) {
       if (
-        (ctx.isMetaMode
+        (ctx.isRegister
           ? CONFIG.focusMoveScreensMeta
           : CONFIG.focusMoveScreensNormal) &&
         floatRelocation("toOutput")
@@ -1053,7 +1053,7 @@ class TilingEngine {
         return;
       }
       if (
-        (ctx.isMetaMode
+        (ctx.isRegister
           ? CONFIG.focusMoveVDesktopsMeta
           : CONFIG.focusMoveVDesktopsNormal) &&
         floatRelocation("toVDesktop")
@@ -1231,7 +1231,7 @@ class TilingEngine {
    */
   public handleLayoutShortcut(
     ctx: IDriverContext,
-    input: Shortcut,
+    input: KrohnkiteAction,
     data?: any,
   ): boolean {
     const layout = this.layouts.getCurrentLayout(ctx.currentSurface);
@@ -1247,7 +1247,7 @@ class TilingEngine {
   public handleDockShortcut(
     ctx: IDriverContext,
     window: WindowClass,
-    input: Shortcut,
+    input: KrohnkiteAction,
   ): boolean {
     return this.docks.handleShortcut(ctx, window, input);
   }

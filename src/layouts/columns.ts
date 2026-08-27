@@ -568,43 +568,43 @@ class ColumnsLayout implements ILayout {
     ctx.showNotification(notification);
   }
 
-  public handleShortcut(ctx: EngineContext, input: Shortcut) {
+  public handleShortcut(ctx: EngineContext, input: KrohnkiteAction) {
     let isApply: boolean = false;
     switch (input) {
-      case Shortcut.SwapLeft:
+      case KrohnkiteAction.MoveLeft:
         if (this.direction.north || this.direction.south) {
           isApply = this.toUpOrLeft(ctx);
         } else if (this.direction.east) {
           isApply = this.toColumnWithBiggerIndex(ctx);
         } else isApply = this.toColumnWithSmallerIndex(ctx);
         break;
-      case Shortcut.SwapRight:
+      case KrohnkiteAction.MoveRight:
         if (this.direction.north || this.direction.south) {
           isApply = this.toBottomOrRight(ctx);
         } else if (this.direction.east) {
           isApply = this.toColumnWithSmallerIndex(ctx);
         } else isApply = this.toColumnWithBiggerIndex(ctx);
         break;
-      case Shortcut.SwapUp:
+      case KrohnkiteAction.MoveUp:
         if (this.direction.north) {
           isApply = this.toColumnWithSmallerIndex(ctx);
         } else if (this.direction.south) {
           isApply = this.toColumnWithBiggerIndex(ctx);
         } else isApply = this.toUpOrLeft(ctx);
         break;
-      case Shortcut.SwapDown:
+      case KrohnkiteAction.MoveDown:
         if (this.direction.north) {
           isApply = this.toColumnWithBiggerIndex(ctx);
         } else if (this.direction.south) {
           isApply = this.toColumnWithSmallerIndex(ctx);
         } else isApply = this.toBottomOrRight(ctx);
         break;
-      case Shortcut.Rotate:
+      case KrohnkiteAction.Rotate:
         this.direction.cwRotation();
         this.showDirection(ctx);
         isApply = true;
         break;
-      case Shortcut.RotatePart:
+      case KrohnkiteAction.RotatePart:
         this.direction.ccwRotation();
         this.showDirection(ctx);
         isApply = true;

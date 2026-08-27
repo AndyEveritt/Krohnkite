@@ -15,7 +15,7 @@ declare function print(s: string): void;
 interface Api {
   workspace: Workspace;
   kwin: KWin;
-  shortcuts: IShortcuts;
+  shortcuts: ShortcutsQml;
   dbus: IDBusQml;
 }
 declare var KWINCONFIG: KWinConfig;

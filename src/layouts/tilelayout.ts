@@ -42,8 +42,8 @@ class TileLayout implements ILayout {
     this.parts = new RotateLayoutPart(
       new HalfSplitLayoutPart(
         new RotateLayoutPart(new StackLayoutPart()),
-        new StackLayoutPart()
-      )
+        new StackLayoutPart(),
+      ),
     );
     switch (CONFIG.tileLayoutInitialAngle) {
       case "1": {
@@ -66,7 +66,7 @@ class TileLayout implements ILayout {
     tiles: WindowClass[],
     basis: WindowClass,
     delta: RectDelta,
-    gap: number
+    gap: number,
   ) {
     this.parts.adjust(area, tiles, basis, delta, gap);
   }
@@ -75,7 +75,7 @@ class TileLayout implements ILayout {
     ctx: EngineContext,
     tileables: WindowClass[],
     area: Rect,
-    gap: number
+    gap: number,
   ): void {
     tileables.forEach((tileable) => (tileable.state = WindowState.Tiled));
 
@@ -91,35 +91,35 @@ class TileLayout implements ILayout {
     return other;
   }
 
-  public handleShortcut(ctx: EngineContext, input: Shortcut) {
+  public handleShortcut(ctx: EngineContext, input: KrohnkiteAction) {
     switch (input) {
-      case Shortcut.DWMLeft:
+      case KrohnkiteAction.DWMLeft:
         this.masterRatio = clip(
           slide(this.masterRatio, -0.05),
           TileLayout.MIN_MASTER_RATIO,
-          TileLayout.MAX_MASTER_RATIO
+          TileLayout.MAX_MASTER_RATIO,
         );
         break;
-      case Shortcut.DWMRight:
+      case KrohnkiteAction.DWMRight:
         this.masterRatio = clip(
           slide(this.masterRatio, +0.05),
           TileLayout.MIN_MASTER_RATIO,
-          TileLayout.MAX_MASTER_RATIO
+          TileLayout.MAX_MASTER_RATIO,
         );
         break;
-      case Shortcut.Increase:
+      case KrohnkiteAction.Increase:
         // TODO: define arbitrary constant
         if (this.numMaster < 10) this.numMaster += 1;
         ctx.showNotification(this.description);
         break;
-      case Shortcut.Decrease:
+      case KrohnkiteAction.Decrease:
         if (this.numMaster > 0) this.numMaster -= 1;
         ctx.showNotification(this.description);
         break;
-      case Shortcut.Rotate:
+      case KrohnkiteAction.Rotate:
         this.parts.rotate(90);
         break;
-      case Shortcut.RotatePart:
+      case KrohnkiteAction.RotatePart:
         this.parts.inner.primary.rotate(90);
         break;
       default:

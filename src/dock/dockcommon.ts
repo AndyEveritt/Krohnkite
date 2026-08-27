@@ -64,7 +64,7 @@ interface IDockEntry {
   slots: DockSlot[];
   remove(window: WindowClass): void;
   arrange(dockedWindows: WindowClass[], workingArea: Rect): Rect;
-  handleShortcut(window: WindowClass, shortcut: Shortcut): boolean;
+  handleShortcut(window: WindowClass, shortcut: KrohnkiteAction): boolean;
 }
 
 interface IDockStore {

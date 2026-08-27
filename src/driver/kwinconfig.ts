@@ -4,7 +4,7 @@
 
     SPDX-License-Identifier: MIT
 */
-enum WinTypes {
+const enum WinTypes {
   tiled = 1,
   docked = 2,
   float = 4,
@@ -61,185 +61,15 @@ interface IFloatWindow {
   stepHeight: number | null;
 }
 
-function isValidConfigKey(key: string): key is ConfigVariables {
-  return key in ConfigVariables;
+interface IShortcutConfEntry {
+  shortcuts: ShortcutName[];
+  mainAction: KrohnkiteAction | null;
+  registerAction: KrohnkiteAction | null;
+  sequenceTime: number | null;
 }
 
-function parseFloatConfig(lines: string[]): IFloatWindow[] {
-  const result: IFloatWindow[] = [];
-  for (const line of lines) {
-    const trimmed = line.trim();
-    if (!trimmed) continue;
-    if (trimmed.startsWith("#")) continue;
-
-    const parts = trimmed.split(":");
-    const classList = parts[0].trim();
-    if (classList) {
-      const rawParts = classList.split(",");
-      const classes = rawParts.map((c) => c.trim()).filter((c) => c !== "");
-      if (classes.length < rawParts.length) {
-        warning(`parseFloatConfig: empty class name in list "${classList}"`);
-        continue;
-      }
-    }
-
-    let title = "";
-    let paramsStr = "";
-    if (parts.length === 2) {
-      paramsStr = parts[1];
-    } else if (parts.length === 3) {
-      title = parts[1];
-      paramsStr = parts[2];
-    } else if (parts.length > 3) {
-      warning(`parseFloatConfig: invalid format in "${trimmed}"`);
-      continue;
-    }
-
-    const entry: IFloatWindow = {
-      class: classList,
-      title,
-      shouldFloat: true,
-      auto: false,
-      width: null,
-      height: null,
-      leftIndent: null,
-      topIndent: null,
-      stepWidth: null,
-      stepHeight: null,
-    };
-
-    if (paramsStr) {
-      const params = separate(paramsStr, ",");
-      for (const param of params) {
-        const eqIdx = param.indexOf("=");
-        const key =
-          eqIdx >= 0
-            ? param.slice(0, eqIdx).trim().toLowerCase()
-            : param.trim().toLowerCase();
-        const rawVal =
-          eqIdx >= 0
-            ? param
-                .slice(eqIdx + 1)
-                .trim()
-                .toLowerCase()
-            : "";
-        switch (key) {
-          case "shouldfloat":
-          case "f":
-            entry.shouldFloat = rawVal === "true" || rawVal === "1";
-            break;
-          case "auto":
-          case "a":
-            entry.auto = rawVal === "true" || rawVal === "1";
-            break;
-          case "width":
-          case "w": {
-            const w = parseNumber(rawVal, false);
-            if (w instanceof Err) {
-              warning(`parseFloatConfig: invalid width "${rawVal}"`);
-            } else {
-              const vw = validateNumber(w, 1, 100);
-              if (vw instanceof Err) {
-                warning(`parseFloatConfig: width out of range: ${rawVal}`);
-              } else {
-                entry.width = vw;
-              }
-            }
-            break;
-          }
-          case "height":
-          case "h": {
-            const h = parseNumber(rawVal, false);
-            if (h instanceof Err) {
-              warning(`parseFloatConfig: invalid height "${rawVal}"`);
-            } else {
-              const vh = validateNumber(h, 1, 100);
-              if (vh instanceof Err) {
-                warning(`parseFloatConfig: height out of range: ${rawVal}`);
-              } else {
-                entry.height = vh;
-              }
-            }
-            break;
-          }
-          case "leftindent":
-          case "li":
-          case "left": {
-            let unit: "px" | "%" = "px";
-            let numStr = rawVal;
-            if (rawVal.endsWith("%")) {
-              unit = "%";
-              numStr = rawVal.slice(0, -1);
-            } else if (rawVal.endsWith("px")) {
-              numStr = rawVal.slice(0, -2);
-            }
-            const l = parseNumber(numStr, true);
-            if (l instanceof Err) {
-              warning(`parseFloatConfig: invalid left indent "${rawVal}"`);
-            } else {
-              entry.leftIndent = { value: l, unit };
-            }
-            break;
-          }
-          case "topindent":
-          case "ti":
-          case "top": {
-            let unit: "px" | "%" = "px";
-            let numStr = rawVal;
-            if (rawVal.endsWith("%")) {
-              unit = "%";
-              numStr = rawVal.slice(0, -1);
-            } else if (rawVal.endsWith("px")) {
-              numStr = rawVal.slice(0, -2);
-            }
-            const t = parseNumber(numStr, true);
-            if (t instanceof Err) {
-              warning(`parseFloatConfig: invalid top indent "${rawVal}"`);
-            } else {
-              entry.topIndent = { value: t, unit };
-            }
-            break;
-          }
-          case "stepwidth":
-          case "sw": {
-            const sw = parseNumber(rawVal, false);
-            if (sw instanceof Err) {
-              warning(`parseFloatConfig: invalid step width "${rawVal}"`);
-            } else {
-              const vsw = validateNumber(sw, 0, 100);
-              if (vsw instanceof Err) {
-                warning(`parseFloatConfig: step width out of range: ${rawVal}`);
-              } else {
-                entry.stepWidth = vsw;
-              }
-            }
-            break;
-          }
-          case "stepheight":
-          case "sh": {
-            const sh = parseNumber(rawVal, false);
-            if (sh instanceof Err) {
-              warning(`parseFloatConfig: invalid step height "${rawVal}"`);
-            } else {
-              const vsh = validateNumber(sh, 0, 100);
-              if (vsh instanceof Err) {
-                warning(
-                  `parseFloatConfig: step height out of range: ${rawVal}`,
-                );
-              } else {
-                entry.stepHeight = vsh;
-              }
-            }
-            break;
-          }
-          default:
-            warning(`parseFloatConfig: unknown param "${key}"`);
-        }
-      }
-    }
-    result.push(entry);
-  }
-  return result;
+function isValidConfigKey(key: string): key is keyof typeof ConfigVariables {
+  return key in ConfigVariables;
 }
 
 class KWinConfig implements IConfig {
@@ -269,6 +99,14 @@ class KWinConfig implements IConfig {
   public srfDefineCfg: string[];
   public srfDefaultConfig: string[];
   /*
+   * Shortcuts
+   * */
+  public altRegisterTimeout: number;
+  public altRegisterIsToggle: boolean;
+  public altRegisterIsPushedTwice: boolean;
+  public shortcutSequenceTime: number;
+  public shortcutConf: IShortcutConfEntry[];
+  /*
    * Geometry
    * */
   public screenGapTop: number;
@@ -283,7 +121,6 @@ class KWinConfig implements IConfig {
    * */
   public adjustLayout: boolean;
   public adjustLayoutLive: boolean;
-  public directionalKeyMode: "dwm" | "focus";
   public focusNormalCfg: WinTypes;
   public focusMetaCfg: WinTypes;
   public focusMoveScreensNormal: boolean;
@@ -291,11 +128,6 @@ class KWinConfig implements IConfig {
   public focusMoveScreensMeta: boolean;
   public focusMoveVDesktopsMeta: boolean;
   public movePointerOnFocus: boolean;
-  public defaultMetaConfig: { [key: string]: Shortcut };
-  public metaConf: string[];
-  public metaTimeout: number;
-  public metaIsToggle: boolean;
-  public metaIsPushedTwice: boolean;
   public newWindowPosition: "last" | "first" | "second";
   /*
    * Rules
@@ -493,18 +325,36 @@ class KWinConfig implements IConfig {
       this.limitTileWidthRatio = KWIN.readConfig("limitTileWidthRatio", 1.6);
 
     //***************************
+    //***************** Shortcuts
+    //***************************
+    this.altRegisterTimeout = validateNumberWithDefault(
+      KWIN.readConfig("altRegisterTimeout", 3000),
+      3000,
+      "altRegisterTimeout",
+      100,
+      9999,
+    );
+    this.altRegisterIsToggle = KWIN.readConfig("altRegisterIsToggle", false);
+    this.altRegisterIsPushedTwice = KWIN.readConfig(
+      "altRegisterIsPushedTwice",
+      false,
+    );
+    this.shortcutSequenceTime = validateNumberWithDefault(
+      KWIN.readConfig("shortcutSequenceTime", 400),
+      400,
+      "altRegisterTimeout",
+      0,
+      9999,
+    );
+    this.shortcutConf = parseShortcutConf(
+      separate(KWIN.readConfig("shortcutConf", ""), "\n"),
+    );
+
+    //***************************
     //****************** Behavior
     //***************************
     this.adjustLayout = KWIN.readConfig("adjustLayout", true);
     this.adjustLayoutLive = KWIN.readConfig("adjustLayoutLive", true);
-    this.directionalKeyMode =
-      validateNumberWithDefault(
-        KWIN.readConfig("directionalKeyMode", 0),
-        0,
-        "directionalKeyMode",
-      ) === 0
-        ? "focus"
-        : "dwm";
 
     this.focusNormalCfg =
       winTypesCfg[
@@ -541,24 +391,6 @@ class KWinConfig implements IConfig {
       true,
     );
     this.movePointerOnFocus = KWIN.readConfig("movePointerOnFocus", false);
-    this.defaultMetaConfig = {
-      RaiseSurfaceCapacity: Shortcut.MetaResetSurfaceCapacity,
-      FocusLeft: Shortcut.MetaFocusLeft,
-      FocusRight: Shortcut.MetaFocusRight,
-      FocusUp: Shortcut.MetaFocusUp,
-      FocusDown: Shortcut.MetaFocusDown,
-    };
-    this.metaConf = separate(KWIN.readConfig("metaConf", ""), "\n");
-    this.metaTimeout = validateNumberWithDefault(
-      KWIN.readConfig("metaTimeout", 3000),
-      3000,
-      "metaTimeout",
-      100,
-      9999,
-    );
-    this.metaIsToggle = KWIN.readConfig("metaIsToggle", false);
-    this.metaIsPushedTwice = KWIN.readConfig("metaIsPushedTwice", false);
-
     this.newWindowPosition =
       (["last", "first", "second"] as const)[
         validateNumberWithDefault(

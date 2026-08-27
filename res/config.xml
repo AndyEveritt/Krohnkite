@@ -252,6 +252,30 @@
     </entry>
 
       <!-- ***************************** -->
+      <!-- *********Shortcuts*********** -->
+      <!-- ***************************** -->
+    <entry name="altRegisterTimeout" type="Int">
+        <label>Time Duration in milliseconds for alter register</label>
+        <default>3000</default>
+    </entry>
+    <entry name="altRegisterIsToggle" type="Bool">
+	    <label>Krohnkite alter register shorcut works as a switcher</label>
+        <default>false</default>
+    </entry>
+    <entry name="altRegisterIsPushedTwice" type="Bool">
+	    <label>Push twice the alter register shortcut to enable/disable the register</label>
+        <default>false</default>
+    </entry>
+    <entry name="shortcutSequenceTime" type="Int">
+        <label>Max waiting time the sequence of shortcuts.</label>
+        <default>400</default>
+    </entry>
+    <entry name="shortcutConf" type="String">
+	    <label>Case Insensitive. Redefining the default keybindings (see the wiki for details)</label>
+      <default></default>
+    </entry>
+
+      <!-- ***************************** -->
       <!-- **********Behavior*********** -->
       <!-- ***************************** -->
 
@@ -263,11 +287,6 @@
     <entry name="adjustLayoutLive" type="Bool">
 	    <label>Adjust as window is being resized</label>
         <default>true</default>
-    </entry>
-
-    <entry name="directionalKeyMode" type="Int">
-     <label>Up, Down, Left, and Right shortcut behaves like focus or dwm</label>
-        <default>0</default>
     </entry>
 
     <entry name="focusNormal" type="Int">
@@ -297,23 +316,6 @@
     <entry name="movePointerOnFocus" type="Bool">
       <label>Move mouse cursor to the center of a window/screen when it becomes focused</label>
       <default>false</default>
-    </entry>
-
-    <entry name="metaConf" type="String">
-	    <label>Case Insensitive. Redefining the default keybindings in Meta Mode (see the wiki for details)</label>
-      <default></default>
-    </entry>
-    <entry name="metaTimeout" type="Int">
-        <label>Time Duration in milliseconds for Meta Mode</label>
-        <default>3000</default>
-    </entry>
-    <entry name="metaIsToggle" type="Bool">
-	    <label>Krohnkite Meta shorcut works as a switcher of the Meta Mode</label>
-        <default>false</default>
-    </entry>
-    <entry name="metaIsPushedTwice" type="Bool">
-	    <label>Push twice the meta shortcut to enable/disable the Meta Mode</label>
-        <default>false</default>
     </entry>
 
     <entry name="newWindowPosition" type="Int">

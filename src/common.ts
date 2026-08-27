@@ -5,58 +5,12 @@
     SPDX-License-Identifier: MIT
 */
 
-interface IShortcuts {
-  getToggleDock(): ShortcutHandler;
-
-  getFocusNext(): ShortcutHandler;
-  getFocusPrev(): ShortcutHandler;
-
-  getFocusUp(): ShortcutHandler;
-  getFocusDown(): ShortcutHandler;
-  getFocusLeft(): ShortcutHandler;
-  getFocusRight(): ShortcutHandler;
-
-  getShiftDown(): ShortcutHandler;
-  getShiftUp(): ShortcutHandler;
-  getShiftLeft(): ShortcutHandler;
-  getShiftRight(): ShortcutHandler;
-
-  getGrowHeight(): ShortcutHandler;
-  getShrinkHeight(): ShortcutHandler;
-  getShrinkWidth(): ShortcutHandler;
-  getGrowWidth(): ShortcutHandler;
-
-  getIncrease(): ShortcutHandler;
-  getDecrease(): ShortcutHandler;
-
-  getToggleFloat(): ShortcutHandler;
-  getFloatAll(): ShortcutHandler;
-  getNextLayout(): ShortcutHandler;
-  getPreviousLayout(): ShortcutHandler;
-
-  getRotate(): ShortcutHandler;
-  getRotatePart(): ShortcutHandler;
-
-  getSetMaster(): ShortcutHandler;
-
-  getTileLayout(): ShortcutHandler;
-  getMonocleLayout(): ShortcutHandler;
-  getThreeColumnLayout(): ShortcutHandler;
-  getSpreadLayout(): ShortcutHandler;
-  getStairLayout(): ShortcutHandler;
-  getFloatingLayout(): ShortcutHandler;
-  getQuarterLayout(): ShortcutHandler;
-  getStackedLayout(): ShortcutHandler;
-  getColumnsLayout(): ShortcutHandler;
-  getSpiralLayout(): ShortcutHandler;
-  getBTreeLayout(): ShortcutHandler;
-  getCascadeLayout(): ShortcutHandler;
-
-  getRaiseSurfaceCapacity(): ShortcutHandler;
-  getLowerSurfaceCapacity(): ShortcutHandler;
-
-  getKrohnkiteMeta(): ShortcutHandler;
+interface IShortcutEntry {
+  name: ShortcutName;
+  hdl: ShortcutHandler;
 }
+
+type ShortcutsQml = IShortcutEntry[];
 
 interface IDBusQml {
   getDBusExists(): DBusCall;
@@ -104,10 +58,16 @@ interface IConfig {
   gapsOverrideConfig: string[];
   limitTileWidthRatio: number;
 
+  //Shortcuts
+  altRegisterTimeout: number;
+  altRegisterIsToggle: boolean;
+  altRegisterIsPushedTwice: boolean;
+  shortcutSequenceTime: number;
+  shortcutConf: IShortcutConfEntry[];
+
   //Behavior
   adjustLayout: boolean;
   adjustLayoutLive: boolean;
-  directionalKeyMode: "dwm" | "focus";
   focusNormalCfg: WinTypes;
   focusMoveScreensNormal: boolean;
   focusMoveVDesktopsNormal: boolean;
@@ -115,11 +75,6 @@ interface IConfig {
   focusMetaCfg: WinTypes;
   focusMoveScreensMeta: boolean;
   focusMoveVDesktopsMeta: boolean;
-  defaultMetaConfig: { [key: string]: Shortcut };
-  metaConf: string[];
-  metaTimeout: number;
-  metaIsToggle: boolean;
-  metaIsPushedTwice: boolean;
   newWindowPosition: "last" | "first" | "second";
 
   //Rules
@@ -179,10 +134,11 @@ interface IConfig {
   //log
 }
 
-interface IKrohnkiteMeta {
+interface IRegister {
   state: boolean;
   lastPushed: number;
   toggleMode: boolean;
+  alterActionID: number;
 }
 
 interface IDriverWindow {
@@ -281,7 +237,7 @@ interface IDriverContext {
   currentDesktop: VirtualDesktop;
   currentSurface: ISurface;
   currentWindow: WindowClass | null;
-  isMetaMode: boolean;
+  isRegister: boolean;
 
   getNeighborOutput(direction: Direction, source: Output): Output | null;
   getNeighborVDesktop(
@@ -304,7 +260,7 @@ interface IDriverContext {
     direction: Direction,
     winTypes: WinTypes,
   ): boolean;
-  metaPushed(): void;
+  alterRegisterHdl(action: KrohnkiteAction): void;
   moveWinToVDesktopByDirection(
     window: WindowClass,
     direction: Direction,
@@ -312,6 +268,7 @@ interface IDriverContext {
   relocateWindows(): boolean;
   setTimeout(func: () => void, timeout: number): void;
   showNotification(text: string): void;
+  shortcutSequencesArrange(): void;
 }
 
 interface ILayoutClass {
@@ -338,7 +295,11 @@ interface ILayout {
     area: Rect,
     gap: number,
   ): void;
-  handleShortcut?(ctx: EngineContext, input: Shortcut, data?: any): boolean;
+  handleShortcut?(
+    ctx: EngineContext,
+    input: KrohnkiteAction,
+    data?: any,
+  ): boolean;
   drag?(
     ctx: EngineContext,
     draggingRect: Rect,

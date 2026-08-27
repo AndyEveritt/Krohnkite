@@ -31,7 +31,7 @@ class ThreeColumnLayout implements ILayout {
     tiles: WindowClass[],
     basis: WindowClass,
     delta: RectDelta,
-    gap: number
+    gap: number,
   ): void {
     const basisIndex = tiles.indexOf(basis);
     if (basisIndex < 0) return;
@@ -46,7 +46,7 @@ class ThreeColumnLayout implements ILayout {
         tiles.map((tile) => tile.weight),
         gap,
         tiles.indexOf(basis),
-        delta
+        delta,
       ).forEach((newWeight, i) => (tiles[i].weight = newWeight * tiles.length));
     } else if (tiles.length === this.masterSize + 1) {
       /* two columns */
@@ -58,7 +58,7 @@ class ThreeColumnLayout implements ILayout {
         gap,
         basisIndex < this.masterSize ? 0 : 1,
         delta,
-        true
+        true,
       );
 
       /* adjust master tile weights */
@@ -69,10 +69,10 @@ class ThreeColumnLayout implements ILayout {
           masterTiles.map((tile) => tile.weight),
           gap,
           basisIndex,
-          delta
+          delta,
         ).forEach(
           (newWeight, i) =>
-            (masterTiles[i].weight = newWeight * masterTiles.length)
+            (masterTiles[i].weight = newWeight * masterTiles.length),
         );
       }
     } else if (tiles.length > this.masterSize + 1) {
@@ -91,7 +91,7 @@ class ThreeColumnLayout implements ILayout {
         gap,
         basisGroup,
         delta,
-        true
+        true,
       );
       const newMasterRatio = newRatios[1];
       const newStackRatio = basisGroup === 0 ? newRatios[0] : newRatios[2];
@@ -110,9 +110,10 @@ class ThreeColumnLayout implements ILayout {
         groupTiles.map((tile) => tile.weight),
         gap,
         groupTiles.indexOf(basis),
-        delta
+        delta,
       ).forEach(
-        (newWeight, i) => (groupTiles[i].weight = newWeight * groupTiles.length)
+        (newWeight, i) =>
+          (groupTiles[i].weight = newWeight * groupTiles.length),
       );
     }
   }
@@ -121,7 +122,7 @@ class ThreeColumnLayout implements ILayout {
     ctx: EngineContext,
     tileables: WindowClass[],
     area: Rect,
-    gap: number
+    gap: number,
   ): void {
     /* Tile all tileables */
     tileables.forEach((tileable) => (tileable.state = WindowState.Tiled));
@@ -132,7 +133,7 @@ class ThreeColumnLayout implements ILayout {
       LayoutUtils.splitAreaWeighted(
         area,
         tiles.map((tile) => tile.weight),
-        gap
+        gap,
       ).forEach((tileArea, i) => (tiles[i].geometry = tileArea));
     } else if (tiles.length === this.masterSize + 1) {
       /* master & R-stack (only 1 window in stack) */
@@ -140,14 +141,14 @@ class ThreeColumnLayout implements ILayout {
         area,
         this.masterRatio,
         gap,
-        true
+        true,
       );
 
       const masterTiles = tiles.slice(0, this.masterSize);
       LayoutUtils.splitAreaWeighted(
         masterArea,
         masterTiles.map((tile) => tile.weight),
-        gap
+        gap,
       ).forEach((tileArea, i) => (masterTiles[i].geometry = tileArea));
 
       tiles[tiles.length - 1].geometry = stackArea;
@@ -160,7 +161,7 @@ class ThreeColumnLayout implements ILayout {
         area,
         [stackRatio, this.masterRatio, stackRatio],
         gap,
-        true
+        true,
       );
 
       const rstackSize = Math.floor((tiles.length - this.masterSize) / 2);
@@ -173,7 +174,7 @@ class ThreeColumnLayout implements ILayout {
         LayoutUtils.splitAreaWeighted(
           groupAreas[group],
           groupTiles.map((tile) => tile.weight),
-          gap
+          gap,
         ).forEach((tileArea, i) => (groupTiles[i].geometry = tileArea));
       });
     }
@@ -188,28 +189,28 @@ class ThreeColumnLayout implements ILayout {
 
   public handleShortcut(
     ctx: EngineContext,
-    input: Shortcut,
-    data?: any
+    input: KrohnkiteAction,
+    data?: any,
   ): boolean {
     switch (input) {
-      case Shortcut.Increase:
+      case KrohnkiteAction.Increase:
         this.resizeMaster(ctx, +1);
         return true;
-      case Shortcut.Decrease:
+      case KrohnkiteAction.Decrease:
         this.resizeMaster(ctx, -1);
         return true;
-      case Shortcut.DWMLeft:
+      case KrohnkiteAction.DWMLeft:
         this.masterRatio = clip(
           slide(this.masterRatio, -0.05),
           ThreeColumnLayout.MIN_MASTER_RATIO,
-          ThreeColumnLayout.MAX_MASTER_RATIO
+          ThreeColumnLayout.MAX_MASTER_RATIO,
         );
         return true;
-      case Shortcut.DWMRight:
+      case KrohnkiteAction.DWMRight:
         this.masterRatio = clip(
           slide(this.masterRatio, +0.05),
           ThreeColumnLayout.MIN_MASTER_RATIO,
-          ThreeColumnLayout.MAX_MASTER_RATIO
+          ThreeColumnLayout.MAX_MASTER_RATIO,
         );
         return true;
       default:

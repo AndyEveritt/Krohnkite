@@ -175,23 +175,26 @@ class DockEntry implements IDockEntry {
     return new Rect(leftBorder, topBorder, width, height);
   }
 
-  public handleShortcut(window: WindowClass, shortcut: Shortcut): boolean {
+  public handleShortcut(
+    window: WindowClass,
+    shortcut: KrohnkiteAction,
+  ): boolean {
     const slot = this.getSlotByWindow(window);
     let desiredPosition: DockPosition;
     if (!slot || !window.dock) {
       return false;
     }
     switch (shortcut) {
-      case Shortcut.SwapLeft:
+      case KrohnkiteAction.MoveLeft:
         desiredPosition = DockPosition.left;
         break;
-      case Shortcut.SwapUp:
+      case KrohnkiteAction.MoveUp:
         desiredPosition = DockPosition.top;
         break;
-      case Shortcut.SwapRight:
+      case KrohnkiteAction.MoveRight:
         desiredPosition = DockPosition.right;
         break;
-      case Shortcut.SwapDown:
+      case KrohnkiteAction.MoveDown:
         desiredPosition = DockPosition.bottom;
         break;
       default:

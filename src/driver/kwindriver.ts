@@ -14,17 +14,21 @@
  */
 var KWIN: KWin;
 
+type RunningShortcutSeq = {
+  pressTime: number;
+  seq: ShortcutSequence[];
+  finishAction: KrohnkiteAction | null | "empty";
+  actionCandidate: KrohnkiteAction | null;
+};
+
 class KWinDriver implements IDriverContext {
   public static backendName: string = "kwin";
-
   public get backend(): string {
     return KWinDriver.backendName;
   }
-
   public get currentDesktop(): VirtualDesktop {
     return this.workspace.currentDesktop;
   }
-
   public get currentSurface(): ISurface {
     /* The active window can already be deleted (and its output destroyed)
      * while events from a hotplug/resume flurry are still being handled;
@@ -39,7 +43,6 @@ class KWinDriver implements IDriverContext {
       this.workspace.currentDesktop,
     );
   }
-
   public set currentSurface(value: ISurface) {
     const ksrf = value as KWinSurface;
 
@@ -52,19 +55,16 @@ class KWinDriver implements IDriverContext {
     if (this.workspace.currentActivity !== ksrf.activity)
       this.workspace.currentActivity = ksrf.activity;
   }
-
   public get currentWindow(): WindowClass | null {
     const client = this.workspace.activeWindow;
     return client ? this.windowMap.get(client) : null;
   }
-
   public set currentWindow(window: WindowClass | null) {
     if (window !== null) {
       window.focusTime = getTime();
       this.workspace.activeWindow = (window.window as DriverWindow).window;
     }
   }
-
   public get currentSurfaces(): ISurface[] {
     const currentSurfaces: ISurface[] = [];
     this.workspace.screens.forEach((output) => {
@@ -83,31 +83,40 @@ class KWinDriver implements IDriverContext {
     });
     return currentSurfaces;
   }
-
   public get cursorPosition(): [number, number] | null {
     const workspacePos = this.workspace.cursorPos;
     return workspacePos !== null ? [workspacePos.x, workspacePos.y] : null;
   }
-
-  public get isMetaMode(): boolean {
-    return this._isMetaMode.state;
+  public get isRegister(): boolean {
+    return this._isRegister.state;
   }
 
   public workspace: Workspace;
-  private shortcuts: IShortcuts;
+  private _shortcuts: Map<ShortcutName, Shortcut>;
+  private _shortcutSequences: Map<ShortcutName, IShortcutConfEntry[]>;
+  private _shortcutPressTime: number;
+  /* this token doesn't reset ever and ~9 quadrillion presses need to overflow it and broke. This is dangerous programming, programming on the edge. */
+  private _shortcutFinishToken: number;
+  private _runningShortcutSequence: RunningShortcutSeq | null;
   private engine: TilingEngine;
   private control: TilingController;
   private windowMap: WrapperMap<KwinWindow, WindowClass>;
   private entered: boolean;
   private _surfaceStore: KWinSurfaceStore;
-  private _isMetaMode: IKrohnkiteMeta;
+  private _isRegister: IRegister;
 
   constructor(api: Api) {
     KWIN = api.kwin;
     CONFIG = KWINCONFIG = new KWinConfig();
     DBUS = new DBusManager(api.dbus);
     this.workspace = api.workspace;
-    this.shortcuts = api.shortcuts;
+    this._shortcuts = new Map(
+      api.shortcuts.map((entry) => [entry.name, new Shortcut(entry)]),
+    );
+    this._shortcutSequences = new Map();
+    this._shortcutPressTime = 0;
+    this._shortcutFinishToken = 0;
+    this._runningShortcutSequence = null;
     this.engine = new TilingEngine();
     this.control = new TilingController(this.engine);
     this.windowMap = new WrapperMap(
@@ -119,17 +128,16 @@ class KWinDriver implements IDriverContext {
     );
     this.entered = false;
     this._surfaceStore = new KWinSurfaceStore(this.workspace);
-    this._isMetaMode = {
+    this._isRegister = {
       state: false,
       lastPushed: 0,
-      toggleMode: CONFIG.metaIsToggle,
+      toggleMode: CONFIG.altRegisterIsToggle,
+      alterActionID: 0,
     };
   }
-
   /*
    * Main
    */
-
   public main() {
     LOG?.send(LogModules.printConfig, undefined, `Config: ${CONFIG}`);
     this._bindEvents();
@@ -140,7 +148,6 @@ class KWinDriver implements IDriverContext {
       this.addWindow(clients[i]);
     }
   }
-
   private addWindow(client: KwinWindow): WindowClass | null {
     if (client.dock) {
       // Docks reserve screen space but aren't tiled. Handle that reservation
@@ -182,7 +189,6 @@ class KWinDriver implements IDriverContext {
     }
     return null;
   }
-
   private manageDock(client: KwinWindow): void {
     const placementArea = () =>
       toRect(
@@ -218,7 +224,6 @@ class KWinDriver implements IDriverContext {
       this.control.onSurfaceUpdate(this, "manageDock");
     });
   }
-
   public focusNeighborWindow(
     direction: Direction,
     winTypes: WinTypes,
@@ -252,7 +257,6 @@ class KWinDriver implements IDriverContext {
 
     return window;
   }
-
   public focusOutput(
     window: KwinWindow | null,
     direction: Direction,
@@ -282,7 +286,6 @@ class KWinDriver implements IDriverContext {
     }
     return true;
   }
-
   public focusSpecial(direction: Direction): boolean {
     switch (direction) {
       case "up": {
@@ -346,7 +349,6 @@ class KWinDriver implements IDriverContext {
       }
     }
   }
-
   public focusVDesktop(
     window: KwinWindow | null,
     direction: Direction,
@@ -381,7 +383,6 @@ class KWinDriver implements IDriverContext {
     }
     return result;
   }
-
   public getNeighborOutput(
     direction: Direction,
     source: Output,
@@ -435,7 +436,6 @@ class KWinDriver implements IDriverContext {
     }
     return retOutput;
   }
-
   public getNeighborVDesktop(
     direction: Direction,
     sourceVDesktop?: VirtualDesktop,
@@ -490,7 +490,6 @@ class KWinDriver implements IDriverContext {
       }
     }
   }
-
   public getSurface(
     output: Output,
     vDesktop?: VirtualDesktop,
@@ -504,53 +503,64 @@ class KWinDriver implements IDriverContext {
       vDesktop,
     );
   }
-
   public setTimeout(func: () => void, timeout: number) {
     KWinSetTimeout(() => this._enter(func), timeout);
   }
-
   public showNotification(text: string) {
     if (CONFIG.notificationDuration > 0)
       popupDialog.showNotification(text, CONFIG.notificationDuration);
   }
-
-  public metaPushed() {
-    if (CONFIG.metaIsToggle) {
-      this._isMetaMode.state = !this._isMetaMode.state;
-      this.showNotification(
-        `Meta toggled ${this._isMetaMode.state ? "on" : "off"}`,
-      );
-    } else if (CONFIG.metaIsPushedTwice) {
-      let pushedTime = getTime();
-      if (pushedTime - this._isMetaMode.lastPushed < CONFIG.metaTimeout - 200) {
-        this._isMetaMode.toggleMode = !this._isMetaMode.toggleMode;
-        this._isMetaMode.state = this._isMetaMode.toggleMode;
-        this.showNotification(
-          `Meta toggled ${this._isMetaMode.state ? "on" : "off"}`,
-        );
-      } else {
-        if (!this._isMetaMode.state) {
-          this._isMetaMode.state = true;
-          this.showNotification(`Meta on`);
-          this.setTimeout(() => {
-            if (!this._isMetaMode.toggleMode) {
-              this._isMetaMode.state = false;
-            }
-          }, CONFIG.metaTimeout);
+  public shortcutSequencesArrange() {}
+  private _setRegisterTimeout(timeId: number, timeout?: number) {
+    this.setTimeout(
+      () => {
+        if (
+          timeId === this._isRegister.alterActionID &&
+          this._isRegister.state !== this._isRegister.toggleMode
+        ) {
+          const timeNow = getTime();
+          const timeSinceLastPressShortcut = timeNow - this._shortcutPressTime;
+          if (timeSinceLastPressShortcut < CONFIG.altRegisterTimeout) {
+            this._setRegisterTimeout(
+              timeId,
+              CONFIG.altRegisterTimeout - timeSinceLastPressShortcut,
+            );
+          } else {
+            this._isRegister.state = this._isRegister.toggleMode;
+            this.showNotification(
+              `Register ${this._isRegister.state ? "on" : "off"}`,
+            );
+          }
         }
+      },
+      timeout ?? CONFIG.notificationDuration + 5,
+    );
+  }
+  public alterRegisterHdl(action: KrohnkiteAction) {
+    switch (action) {
+      case "AlterRegister": {
+        this._isRegister.state = !this._isRegister.state;
+        this._isRegister.alterActionID = getTime();
+        // const id = this._isRegister.alterActionID;
+        this.showNotification(
+          `Register ${this._isRegister.state ? "on" : "off"}`,
+        );
+        if (this._isRegister.state !== this._isRegister.toggleMode) {
+          this._setRegisterTimeout(this._isRegister.alterActionID);
+        }
+        break;
       }
-      this._isMetaMode.lastPushed = pushedTime;
-    } else {
-      if (!this._isMetaMode.state) {
-        this._isMetaMode.state = true;
-        this.showNotification(`Meta on`);
-        this.setTimeout(() => {
-          this._isMetaMode.state = false;
-        }, CONFIG.notificationDuration);
+      case "ToggleRegister": {
+        this._isRegister.alterActionID = 0;
+        this._isRegister.toggleMode = !this._isRegister.toggleMode;
+        this._isRegister.state = this._isRegister.toggleMode;
+        this.showNotification(
+          `Register toggled ${this._isRegister.state ? "on" : "off"}`,
+        );
+        break;
       }
     }
   }
-
   public relocateWindows(): boolean {
     const relocationWindows = this.engine.relocationWindows;
     if (relocationWindows.totalNumWinsPrepareToOutput === 0) {
@@ -597,7 +607,6 @@ class KWinDriver implements IDriverContext {
     );
     return true;
   }
-
   private _moveWindowToOutput(
     window: WindowClass,
     targetOutput: Output,
@@ -615,7 +624,6 @@ class KWinDriver implements IDriverContext {
     }
     return true;
   }
-
   private _transferWindowsToVDesktops() {
     const overCapacityWindows = this.engine.relocationWindows;
     if (overCapacityWindows.totalNumWinsPrepareToVDesktop <= 0) return;
@@ -631,7 +639,6 @@ class KWinDriver implements IDriverContext {
     }
     this._relocateWindowsProcessFinish("transferWindowToVDesktop");
   }
-
   private _relocateWindowsProcessFinish(reason: keyof typeof ArrangeReason) {
     if (this.engine.relocationWindows.activeWindow !== null)
       this.currentWindow = this.engine.relocationWindows.activeWindow;
@@ -684,7 +691,6 @@ class KWinDriver implements IDriverContext {
       warning(`${getMethodName()}: ${e}`);
     }
   }
-
   private _sendingWindowsProcessCall(
     reason: keyof typeof ArrangeReason,
   ): boolean {
@@ -702,7 +708,6 @@ class KWinDriver implements IDriverContext {
     }
     return false;
   }
-
   public moveWinToVDesktopByDirection(
     window: WindowClass,
     direction: Direction,
@@ -715,7 +720,6 @@ class KWinDriver implements IDriverContext {
     this.workspace.activeWindow = client;
     return true;
   }
-
   private _moveWinToVDesktop(
     window: WindowClass,
     virtualDesktop: VirtualDesktop,
@@ -726,7 +730,6 @@ class KWinDriver implements IDriverContext {
       client.desktops = [virtualDesktop];
     }
   }
-
   private _getWindowsByDirection(
     wType: WinTypes,
     surface: ISurface,
@@ -833,7 +836,6 @@ class KWinDriver implements IDriverContext {
     });
     return windows;
   }
-
   private _makeActiveScreen(output: Output, notify: boolean = true) {
     for (let win of this.workspace.stackingOrder) {
       if (win.resourceClass === "plasmashell" && win.output === output) {
@@ -843,7 +845,6 @@ class KWinDriver implements IDriverContext {
       }
     }
   }
-
   private _computeCrossScreenSourceRect(
     window: KwinWindow,
     surface: ISurface,
@@ -873,7 +874,6 @@ class KWinDriver implements IDriverContext {
       }
     }
   }
-
   private _computeSurfaceEdgeSourceRect(
     surface: ISurface,
     direction: Direction,
@@ -890,7 +890,6 @@ class KWinDriver implements IDriverContext {
         return new Rect(g.x, g.y, g.width, 5);
     }
   }
-
   private _setFocusOnSurface(
     window: KwinWindow | null,
     surface: ISurface,
@@ -957,10 +956,9 @@ class KWinDriver implements IDriverContext {
     }
     return true;
   }
-
-  // Read the virtual desktop currently shown on a specific output. Uses KWin
-  // 6.7's per-output API (workspace.currentDesktopForScreen) and falls back to
-  // the global currentDesktop on older KWin, where every output shares it.
+  /* Read the virtual desktop currently shown on a specific output. Uses KWin
+  6.7's per-output API (workspace.currentDesktopForScreen) and falls back to
+  the global currentDesktop on older KWin, where every output shares it. */
   private _outputCurrentDesktop(output: Output): VirtualDesktop {
     if (typeof this.workspace.currentDesktopForScreen === "function") {
       try {
@@ -972,13 +970,12 @@ class KWinDriver implements IDriverContext {
     }
     return this.workspace.currentDesktop;
   }
-
-  // Switch a specific output to a virtual desktop via KWin 6.7's per-output API.
-  // Signature per KWin's src/scripting/workspace_wrapper.cpp:
-  //   setCurrentDesktopForScreen(VirtualDesktop *desktop, LogicalOutput *output)
-  // Falls back to the global currentDesktop setter on older KWin (which on a
-  // per-screen setup would jump to the output already showing the desktop, but
-  // older KWin has no per-screen desktops so the global setter is correct there).
+  /* Switch a specific output to a virtual desktop via KWin 6.7's per-output API.
+  Signature per KWin's src/scripting/workspace_wrapper.cpp:
+    setCurrentDesktopForScreen(VirtualDesktop *desktop, LogicalOutput *output)
+  Falls back to the global currentDesktop setter on older KWin (which on a
+  per-screen setup would jump to the output already showing the desktop, but
+  older KWin has no per-screen desktops so the global setter is correct there). */
   private _setOutputDesktop(output: Output, desktop: VirtualDesktop): void {
     if (typeof this.workspace.setCurrentDesktopForScreen === "function") {
       try {
@@ -990,91 +987,161 @@ class KWinDriver implements IDriverContext {
     }
     this.workspace.currentDesktop = desktop;
   }
-
-  private _bindShortcut() {
-    const cb = (shortcut: Shortcut) => {
-      return () => {
-        LOG?.send(LogModules.shortcut, `Shortcut pressed:`, `${shortcut}`);
-        this._enter(() =>
-          this.control.onShortcut(this, shortcut, "shortcutCB"),
-        );
-      };
+  private _onShortcut(shortcut: Shortcut) {
+    this._shortcutPressTime = getTime();
+    const token = ++this._shortcutFinishToken;
+    const control = (action: KrohnkiteAction | null) => {
+      if (shortcut.name) {
+        LOG?.send("shortcut", "ControlFuncCall", `action:${action}`);
+        this.control.onShortcut(this, action, "shortcutCB");
+      }
     };
-
-    const shortcutPairs: Array<[() => ShortcutHandler, Shortcut]> = [
-      [() => this.shortcuts.getToggleDock(), Shortcut.ToggleDock],
-      [() => this.shortcuts.getFocusNext(), Shortcut.FocusNext],
-      [() => this.shortcuts.getFocusPrev(), Shortcut.FocusPrev],
-      [() => this.shortcuts.getFocusDown(), Shortcut.FocusDown],
-      [() => this.shortcuts.getFocusUp(), Shortcut.FocusUp],
-      [() => this.shortcuts.getFocusLeft(), Shortcut.FocusLeft],
-      [() => this.shortcuts.getFocusRight(), Shortcut.FocusRight],
-      [() => this.shortcuts.getShiftDown(), Shortcut.ShiftDown],
-      [() => this.shortcuts.getShiftUp(), Shortcut.ShiftUp],
-      [() => this.shortcuts.getShiftLeft(), Shortcut.ShiftLeft],
-      [() => this.shortcuts.getShiftRight(), Shortcut.ShiftRight],
-      [() => this.shortcuts.getGrowHeight(), Shortcut.GrowHeight],
-      [() => this.shortcuts.getShrinkHeight(), Shortcut.ShrinkHeight],
-      [() => this.shortcuts.getShrinkWidth(), Shortcut.ShrinkWidth],
-      [() => this.shortcuts.getGrowWidth(), Shortcut.GrowWidth],
-      [() => this.shortcuts.getIncrease(), Shortcut.Increase],
-      [() => this.shortcuts.getDecrease(), Shortcut.Decrease],
-      [() => this.shortcuts.getToggleFloat(), Shortcut.ToggleFloat],
-      [() => this.shortcuts.getFloatAll(), Shortcut.ToggleFloatAll],
-      [() => this.shortcuts.getNextLayout(), Shortcut.NextLayout],
-      [() => this.shortcuts.getPreviousLayout(), Shortcut.PreviousLayout],
-      [() => this.shortcuts.getRotate(), Shortcut.Rotate],
-      [() => this.shortcuts.getRotatePart(), Shortcut.RotatePart],
-      [() => this.shortcuts.getSetMaster(), Shortcut.SetMaster],
-      [
-        () => this.shortcuts.getRaiseSurfaceCapacity(),
-        Shortcut.RaiseSurfaceCapacity,
-      ],
-      [
-        () => this.shortcuts.getLowerSurfaceCapacity(),
-        Shortcut.LowerSurfaceCapacity,
-      ],
-      [() => this.shortcuts.getKrohnkiteMeta(), Shortcut.KrohnkiteMeta],
-    ];
-
-    for (const [getHandler, shortcut] of shortcutPairs) {
-      getHandler().activated.connect(cb(shortcut));
+    const runSeq = (runningShortcutSequences: RunningShortcutSeq): boolean => {
+      let maxSeqInProcess: number | null = null;
+      for (let i = runningShortcutSequences.seq.length - 1; i >= 0; i--) {
+        const seq = runningShortcutSequences.seq[i];
+        if (seq.state === "inProcess") {
+          switch (seq.next(shortcut)) {
+            case "inProcess": {
+              maxSeqInProcess =
+                maxSeqInProcess !== null
+                  ? Math.max(maxSeqInProcess, seq.sequence.length)
+                  : seq.sequence.length;
+              break;
+            }
+            case "finish": {
+              if (
+                maxSeqInProcess === null ||
+                maxSeqInProcess <= seq.sequence.length
+              ) {
+                runningShortcutSequences.finishAction = seq.resolve(
+                  this.isRegister,
+                );
+              } else {
+                runningShortcutSequences.actionCandidate = seq.resolve(
+                  this.isRegister,
+                );
+              }
+              break;
+            }
+          }
+        }
+      }
+      const notFinished = runningShortcutSequences.finishAction === "empty";
+      if (maxSeqInProcess === null && notFinished) return false;
+      else if (notFinished) {
+        runningShortcutSequences.pressTime = this._shortcutPressTime;
+        this.setTimeout(
+          () => this.onShortcutFinish(token),
+          runningShortcutSequences.seq[0].timeout + 5,
+        );
+      }
+      return true;
+    };
+    if (this._runningShortcutSequence !== null) {
+      if (runSeq(this._runningShortcutSequence)) {
+        if (this._runningShortcutSequence.finishAction !== "empty") {
+          let a = this._runningShortcutSequence.finishAction;
+          this._runningShortcutSequence = null;
+          control(a);
+        }
+        return;
+      } else {
+        this._runningShortcutSequence = null;
+        return;
+      }
     }
-
-    const layoutCb = (layoutClass: ILayoutClass) => {
-      return () => {
-        LOG?.send(LogModules.shortcut, "shortcut layout", `${layoutClass.id}`);
-        this._enter(() =>
-          this.control.onShortcut(
-            this,
-            Shortcut.SetLayout,
-            "shortcutLayoutCB",
-            layoutClass.id,
-          ),
-        );
+    const shortcutSequences = this._shortcutSequences.get(shortcut.name);
+    if (
+      this._runningShortcutSequence === null &&
+      shortcutSequences !== undefined
+    ) {
+      const seq = shortcutSequences.map((s) => new ShortcutSequence(s));
+      this._runningShortcutSequence = {
+        pressTime: this._shortcutPressTime,
+        seq,
+        finishAction: "empty",
+        actionCandidate: shortcut.resolve(this.isRegister),
       };
-    };
-
-    const layoutPairs: Array<[() => ShortcutHandler, ILayoutClass]> = [
-      [() => this.shortcuts.getTileLayout(), TileLayout],
-      [() => this.shortcuts.getMonocleLayout(), MonocleLayout],
-      [() => this.shortcuts.getThreeColumnLayout(), ThreeColumnLayout],
-      [() => this.shortcuts.getSpreadLayout(), SpreadLayout],
-      [() => this.shortcuts.getStairLayout(), StairLayout],
-      [() => this.shortcuts.getFloatingLayout(), FloatingLayout],
-      [() => this.shortcuts.getQuarterLayout(), QuarterLayout],
-      [() => this.shortcuts.getStackedLayout(), StackedLayout],
-      [() => this.shortcuts.getColumnsLayout(), ColumnsLayout],
-      [() => this.shortcuts.getSpiralLayout(), SpiralLayout],
-      [() => this.shortcuts.getBTreeLayout(), BinaryTreeLayout],
-      [() => this.shortcuts.getCascadeLayout(), CascadeLayout],
-    ];
-
-    for (const [getHandler, layoutClass] of layoutPairs) {
-      getHandler().activated.connect(layoutCb(layoutClass));
+      this.setTimeout(() => this.onShortcutFinish(token), seq[0].timeout + 5);
+      return;
+    }
+    control(shortcut.resolve(this.isRegister));
+  }
+  public onShortcutFinish(token: number) {
+    if (
+      this._runningShortcutSequence !== null &&
+      token === this._shortcutFinishToken &&
+      this._runningShortcutSequence.pressTime === this._shortcutPressTime
+    ) {
+      this.control.onShortcut(
+        this,
+        this._runningShortcutSequence.actionCandidate,
+        "shortcutCB",
+      );
+      this._runningShortcutSequence = null;
     }
   }
-
+  private _bindShortcut() {
+    if (CONFIG.altRegisterIsPushedTwice) {
+      const conf = {
+        shortcuts: ["AlterRegisterSC", "AlterRegisterSC"],
+        mainAction: "ToggleRegister",
+        registerAction: "ToggleRegister",
+        sequenceTime: null,
+      } as IShortcutConfEntry;
+      const list = this._shortcutSequences.get("AlterRegisterSC");
+      if (list === undefined)
+        this._shortcutSequences.set("AlterRegisterSC", [conf]);
+      else list.push(conf);
+    }
+    for (const conf of CONFIG.shortcutConf) {
+      if (conf.shortcuts.length === 1) {
+        const shortcut = this._shortcuts.get(conf.shortcuts[0]);
+        if (shortcut === undefined) continue;
+        if (conf.mainAction !== null) shortcut.action = conf.mainAction;
+        if (conf.registerAction !== null)
+          shortcut.registerAction = conf.registerAction;
+      } else {
+        const first = conf.shortcuts[0];
+        const list = this._shortcutSequences.get(first);
+        if (list === undefined) this._shortcutSequences.set(first, [conf]);
+        else list.push(conf);
+      }
+    }
+    /* check register shortcuts */
+    for (const shortcut of this._shortcuts.values()) {
+      const action = shortcut.action;
+      const registerAction = shortcut.registerAction;
+      const isRegisterAction = (a: KrohnkiteAction | null) =>
+        a === KrohnkiteAction.AlterRegister ||
+        a === KrohnkiteAction.ToggleRegister;
+      if (isRegisterAction(action) || isRegisterAction(registerAction)) {
+        if (action !== registerAction) {
+          warning(
+            `${getMethodName()}. Shortcut "${shortcut.name}": action and registerAction must be equal to AlterRegister or ToggleRegister; fixing.`,
+          );
+          if (isRegisterAction(action)) shortcut.registerAction = action;
+          else shortcut.action = registerAction;
+        }
+      }
+    }
+    for (const list of this._shortcutSequences.values()) {
+      list.sort((a, b) => a.shortcuts.length - b.shortcuts.length);
+      const maxTime = list.reduce(
+        (max, conf) =>
+          Math.max(max, conf.sequenceTime ?? CONFIG.shortcutSequenceTime),
+        0,
+      );
+      for (const conf of list) conf.sequenceTime = maxTime;
+    }
+    for (const shortcut of this._shortcuts.values()) {
+      shortcut.hdl.activated.connect(() => {
+        LOG?.send(LogModules.shortcut, `Shortcut pressed:`, `${shortcut.name}`);
+        this._enter(() => this._onShortcut(shortcut));
+      });
+    }
+  }
   /**
    * Binds callback to the signal w/ extra fail-safe measures, like re-entry
    * prevention and auto-disconnect on termination.
@@ -1092,7 +1159,6 @@ class KWinDriver implements IDriverContext {
 
     return wrapper;
   }
-
   /**
    * Run the given function in a protected(?) context to prevent nested event
    * handling.
@@ -1229,7 +1295,6 @@ class KWinDriver implements IDriverContext {
     /* NOTE: How disappointing. This doesn't work at all. Even an official kwin script tries this.
      *       https://github.com/KDE/kwin/blob/master/scripts/minimizeall/contents/code/main.js */
   }
-
   private _bindWindowEvents(window: WindowClass, client: KwinWindow) {
     let moving = false;
     let resizing = false;

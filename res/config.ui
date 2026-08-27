@@ -24,7 +24,7 @@
   </property>
   <property name="font">
    <font>
-    <pointsize>14</pointsize>
+    <pointsize>12</pointsize>
    </font>
   </property>
   <property name="windowTitle">
@@ -48,19 +48,13 @@
      <property name="font">
       <font>
        <family>Noto Sans</family>
-       <pointsize>14</pointsize>
+       <pointsize>12</pointsize>
        <italic>false</italic>
        <bold>false</bold>
       </font>
      </property>
-     <property name="toolTip">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-     </property>
-     <property name="toolTipDuration">
-      <number>0</number>
-     </property>
      <property name="styleSheet">
-      <string notr="true">font: 14pt &quot;Noto Sans&quot;;</string>
+      <string notr="true">font: 12pt &quot;Noto Sans&quot;;</string>
      </property>
      <property name="currentIndex">
       <number>0</number>
@@ -248,9 +242,6 @@
               <bold>false</bold>
               <underline>true</underline>
              </font>
-            </property>
-            <property name="toolTipDuration">
-             <number>-1</number>
             </property>
             <property name="text">
              <string>Tile Layout</string>
@@ -2277,9 +2268,6 @@
                 </item>
                 <item row="0" column="1" alignment="Qt::AlignmentFlag::AlignHCenter">
                  <widget class="QLabel" name="label_66">
-                  <property name="toolTip">
-                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                  </property>
                   <property name="text">
                    <string>Top</string>
                   </property>
@@ -2287,9 +2275,6 @@
                 </item>
                 <item row="0" column="3" alignment="Qt::AlignmentFlag::AlignHCenter">
                  <widget class="QLabel" name="label_67">
-                  <property name="toolTip">
-                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                  </property>
                   <property name="text">
                    <string>Bottom</string>
                   </property>
@@ -2297,9 +2282,6 @@
                 </item>
                 <item row="0" column="2" alignment="Qt::AlignmentFlag::AlignHCenter">
                  <widget class="QLabel" name="label_65">
-                  <property name="toolTip">
-                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                  </property>
                   <property name="text">
                    <string>Right</string>
                   </property>
@@ -2377,9 +2359,6 @@
                 </item>
                 <item row="0" column="0" alignment="Qt::AlignmentFlag::AlignHCenter">
                  <widget class="QLabel" name="label_64">
-                  <property name="toolTip">
-                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                  </property>
                   <property name="text">
                    <string>Left</string>
                   </property>
@@ -2506,9 +2485,6 @@
                 </item>
                 <item row="0" column="1" alignment="Qt::AlignmentFlag::AlignHCenter">
                  <widget class="QLabel" name="label_68">
-                  <property name="toolTip">
-                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                  </property>
                   <property name="text">
                    <string>Top</string>
                   </property>
@@ -2551,9 +2527,6 @@
                 </item>
                 <item row="0" column="3" alignment="Qt::AlignmentFlag::AlignHCenter">
                  <widget class="QLabel" name="label_69">
-                  <property name="toolTip">
-                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                  </property>
                   <property name="text">
                    <string>Bottom</string>
                   </property>
@@ -2561,9 +2534,6 @@
                 </item>
                 <item row="0" column="0" alignment="Qt::AlignmentFlag::AlignHCenter">
                  <widget class="QLabel" name="label_70">
-                  <property name="toolTip">
-                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                  </property>
                   <property name="text">
                    <string>Left</string>
                   </property>
@@ -2571,9 +2541,6 @@
                 </item>
                 <item row="0" column="2" alignment="Qt::AlignmentFlag::AlignHCenter">
                  <widget class="QLabel" name="label_71">
-                  <property name="toolTip">
-                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-                  </property>
                   <property name="text">
                    <string>Right</string>
                   </property>
@@ -2767,7 +2734,7 @@
             <property name="font">
              <font>
               <family>Noto Sans</family>
-              <pointsize>14</pointsize>
+              <pointsize>12</pointsize>
               <italic>false</italic>
               <bold>false</bold>
               <hintingpreference>PreferDefaultHinting</hintingpreference>
@@ -2910,7 +2877,7 @@
                <property name="font">
                 <font>
                  <family>Noto Sans</family>
-                 <pointsize>14</pointsize>
+                 <pointsize>12</pointsize>
                  <italic>false</italic>
                  <bold>false</bold>
                  <hintingpreference>PreferDefaultHinting</hintingpreference>
@@ -2957,7 +2924,7 @@
             <property name="font">
              <font>
               <family>Noto Sans</family>
-              <pointsize>14</pointsize>
+              <pointsize>12</pointsize>
               <italic>false</italic>
               <bold>false</bold>
              </font>
@@ -2994,7 +2961,7 @@
          <property name="font">
           <font>
            <family>Noto Sans</family>
-           <pointsize>14</pointsize>
+           <pointsize>12</pointsize>
            <italic>false</italic>
            <bold>false</bold>
           </font>
@@ -3068,6 +3035,760 @@
        </item>
       </layout>
      </widget>
+     <widget class="QWidget" name="tab_2">
+      <attribute name="title">
+       <string>Shortcuts</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayout_3">
+       <item>
+        <widget class="QGroupBox" name="GB_3_metaShortcut">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="title">
+          <string>Alter Register</string>
+         </property>
+         <layout class="QGridLayout" name="gridLayout_38">
+          <item row="0" column="0">
+           <widget class="QGroupBox" name="GB_2_metaDuration">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Double push AlterRegisterSC to toggle on/off  the Register.&lt;/p&gt;&lt;p&gt;add shortcut sequence:&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;AlterRegisterSC,AlterRegisterSC:ma=ToggleRegister,ra=ToggleRegister&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="title">
+             <string/>
+            </property>
+            <property name="flat">
+             <bool>true</bool>
+            </property>
+            <layout class="QGridLayout" name="gridLayout_31">
+             <property name="leftMargin">
+              <number>0</number>
+             </property>
+             <property name="topMargin">
+              <number>0</number>
+             </property>
+             <property name="bottomMargin">
+              <number>0</number>
+             </property>
+             <property name="horizontalSpacing">
+              <number>6</number>
+             </property>
+             <property name="verticalSpacing">
+              <number>0</number>
+             </property>
+             <item row="0" column="4">
+              <spacer name="horizontalSpacer_22">
+               <property name="orientation">
+                <enum>Qt::Orientation::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>40</width>
+                 <height>20</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+             <item row="0" column="0">
+              <widget class="QLabel" name="label_61">
+               <property name="text">
+                <string>Duration: </string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="3">
+              <widget class="QCheckBox" name="kcfg_altRegisterIsPushedTwice">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="maximumSize">
+                <size>
+                 <width>16777215</width>
+                 <height>20</height>
+                </size>
+               </property>
+               <property name="sizeIncrement">
+                <size>
+                 <width>0</width>
+                 <height>0</height>
+                </size>
+               </property>
+               <property name="toolTip">
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Push twice AlterRegisterSC shortcut to toggle Register Mode&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
+               <property name="text">
+                <string>Push twice  to toggle</string>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="1">
+              <widget class="QSpinBox" name="kcfg_altRegisterTimeout">
+               <property name="focusPolicy">
+                <enum>Qt::FocusPolicy::StrongFocus</enum>
+               </property>
+               <property name="toolTip">
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;After this time the register state will return to its original state. Any shortcut will refresh this timer.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
+               <property name="alignment">
+                <set>Qt::AlignmentFlag::AlignCenter</set>
+               </property>
+               <property name="suffix">
+                <string>ms</string>
+               </property>
+               <property name="minimum">
+                <number>100</number>
+               </property>
+               <property name="maximum">
+                <number>9999</number>
+               </property>
+               <property name="value">
+                <number>3000</number>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="2">
+              <widget class="QCheckBox" name="kcfg_altRegisterIsToggle">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="toolTip">
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Alter Register shortcut will toggle register. Switch on/off without timeout.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
+               <property name="text">
+                <string>Push to toggle</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QGroupBox" name="groupBox_30">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="title">
+          <string>Possible shortcuts and actions (for information only)</string>
+         </property>
+         <property name="flat">
+          <bool>true</bool>
+         </property>
+         <layout class="QGridLayout" name="gridLayout_39">
+          <item row="0" column="4">
+           <widget class="QComboBox" name="possibleActions">
+            <item>
+             <property name="text">
+              <string>AlterRegister</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Decrease</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>DWMLeft</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>DWMRight</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>FocusDown</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>FocusLeft</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>FocusNext</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>FocusPrev</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>FocusRight</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>FocusUp</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>GrowHeight</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>GrowWidth</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Increase</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>LowerSurfaceCapacity</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>NextLayout</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>PreviousLayout</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>RaiseSurfaceCapacity</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>ResetSurfaceCapacity</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>Rotate</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>RotatePart</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>SetBinaryTreeLayout</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>SetCascadeLayout</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>SetColumnsLayout</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>SetFloatingLayout</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>SetMaster</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>SetMonocleLayout</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>SetQuarterLayout</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>SetSpiralLayout</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>SetSpreadLayout</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>SetStackedLayout</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>SetStairLayout</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>SetThreeColumnLayout</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>SetTileLayout</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>MoveDown</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>MoveLeft</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>MoveRight</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>MoveUp</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>ShrinkHeight</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>ShrinkWidth</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>SwapDown</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>SwapUp</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>ToggleDock</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>ToggleFloat</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>ToggleFloatAll</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>ToggleRegister</string>
+             </property>
+            </item>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QLabel" name="label_78">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Minimum">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="text">
+             <string>Shortcuts</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="2">
+           <widget class="QComboBox" name="possibleShortcuts">
+            <item>
+             <property name="text">
+              <string>AlterRegisterSC</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>DecreaseSC</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>FocusDownSC</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>FocusLeftSC</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>FocusNextSC</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>FocusPrevSC</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>FocusRightSC</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>FocusUpSC</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>GrowHeightSC</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>GrowWidthSC</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>IncreaseSC</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>LowerSurfaceCapacitySC</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>NextLayoutSC</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>PreviousLayoutSC</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>RaiseSurfaceCapacitySC</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>RotateSC</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>RotatePartSC</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>SetBinaryTreeLayoutSC</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>SetCascadeLayoutSC</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>SetColumnsLayoutSC</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>SetFloatingLayoutSC</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>SetMasterSC</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>SetMonocleLayoutSC</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>SetQuarterLayoutSC</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>SetSpiralLayoutSC</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>SetSpreadLayoutSC</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>SetStackedLayoutSC</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>SetStairLayoutSC</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>SetThreeColumnLayoutSC</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>SetTileLayoutSC</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>MoveDownSC</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>MoveLeftSC</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>MoveRightSC</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>MoveUpSC</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>ShrinkHeightSC</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>ShrinkWidthSC</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>ToggleDockSC</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>ToggleFloatSC</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>ToggleFloatAllSC</string>
+             </property>
+            </item>
+           </widget>
+          </item>
+          <item row="0" column="3">
+           <widget class="QLabel" name="label_79">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="text">
+             <string>Actions</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QLabel" name="label_77">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="text">
+          <string>Default shortcuts override</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignmentFlag::AlignCenter</set>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QGroupBox" name="groupBox_33">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="title">
+          <string/>
+         </property>
+         <property name="flat">
+          <bool>true</bool>
+         </property>
+         <layout class="QGridLayout" name="gridLayout_40">
+          <item row="1" column="1">
+           <widget class="QSpinBox" name="kcfg_shortcutSequenceTime">
+            <property name="focusPolicy">
+             <enum>Qt::FocusPolicy::StrongFocus</enum>
+            </property>
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Max waiting time the sequence of shortcuts. By default no sequences configured, but you can configure them by yourself below text field.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignmentFlag::AlignCenter</set>
+            </property>
+            <property name="suffix">
+             <string>ms</string>
+            </property>
+            <property name="minimum">
+             <number>100</number>
+            </property>
+            <property name="maximum">
+             <number>9999</number>
+            </property>
+            <property name="value">
+             <number>400</number>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QLabel" name="label_80">
+            <property name="text">
+             <string>Sequence time</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="3">
+           <spacer name="horizontalSpacer_23">
+            <property name="orientation">
+             <enum>Qt::Orientation::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item row="1" column="4">
+           <widget class="QToolButton" name="toolButton">
+            <property name="contextMenuPolicy">
+             <enum>Qt::ContextMenuPolicy::NoContextMenu</enum>
+            </property>
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;One rule per line. Case insensitive. Format:&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:700;&quot;&gt;&amp;lt;Shortcut&amp;gt;[,&amp;lt;Shortcut&amp;gt;...]:&amp;lt;flag&amp;gt;=&amp;lt;value&amp;gt;[,&amp;lt;flag&amp;gt;=&amp;lt;value&amp;gt;...]&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;A comma-separated list of shortcuts forms a key sequence that must be pressed in order. Shortcut and action names are listed above in &amp;quot;Possible shortcuts and actions&amp;quot;.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Flags (at least one action flag is required):&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:700;&quot;&gt;mainaction|ma&lt;/span&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt; — the action to perform (KrohnkiteAction).&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:700;&quot;&gt;registeraction|ra&lt;/span&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt; — the action to perform while the register (meta) mode is active (KrohnkiteAction).&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:700;&quot;&gt;sequencetime|st&lt;/span&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt; — milliseconds, overrides the &amp;quot;Sequence time&amp;quot; setting for that rule.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Examples:&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:700;&quot;&gt;MoveLeftSC:ra=swapleft&lt;/span&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt; — assign SwapLeft action to MoveLeftSC shortcut when register is on. &lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:700;&quot;&gt;GrowWidthSC,ShrinkWidthSC:ma=resetSurfaceCapacity,st=500&lt;/span&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt; — assign shortcut sequence with sequence time overriding to 500 ml with main action to reset srf capacity.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="text">
+             <string>?</string>
+            </property>
+            <property name="icon">
+             <iconset theme="dialog-question"/>
+            </property>
+            <property name="iconSize">
+             <size>
+              <width>32</width>
+              <height>32</height>
+             </size>
+            </property>
+            <property name="popupMode">
+             <enum>QToolButton::ToolButtonPopupMode::InstantPopup</enum>
+            </property>
+            <property name="toolButtonStyle">
+             <enum>Qt::ToolButtonStyle::ToolButtonIconOnly</enum>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPlainTextEdit" name="kcfg_shortcutConf">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Expanding" vsizetype="Minimum">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="toolTip">
+          <string/>
+         </property>
+         <property name="toolTipDuration">
+          <number>-9</number>
+         </property>
+         <property name="readOnly">
+          <bool>false</bool>
+         </property>
+         <property name="overwriteMode">
+          <bool>false</bool>
+         </property>
+         <property name="backgroundVisible">
+          <bool>true</bool>
+         </property>
+         <property name="centerOnScroll">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
      <widget class="QWidget" name="_4_behaviorTab">
       <attribute name="title">
        <string>Behavior</string>
@@ -3096,222 +3817,6 @@
             </property>
             <property name="text">
              <string>Adjust layout in realtime as window is being resized</string>
-            </property>
-           </widget>
-          </item>
-         </layout>
-        </widget>
-       </item>
-       <item>
-        <widget class="QGroupBox" name="GB_2_directionalMode">
-         <property name="font">
-          <font>
-           <family>Noto Sans</family>
-           <pointsize>14</pointsize>
-           <italic>false</italic>
-           <bold>false</bold>
-          </font>
-         </property>
-         <property name="title">
-          <string>Directional Keys Behaviors</string>
-         </property>
-         <layout class="QGridLayout" name="gridLayout_4">
-          <item row="1" column="3">
-           <widget class="QLabel" name="label_3">
-            <property name="font">
-             <font>
-              <family>Noto Sans</family>
-              <pointsize>14</pointsize>
-              <italic>false</italic>
-              <bold>false</bold>
-              <underline>true</underline>
-             </font>
-            </property>
-            <property name="text">
-             <string>Down</string>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignmentFlag::AlignCenter</set>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="5">
-           <widget class="QLabel" name="label_5">
-            <property name="font">
-             <font>
-              <family>Noto Sans</family>
-              <pointsize>14</pointsize>
-              <italic>false</italic>
-              <bold>false</bold>
-              <underline>true</underline>
-             </font>
-            </property>
-            <property name="text">
-             <string>Right</string>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignmentFlag::AlignCenter</set>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="2">
-           <widget class="QLabel" name="label_2">
-            <property name="font">
-             <font>
-              <family>Noto Sans</family>
-              <pointsize>14</pointsize>
-              <italic>false</italic>
-              <bold>false</bold>
-              <underline>true</underline>
-             </font>
-            </property>
-            <property name="text">
-             <string>Up</string>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignmentFlag::AlignCenter</set>
-            </property>
-           </widget>
-          </item>
-          <item row="3" column="0">
-           <widget class="QLabel" name="label_74">
-            <property name="text">
-             <string>DWM style</string>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignmentFlag::AlignCenter</set>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="4">
-           <widget class="QLabel" name="label_4">
-            <property name="font">
-             <font>
-              <family>Noto Sans</family>
-              <pointsize>14</pointsize>
-              <italic>false</italic>
-              <bold>false</bold>
-              <underline>true</underline>
-             </font>
-            </property>
-            <property name="text">
-             <string>Left</string>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignmentFlag::AlignCenter</set>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="0">
-           <widget class="QComboBox" name="kcfg_directionalKeyMode">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="focusPolicy">
-             <enum>Qt::FocusPolicy::ClickFocus</enum>
-            </property>
-            <item>
-             <property name="text">
-              <string>Directional</string>
-             </property>
-            </item>
-            <item>
-             <property name="text">
-              <string>DWM style</string>
-             </property>
-            </item>
-           </widget>
-          </item>
-          <item row="2" column="0">
-           <widget class="QLabel" name="label_75">
-            <property name="text">
-             <string>Directional</string>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignmentFlag::AlignCenter</set>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="2">
-           <widget class="QLabel" name="label_9">
-            <property name="text">
-             <string>Focus Up</string>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignmentFlag::AlignCenter</set>
-            </property>
-           </widget>
-          </item>
-          <item row="3" column="2">
-           <widget class="QLabel" name="label">
-            <property name="text">
-             <string>Focus Next</string>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignmentFlag::AlignCenter</set>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="3">
-           <widget class="QLabel" name="label_10">
-            <property name="text">
-             <string>Focus Down</string>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignmentFlag::AlignCenter</set>
-            </property>
-           </widget>
-          </item>
-          <item row="3" column="3">
-           <widget class="QLabel" name="label_6">
-            <property name="text">
-             <string>Focus Prev</string>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignmentFlag::AlignCenter</set>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="4">
-           <widget class="QLabel" name="label_11">
-            <property name="text">
-             <string>Focus Left</string>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignmentFlag::AlignCenter</set>
-            </property>
-           </widget>
-          </item>
-          <item row="3" column="4">
-           <widget class="QLabel" name="label_7">
-            <property name="text">
-             <string>Adjust Layout</string>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignmentFlag::AlignCenter</set>
-            </property>
-           </widget>
-          </item>
-          <item row="2" column="5">
-           <widget class="QLabel" name="label_12">
-            <property name="text">
-             <string>Focus Right</string>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignmentFlag::AlignCenter</set>
-            </property>
-           </widget>
-          </item>
-          <item row="3" column="5">
-           <widget class="QLabel" name="label_8">
-            <property name="text">
-             <string>Adjust Layout</string>
-            </property>
-            <property name="alignment">
-             <set>Qt::AlignmentFlag::AlignCenter</set>
             </property>
            </widget>
           </item>
@@ -3485,7 +3990,7 @@
              <item row="0" column="3">
               <widget class="QLabel" name="label_63">
                <property name="text">
-                <string>Meta Mode</string>
+                <string>Alter Register</string>
                </property>
                <property name="margin">
                 <number>0</number>
@@ -3506,9 +4011,6 @@
             <layout class="QGridLayout" name="gridLayout_35">
              <item row="0" column="0">
               <widget class="QCheckBox" name="kcfg_focusMoveScreensNormal">
-               <property name="toolTip">
-                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-               </property>
                <property name="text">
                 <string>focusing/moving across screens</string>
                </property>
@@ -3519,9 +4021,6 @@
              </item>
              <item row="1" column="1">
               <widget class="QCheckBox" name="kcfg_focusMoveVDesktopsMeta">
-               <property name="toolTip">
-                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-               </property>
                <property name="text">
                 <string>focusing/moving across Vdesktops</string>
                </property>
@@ -3532,9 +4031,6 @@
              </item>
              <item row="0" column="1">
               <widget class="QCheckBox" name="kcfg_focusMoveScreensMeta">
-               <property name="toolTip">
-                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-               </property>
                <property name="text">
                 <string>focusing/moving across screens</string>
                </property>
@@ -3545,9 +4041,6 @@
              </item>
              <item row="1" column="0">
               <widget class="QCheckBox" name="kcfg_focusMoveVDesktopsNormal">
-               <property name="toolTip">
-                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-               </property>
                <property name="text">
                 <string>focusing/moving across Vdesktops</string>
                </property>
@@ -3578,159 +4071,6 @@
                 </size>
                </property>
               </spacer>
-             </item>
-            </layout>
-           </widget>
-          </item>
-         </layout>
-        </widget>
-       </item>
-       <item>
-        <widget class="QGroupBox" name="GB_3_metaShortcut">
-         <property name="title">
-          <string>Krohnkite Meta Mode</string>
-         </property>
-         <layout class="QVBoxLayout" name="verticalLayout_3">
-          <item>
-           <widget class="QPlainTextEdit" name="kcfg_metaConf">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Expanding" vsizetype="Minimum">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Redefining the default keybindings in Meta Mode (see the wiki for details)&lt;/p&gt;&lt;p&gt;Format(Case Sensitive): functionality1=functionality2&amp;lt;enter&amp;gt;&lt;/p&gt;&lt;p&gt;where functionality1 is what you shortcut push, functionality2 - what functionality will run in Meta Mode For example:&lt;/p&gt;&lt;p&gt;RaiseSurfaceCapacity=ResetSurfaceCapacity&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-            </property>
-            <property name="overwriteMode">
-             <bool>false</bool>
-            </property>
-            <property name="backgroundVisible">
-             <bool>true</bool>
-            </property>
-            <property name="centerOnScroll">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QGroupBox" name="GB_2_metaDuration">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="title">
-             <string/>
-            </property>
-            <property name="flat">
-             <bool>true</bool>
-            </property>
-            <layout class="QGridLayout" name="gridLayout_31">
-             <property name="leftMargin">
-              <number>0</number>
-             </property>
-             <property name="topMargin">
-              <number>0</number>
-             </property>
-             <property name="bottomMargin">
-              <number>0</number>
-             </property>
-             <property name="horizontalSpacing">
-              <number>6</number>
-             </property>
-             <property name="verticalSpacing">
-              <number>0</number>
-             </property>
-             <item row="0" column="3">
-              <widget class="QCheckBox" name="kcfg_metaIsPushedTwice">
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                 <horstretch>0</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
-               <property name="maximumSize">
-                <size>
-                 <width>16777215</width>
-                 <height>20</height>
-                </size>
-               </property>
-               <property name="sizeIncrement">
-                <size>
-                 <width>0</width>
-                 <height>0</height>
-                </size>
-               </property>
-               <property name="toolTip">
-                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Push twice the meta shortcut to enable/disable the Meta Mode&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-               </property>
-               <property name="text">
-                <string>Push twice  to toggle</string>
-               </property>
-              </widget>
-             </item>
-             <item row="0" column="0">
-              <widget class="QLabel" name="label_61">
-               <property name="text">
-                <string>Duration: </string>
-               </property>
-              </widget>
-             </item>
-             <item row="0" column="1">
-              <widget class="QSpinBox" name="kcfg_metaTimeout">
-               <property name="focusPolicy">
-                <enum>Qt::FocusPolicy::StrongFocus</enum>
-               </property>
-               <property name="toolTip">
-                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Time Duration in milliseconds before the Meta Mode is automatically disabled&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-               </property>
-               <property name="alignment">
-                <set>Qt::AlignmentFlag::AlignCenter</set>
-               </property>
-               <property name="suffix">
-                <string>ms</string>
-               </property>
-               <property name="minimum">
-                <number>100</number>
-               </property>
-               <property name="maximum">
-                <number>9999</number>
-               </property>
-               <property name="value">
-                <number>3000</number>
-               </property>
-              </widget>
-             </item>
-             <item row="0" column="4">
-              <spacer name="horizontalSpacer_22">
-               <property name="orientation">
-                <enum>Qt::Orientation::Horizontal</enum>
-               </property>
-               <property name="sizeHint" stdset="0">
-                <size>
-                 <width>40</width>
-                 <height>20</height>
-                </size>
-               </property>
-              </spacer>
-             </item>
-             <item row="0" column="2">
-              <widget class="QCheckBox" name="kcfg_metaIsToggle">
-               <property name="sizePolicy">
-                <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-                 <horstretch>0</horstretch>
-                 <verstretch>0</verstretch>
-                </sizepolicy>
-               </property>
-               <property name="toolTip">
-                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Krohnkite Meta shorcut works as a switcher of the Meta Mode&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-               </property>
-               <property name="text">
-                <string>Push to toggle</string>
-               </property>
-              </widget>
              </item>
             </layout>
            </widget>
@@ -5717,7 +6057,7 @@
             <property name="font">
              <font>
               <family>Noto Sans</family>
-              <pointsize>14</pointsize>
+              <pointsize>12</pointsize>
               <italic>false</italic>
               <bold>false</bold>
              </font>
@@ -5747,7 +6087,7 @@
                <property name="font">
                 <font>
                  <family>Noto Sans</family>
-                 <pointsize>14</pointsize>
+                 <pointsize>12</pointsize>
                  <italic>false</italic>
                  <bold>false</bold>
                 </font>
@@ -5765,7 +6105,7 @@
                <property name="font">
                 <font>
                  <family>Noto Sans</family>
-                 <pointsize>14</pointsize>
+                 <pointsize>12</pointsize>
                  <italic>false</italic>
                  <bold>false</bold>
                 </font>
@@ -5783,7 +6123,7 @@
                <property name="font">
                 <font>
                  <family>Noto Sans</family>
-                 <pointsize>14</pointsize>
+                 <pointsize>12</pointsize>
                  <italic>false</italic>
                  <bold>false</bold>
                 </font>
@@ -5801,7 +6141,7 @@
                <property name="font">
                 <font>
                  <family>Noto Sans</family>
-                 <pointsize>14</pointsize>
+                 <pointsize>12</pointsize>
                  <italic>false</italic>
                  <bold>false</bold>
                 </font>
@@ -5834,7 +6174,7 @@
                <property name="font">
                 <font>
                  <family>Noto Sans</family>
-                 <pointsize>14</pointsize>
+                 <pointsize>12</pointsize>
                  <italic>false</italic>
                  <bold>false</bold>
                 </font>
@@ -5849,7 +6189,7 @@
                <property name="font">
                 <font>
                  <family>Noto Sans</family>
-                 <pointsize>14</pointsize>
+                 <pointsize>12</pointsize>
                  <italic>false</italic>
                  <bold>false</bold>
                 </font>
@@ -5864,7 +6204,7 @@
                <property name="font">
                 <font>
                  <family>Noto Sans</family>
-                 <pointsize>14</pointsize>
+                 <pointsize>12</pointsize>
                  <italic>false</italic>
                  <bold>false</bold>
                 </font>
@@ -5879,7 +6219,7 @@
                <property name="font">
                 <font>
                  <family>Noto Sans</family>
-                 <pointsize>14</pointsize>
+                 <pointsize>12</pointsize>
                  <italic>false</italic>
                  <bold>false</bold>
                 </font>
@@ -5894,7 +6234,7 @@
                <property name="font">
                 <font>
                  <family>Noto Sans</family>
-                 <pointsize>14</pointsize>
+                 <pointsize>12</pointsize>
                  <italic>false</italic>
                  <bold>false</bold>
                 </font>
@@ -5909,7 +6249,7 @@
                <property name="font">
                 <font>
                  <family>Noto Sans</family>
-                 <pointsize>14</pointsize>
+                 <pointsize>12</pointsize>
                  <italic>false</italic>
                  <bold>false</bold>
                 </font>
@@ -5939,7 +6279,7 @@
                <property name="font">
                 <font>
                  <family>Noto Sans</family>
-                 <pointsize>14</pointsize>
+                 <pointsize>12</pointsize>
                  <italic>false</italic>
                  <bold>false</bold>
                 </font>
@@ -5954,7 +6294,7 @@
                <property name="font">
                 <font>
                  <family>Noto Sans</family>
-                 <pointsize>14</pointsize>
+                 <pointsize>12</pointsize>
                  <italic>false</italic>
                  <bold>false</bold>
                 </font>
@@ -5998,38 +6338,6 @@
  </customwidgets>
  <resources/>
  <connections>
-  <connection>
-   <sender>kcfg_metaIsToggle</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>kcfg_metaTimeout</receiver>
-   <slot>setDisabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>86</x>
-     <y>591</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>203</x>
-     <y>591</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>kcfg_metaIsToggle</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>kcfg_metaIsPushedTwice</receiver>
-   <slot>setDisabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>311</x>
-     <y>585</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>499</x>
-     <y>585</y>
-    </hint>
-   </hints>
-  </connection>
   <connection>
    <sender>kcfg_soleWindowNoGaps</sender>
    <signal>toggled(bool)</signal>

@@ -36,7 +36,7 @@ Item {
             "workspace": Workspace,
             // "options": Options,
             "kwin": KWin,
-            "shortcuts": shortcutsLoader.item,
+            "shortcuts": shortcutsLoader.item.shortcutList,
             "dbus": dbusCallLoader.item
         };
 

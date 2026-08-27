@@ -23,7 +23,7 @@ class SpreadLayout implements ILayout {
     ctx: EngineContext,
     tileables: WindowClass[],
     area: Rect,
-    gap: number
+    gap: number,
   ): void {
     /* Tile all tileables */
     tileables.forEach((tileable) => (tileable.state = WindowState.Tiled));
@@ -45,7 +45,7 @@ class SpreadLayout implements ILayout {
         area.x + (i < numTiles ? spaceWidth * (numTiles - i - 1) : 0),
         area.y,
         cardWidth,
-        area.height
+        area.height,
       );
   }
 
@@ -55,13 +55,13 @@ class SpreadLayout implements ILayout {
     return other;
   }
 
-  public handleShortcut(ctx: EngineContext, input: Shortcut) {
+  public handleShortcut(ctx: EngineContext, input: KrohnkiteAction) {
     switch (input) {
-      case Shortcut.Decrease:
+      case KrohnkiteAction.Decrease:
         // TODO: define arbitrary constants
         this.space = Math.max(0.04, this.space - 0.01);
         break;
-      case Shortcut.Increase:
+      case KrohnkiteAction.Increase:
         // TODO: define arbitrary constants
         this.space = Math.min(0.1, this.space + 0.01);
         break;

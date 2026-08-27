@@ -114,10 +114,15 @@ const ConfigVariables = {
   gapsOverrideConfig: "gapsOverrideConfig",
   limitTileWidth: "limitTileWidth",
   limitTileWidthRatio: "limitTileWidthRatio",
+  /* Shortcuts */
+  shortcutConf: "metaConf",
+  altRegisterTimeout: "altRegisterTimeout",
+  altRegisterIsToggle: "altRegisterIsToggle",
+  altRegisterIsPushedTwice: "altRegisterIsPushedTwice",
+  shortcutSequenceTime: "shortcutSequenceTime",
   /* Behavior */
   adjustLayout: "adjustLayout",
   adjustLayoutLive: "adjustLayoutLive",
-  directionalKeyMode: "directionalKeyMode",
   focusNormal: "focusNormal",
   focusMeta: "focusMeta",
   focusMoveScreensNormal: "focusMoveScreensNormal",
@@ -125,10 +130,6 @@ const ConfigVariables = {
   focusMoveScreensMeta: "focusMoveScreensMeta",
   focusMoveVDesktopsMeta: "focusMoveVDesktopsMeta",
   movePointerOnFocus: "movePointerOnFocus",
-  metaConf: "metaConf",
-  metaTimeout: "metaTimeout",
-  metaIsToggle: "metaIsToggle",
-  metaIsPushedTwice: "metaIsPushedTwice",
   newWindowPosition: "newWindowPosition",
   /* Rules */
   ignoreClass: "ignoreClass",
@@ -229,7 +230,7 @@ const WindowState = {
 } as const;
 type WindowState = (typeof WindowState)[keyof typeof WindowState];
 
-const Shortcut = {
+const KrohnkiteAction = {
   FocusNext: "FocusNext",
   FocusPrev: "FocusPrev",
   DWMLeft: "DWMLeft",
@@ -240,15 +241,13 @@ const Shortcut = {
   FocusLeft: "FocusLeft",
   FocusRight: "FocusRight",
 
-  ShiftLeft: "ShiftLeft",
-  ShiftRight: "ShiftRight",
-  ShiftUp: "ShiftUp",
-  ShiftDown: "ShiftDown",
+  MoveLeft: "MoveLeft",
+  MoveRight: "MoveRight",
+  MoveUp: "MoveUp",
+  MoveDown: "MoveDown",
 
   SwapUp: "SwapUp",
   SwapDown: "SwapDown",
-  SwapLeft: "SwapLeft",
-  SwapRight: "SwapRight",
 
   GrowWidth: "GrowWidth",
   GrowHeight: "GrowHeight",
@@ -257,15 +256,25 @@ const Shortcut = {
 
   Increase: "Increase",
   Decrease: "Decrease",
-  ShiftIncrease: "ShiftIncrease", //NOTE: unused shortcut
-  ShiftDecrease: "ShiftDecrease", //NOTE: unused shortcut
 
   ToggleFloat: "ToggleFloat",
   ToggleFloatAll: "ToggleFloatAll",
   SetMaster: "SetMaster",
   NextLayout: "NextLayout",
   PreviousLayout: "PreviousLayout",
-  SetLayout: "SetLayout",
+
+  SetTileLayout: "SetTileLayout",
+  SetMonocleLayout: "SetMonocleLayout",
+  SetThreeColumnLayout: "SetThreeColumnLayout",
+  SetSpreadLayout: "SetSpreadLayout",
+  SetStairLayout: "SetStairLayout",
+  SetFloatingLayout: "SetFloatingLayout",
+  SetQuarterLayout: "SetQuarterLayout",
+  SetStackedLayout: "SetStackedLayout",
+  SetColumnsLayout: "SetColumnsLayout",
+  SetSpiralLayout: "SetSpiralLayout",
+  SetBinaryTreeLayout: "SetBinaryTreeLayout",
+  SetCascadeLayout: "SetCascadeLayout",
 
   Rotate: "Rotate",
   RotatePart: "RotatePart",
@@ -274,16 +283,12 @@ const Shortcut = {
 
   RaiseSurfaceCapacity: "RaiseSurfaceCapacity",
   LowerSurfaceCapacity: "LowerSurfaceCapacity",
+  ResetSurfaceCapacity: "ResetSurfaceCapacity",
 
-  KrohnkiteMeta: "KrohnkiteMeta",
-
-  MetaResetSurfaceCapacity: "MetaResetSurfaceCapacity",
-  MetaFocusLeft: "MetaFocusLeft",
-  MetaFocusRight: "MetaFocusRight",
-  MetaFocusUp: "MetaFocusUp",
-  MetaFocusDown: "MetaFocusDown",
+  AlterRegister: "AlterRegister",
+  ToggleRegister: "ToggleRegister",
 } as const;
-type Shortcut = (typeof Shortcut)[keyof typeof Shortcut];
+type KrohnkiteAction = (typeof KrohnkiteAction)[keyof typeof KrohnkiteAction];
 
 // Logging
 const LogModules = {

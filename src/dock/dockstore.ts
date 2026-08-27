@@ -57,13 +57,13 @@ class DockStore implements IDockStore {
   public handleShortcut(
     ctx: IDriverContext,
     window: WindowClass,
-    shortcut: Shortcut,
+    shortcut: KrohnkiteAction,
   ): boolean {
     switch (shortcut) {
-      case Shortcut.SwapLeft:
-      case Shortcut.SwapUp:
-      case Shortcut.SwapRight:
-      case Shortcut.SwapDown:
+      case KrohnkiteAction.MoveLeft:
+      case KrohnkiteAction.MoveUp:
+      case KrohnkiteAction.MoveRight:
+      case KrohnkiteAction.MoveDown:
         const srf = ctx.currentSurface;
         if (this.store[srf.id]) {
           return this.store[srf.id].handleShortcut(window, shortcut);

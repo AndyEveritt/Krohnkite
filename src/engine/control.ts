@@ -12,17 +12,30 @@
  * In short, this class is just a bunch of event handling methods.
  */
 
+const LayoutShortcutIds: Partial<Record<KrohnkiteAction, string>> = {
+  ["SetTileLayout"]: "TileLayout",
+  ["SetMonocleLayout"]: "MonocleLayout",
+  ["SetThreeColumnLayout"]: "ThreeColumnLayout",
+  ["SetSpreadLayout"]: "SpreadLayout",
+  ["SetStairLayout"]: "StairLayout",
+  ["SetFloatingLayout"]: "FloatingLayout",
+  ["SetQuarterLayout"]: "QuarterLayout",
+  ["SetStackedLayout"]: "StackedLayout",
+  ["SetColumnsLayout"]: "ColumnsLayout",
+  ["SetSpiralLayout"]: "SpiralLayout",
+  ["SetBinaryTreeLayout"]: "BinaryTreeLayout",
+  ["SetCascadeLayout"]: "CascadeLayout",
+};
+
 class TilingController {
   public engine: TilingEngine;
   private isDragging: boolean;
   private dragCompleteTime: number | null;
-  private _metaShortcuts: { [key: string]: Shortcut };
 
   public constructor(engine: TilingEngine) {
     this.engine = engine;
     this.isDragging = false;
     this.dragCompleteTime = null;
-    this._metaShortcuts = this._initMetaShortcuts();
   }
 
   public onSurfaceUpdate(
@@ -294,55 +307,13 @@ class TilingController {
 
   public onShortcut(
     ctx: IDriverContext,
-    input: Shortcut,
+    input: KrohnkiteAction | null,
     reason: keyof typeof ArrangeReason,
     data?: any,
   ) {
-    if (input === Shortcut.KrohnkiteMeta) {
-      ctx.metaPushed();
-      return;
-    }
-    let metaShortcut;
-    if (
-      ctx.isMetaMode &&
-      (metaShortcut = this._getMetaShortcut(input)) !== null
-    ) {
-      input = metaShortcut;
-    }
+    if (input === null) return;
 
     let isArrangeNeeded = true;
-    if (CONFIG.directionalKeyMode === "dwm") {
-      switch (input) {
-        case Shortcut.FocusUp:
-          input = Shortcut.FocusNext;
-          break;
-        case Shortcut.FocusDown:
-          input = Shortcut.FocusPrev;
-          break;
-        case Shortcut.FocusLeft:
-          input = Shortcut.DWMLeft;
-          break;
-        case Shortcut.FocusRight:
-          input = Shortcut.DWMRight;
-          break;
-      }
-    } else if (CONFIG.directionalKeyMode === "focus") {
-      switch (input) {
-        case Shortcut.ShiftUp:
-          input = Shortcut.SwapUp;
-          break;
-        case Shortcut.ShiftDown:
-          input = Shortcut.SwapDown;
-          break;
-        case Shortcut.ShiftLeft:
-          input = Shortcut.SwapLeft;
-          break;
-        case Shortcut.ShiftRight:
-          input = Shortcut.SwapRight;
-          break;
-      }
-    }
-
     let currentCapacity: number | null;
     const window = ctx.currentWindow;
     if (
@@ -370,37 +341,37 @@ class TilingController {
       );
       return;
     }
-
     switch (input) {
-      case Shortcut.FocusNext:
+      case KrohnkiteAction.AlterRegister:
+      case KrohnkiteAction.ToggleRegister:
+        ctx.alterRegisterHdl(input);
+        isArrangeNeeded = false;
+        break;
+      case KrohnkiteAction.FocusNext:
         this.engine.focusOrder(ctx, +1);
         isArrangeNeeded = false;
         break;
-      case Shortcut.FocusPrev:
+      case KrohnkiteAction.FocusPrev:
         this.engine.focusOrder(ctx, -1);
         isArrangeNeeded = false;
         break;
 
-      case Shortcut.MetaFocusUp:
-      case Shortcut.FocusUp:
+      case KrohnkiteAction.FocusUp:
         isArrangeNeeded = this.engine.focusDir(ctx, "up");
         break;
-      case Shortcut.MetaFocusDown:
-      case Shortcut.FocusDown:
+      case KrohnkiteAction.FocusDown:
         isArrangeNeeded = this.engine.focusDir(ctx, "down");
         break;
-      case Shortcut.MetaFocusLeft:
-      case Shortcut.DWMLeft:
-      case Shortcut.FocusLeft:
+      case KrohnkiteAction.DWMLeft:
+      case KrohnkiteAction.FocusLeft:
         isArrangeNeeded = this.engine.focusDir(ctx, "left");
         break;
-      case Shortcut.MetaFocusRight:
-      case Shortcut.DWMRight:
-      case Shortcut.FocusRight:
+      case KrohnkiteAction.DWMRight:
+      case KrohnkiteAction.FocusRight:
         isArrangeNeeded = this.engine.focusDir(ctx, "right");
         break;
 
-      case Shortcut.GrowWidth:
+      case KrohnkiteAction.GrowWidth:
         if (window) {
           if (window.state === WindowState.Docked && window.dock) {
             if (
@@ -417,7 +388,7 @@ class TilingController {
           } else this.engine.resizeWindow(ctx, window, "east", 1);
         }
         break;
-      case Shortcut.ShrinkWidth:
+      case KrohnkiteAction.ShrinkWidth:
         if (window) {
           if (window.state === WindowState.Docked && window.dock) {
             if (
@@ -434,7 +405,7 @@ class TilingController {
           } else this.engine.resizeWindow(ctx, window, "east", -1);
         }
         break;
-      case Shortcut.GrowHeight:
+      case KrohnkiteAction.GrowHeight:
         if (window) {
           if (window.state === WindowState.Docked && window.dock) {
             if (
@@ -451,7 +422,7 @@ class TilingController {
           } else this.engine.resizeWindow(ctx, window, "south", 1);
         }
         break;
-      case Shortcut.ShrinkHeight:
+      case KrohnkiteAction.ShrinkHeight:
         if (window) {
           if (window.state === WindowState.Docked && window.dock) {
             if (
@@ -469,61 +440,72 @@ class TilingController {
         }
         break;
 
-      case Shortcut.ShiftUp:
+      case KrohnkiteAction.SwapUp:
         if (window) this.engine.swapOrder(window, -1);
         break;
-      case Shortcut.ShiftDown:
+      case KrohnkiteAction.SwapDown:
         if (window) this.engine.swapOrder(window, +1);
         break;
 
-      case Shortcut.SwapUp:
+      case KrohnkiteAction.MoveUp:
         isArrangeNeeded = this.engine.swapDirOrMoveFloat(ctx, "up");
         break;
-      case Shortcut.SwapDown:
+      case KrohnkiteAction.MoveDown:
         isArrangeNeeded = this.engine.swapDirOrMoveFloat(ctx, "down");
         break;
-      case Shortcut.SwapLeft:
+      case KrohnkiteAction.MoveLeft:
         isArrangeNeeded = this.engine.swapDirOrMoveFloat(ctx, "left");
         break;
-      case Shortcut.SwapRight:
+      case KrohnkiteAction.MoveRight:
         isArrangeNeeded = this.engine.swapDirOrMoveFloat(ctx, "right");
         break;
 
-      case Shortcut.SetMaster:
+      case KrohnkiteAction.SetMaster:
         if (window) this.engine.setMaster(window);
         break;
-      case Shortcut.ToggleFloat:
+      case KrohnkiteAction.ToggleFloat:
         if (window) this.engine.toggleFloat(window);
         break;
-      case Shortcut.ToggleFloatAll:
+      case KrohnkiteAction.ToggleFloatAll:
         this.engine.floatAll(ctx, ctx.currentSurface);
         break;
 
-      case Shortcut.NextLayout:
+      case KrohnkiteAction.NextLayout:
         this.engine.cycleLayout(ctx, 1);
         break;
-      case Shortcut.PreviousLayout:
+      case KrohnkiteAction.PreviousLayout:
         this.engine.cycleLayout(ctx, -1);
         break;
-      case Shortcut.SetLayout:
-        if (typeof data === "string") this.engine.setLayout(ctx, data);
+      case KrohnkiteAction.SetTileLayout:
+      case KrohnkiteAction.SetMonocleLayout:
+      case KrohnkiteAction.SetThreeColumnLayout:
+      case KrohnkiteAction.SetSpreadLayout:
+      case KrohnkiteAction.SetStairLayout:
+      case KrohnkiteAction.SetFloatingLayout:
+      case KrohnkiteAction.SetQuarterLayout:
+      case KrohnkiteAction.SetStackedLayout:
+      case KrohnkiteAction.SetColumnsLayout:
+      case KrohnkiteAction.SetSpiralLayout:
+      case KrohnkiteAction.SetBinaryTreeLayout:
+      case KrohnkiteAction.SetCascadeLayout:
+        this.engine.setLayout(ctx, LayoutShortcutIds[input]!);
         break;
 
-      case Shortcut.ToggleDock:
+      case KrohnkiteAction.ToggleDock:
         if (window) this.engine.toggleDock(window);
         break;
 
-      case Shortcut.RaiseSurfaceCapacity:
+      case KrohnkiteAction.RaiseSurfaceCapacity:
         currentCapacity = this.engine.raiseSurfaceCapacity(ctx);
         ctx.showNotification(
           `Surface capacity: ${currentCapacity !== null ? currentCapacity : "unlimited"}`,
         );
         break;
-      case Shortcut.LowerSurfaceCapacity:
+      case KrohnkiteAction.LowerSurfaceCapacity:
         currentCapacity = this.engine.lowerSurfaceCapacity(ctx);
         ctx.showNotification(`Surface capacity: ${currentCapacity}`);
         break;
-      case Shortcut.MetaResetSurfaceCapacity:
+      case KrohnkiteAction.ResetSurfaceCapacity:
         currentCapacity = this.engine.ResetSurfaceCapacity(ctx);
         ctx.showNotification(
           `Surface capacity: ${currentCapacity !== null ? currentCapacity : "unlimited"}`,
@@ -536,32 +518,5 @@ class TilingController {
       window?.moveMouseToFocus();
     }
     this.engine.arrange(ctx, reason, `${getMethodName()}:shortcut=${input}`);
-  }
-
-  private _initMetaShortcuts() {
-    let metaShortcuts: { [key: string]: Shortcut } = CONFIG.defaultMetaConfig;
-    CONFIG.metaConf.forEach((shortcutPair) => {
-      let splitted = shortcutPair.split("=").map((p) => p.trim());
-      if (splitted.length !== 2) {
-        warning(`"Meta Config: ${splitted}" have to has the one equal sign`);
-        return;
-      }
-      let [pushedShortcut, runShortcut] = splitted;
-      if (!(pushedShortcut in Shortcut)) {
-        warning(`Meta Config: "${pushedShortcut}" unknown shortcut`);
-        return;
-      } else if (!(runShortcut in Shortcut)) {
-        warning(`Meta Config: "${runShortcut}" unknown shortcut`);
-        return;
-      }
-      metaShortcuts[pushedShortcut] = runShortcut as Shortcut;
-    });
-    return metaShortcuts;
-  }
-
-  private _getMetaShortcut(input: Shortcut): Shortcut | null {
-    if (input in this._metaShortcuts) {
-      return this._metaShortcuts[input];
-    } else return null;
   }
 }
