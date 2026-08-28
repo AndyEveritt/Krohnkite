@@ -307,11 +307,11 @@ class TilingController {
 
   public onShortcut(
     ctx: IDriverContext,
-    input: KrohnkiteAction | null,
+    action: KrohnkiteAction | null,
     reason: keyof typeof ArrangeReason,
     data?: any,
   ) {
-    if (input === null) return;
+    if (action === null) return;
 
     let isArrangeNeeded = true;
     let currentCapacity: number | null;
@@ -319,18 +319,21 @@ class TilingController {
     if (
       window !== null &&
       window.state === WindowState.Docked &&
-      this.engine.handleDockShortcut(ctx, window, input)
+      this.engine.handleDockWinShortcut(ctx, window, action)
     ) {
-      if (CONFIG.movePointerOnFocus) {
-        window?.moveMouseToFocus();
-      }
       this.engine.arrange(
         ctx,
         reason,
         `${getMethodName()}:windowState=${window.state}`,
       );
       return;
-    } else if (this.engine.handleLayoutShortcut(ctx, input, data)) {
+    } else if (
+      window !== null &&
+      window.isFloating &&
+      this.engine.handleFloatWinShortcut(ctx, window, action)
+    ) {
+      return;
+    } else if (this.engine.handleLayoutShortcut(ctx, action, data)) {
       if (CONFIG.movePointerOnFocus) {
         window?.moveMouseToFocus();
       }
@@ -341,10 +344,10 @@ class TilingController {
       );
       return;
     }
-    switch (input) {
+    switch (action) {
       case KrohnkiteAction.AlterRegister:
       case KrohnkiteAction.ToggleRegister:
-        ctx.alterRegisterHdl(input);
+        ctx.alterRegisterHdl(action);
         isArrangeNeeded = false;
         break;
       case KrohnkiteAction.FocusNext:
@@ -373,70 +376,22 @@ class TilingController {
 
       case KrohnkiteAction.GrowWidth:
         if (window) {
-          if (window.state === WindowState.Docked && window.dock) {
-            if (
-              window.dock.position === DockPosition.left ||
-              window.dock.position === DockPosition.right
-            ) {
-              window.dock.cfg.vWide += 1;
-            } else if (
-              window.dock.position === DockPosition.top ||
-              window.dock.position === DockPosition.bottom
-            ) {
-              window.dock.cfg.hWide += 1;
-            }
-          } else this.engine.resizeWindow(ctx, window, "east", 1);
+          this.engine.resizeWindow(ctx, window, "east", 1);
         }
         break;
       case KrohnkiteAction.ShrinkWidth:
         if (window) {
-          if (window.state === WindowState.Docked && window.dock) {
-            if (
-              window.dock.position === DockPosition.left ||
-              window.dock.position === DockPosition.right
-            ) {
-              window.dock.cfg.vWide -= 1;
-            } else if (
-              window.dock.position === DockPosition.top ||
-              window.dock.position === DockPosition.bottom
-            ) {
-              window.dock.cfg.hWide -= 1;
-            }
-          } else this.engine.resizeWindow(ctx, window, "east", -1);
+          this.engine.resizeWindow(ctx, window, "east", -1);
         }
         break;
       case KrohnkiteAction.GrowHeight:
         if (window) {
-          if (window.state === WindowState.Docked && window.dock) {
-            if (
-              window.dock.position === DockPosition.left ||
-              window.dock.position === DockPosition.right
-            ) {
-              window.dock.cfg.vHeight += 1;
-            } else if (
-              window.dock.position === DockPosition.top ||
-              window.dock.position === DockPosition.bottom
-            ) {
-              window.dock.cfg.hHeight += 1;
-            }
-          } else this.engine.resizeWindow(ctx, window, "south", 1);
+          this.engine.resizeWindow(ctx, window, "south", 1);
         }
         break;
       case KrohnkiteAction.ShrinkHeight:
         if (window) {
-          if (window.state === WindowState.Docked && window.dock) {
-            if (
-              window.dock.position === DockPosition.left ||
-              window.dock.position === DockPosition.right
-            ) {
-              window.dock.cfg.vHeight -= 1;
-            } else if (
-              window.dock.position === DockPosition.top ||
-              window.dock.position === DockPosition.bottom
-            ) {
-              window.dock.cfg.hHeight -= 1;
-            }
-          } else this.engine.resizeWindow(ctx, window, "south", -1);
+          this.engine.resizeWindow(ctx, window, "south", -1);
         }
         break;
 
@@ -448,16 +403,16 @@ class TilingController {
         break;
 
       case KrohnkiteAction.MoveUp:
-        isArrangeNeeded = this.engine.swapDirOrMoveFloat(ctx, "up");
+        isArrangeNeeded = this.engine.moveTiledWindow(ctx, "up");
         break;
       case KrohnkiteAction.MoveDown:
-        isArrangeNeeded = this.engine.swapDirOrMoveFloat(ctx, "down");
+        isArrangeNeeded = this.engine.moveTiledWindow(ctx, "down");
         break;
       case KrohnkiteAction.MoveLeft:
-        isArrangeNeeded = this.engine.swapDirOrMoveFloat(ctx, "left");
+        isArrangeNeeded = this.engine.moveTiledWindow(ctx, "left");
         break;
       case KrohnkiteAction.MoveRight:
-        isArrangeNeeded = this.engine.swapDirOrMoveFloat(ctx, "right");
+        isArrangeNeeded = this.engine.moveTiledWindow(ctx, "right");
         break;
 
       case KrohnkiteAction.SetMaster:
@@ -488,7 +443,7 @@ class TilingController {
       case KrohnkiteAction.SetSpiralLayout:
       case KrohnkiteAction.SetBinaryTreeLayout:
       case KrohnkiteAction.SetCascadeLayout:
-        this.engine.setLayout(ctx, LayoutShortcutIds[input]!);
+        this.engine.setLayout(ctx, LayoutShortcutIds[action]!);
         break;
 
       case KrohnkiteAction.ToggleDock:
@@ -517,6 +472,6 @@ class TilingController {
     if (CONFIG.movePointerOnFocus) {
       window?.moveMouseToFocus();
     }
-    this.engine.arrange(ctx, reason, `${getMethodName()}:shortcut=${input}`);
+    this.engine.arrange(ctx, reason, `${getMethodName()}:shortcut=${action}`);
   }
 }

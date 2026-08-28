@@ -31,10 +31,13 @@ class EngineContext {
 
   public get surfaceParams(): string {
     let srf = this.drvctx.currentSurface;
-    return srf.output.name, srf.activity, srf.vDesktop.name;
+    return (srf.output.name, srf.activity, srf.vDesktop.name);
   }
 
-  constructor(private drvctx: IDriverContext, private engine: TilingEngine) {}
+  constructor(
+    private drvctx: IDriverContext,
+    private engine: TilingEngine,
+  ) {}
 
   public setTimeout(func: () => void, timeout: number): void {
     this.drvctx.setTimeout(func, timeout);
@@ -44,14 +47,10 @@ class EngineContext {
     this.engine.focusOrder(this.drvctx, step);
   }
 
-  public moveWindow(window: WindowClass, target: WindowClass, after?: boolean) {
-    this.engine.windows.move(window, target, after);
-  }
-
   public moveWindowByWinId(
     window: WindowClass,
     targetId: string,
-    after?: boolean
+    after?: boolean,
   ) {
     let target = this.engine.windows.getWindowById(targetId);
     if (target === null) return;

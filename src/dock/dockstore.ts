@@ -57,21 +57,54 @@ class DockStore implements IDockStore {
   public handleShortcut(
     ctx: IDriverContext,
     window: WindowClass,
-    shortcut: KrohnkiteAction,
+    action: KrohnkiteAction,
   ): boolean {
-    switch (shortcut) {
+    let result = false;
+    switch (action) {
+      case KrohnkiteAction.GrowWidth:
+      case KrohnkiteAction.ShrinkWidth:
+        if (window.dock !== null) {
+          const increment = action === KrohnkiteAction.GrowWidth ? 1 : -1;
+          if (
+            window.dock.position === DockPosition.left ||
+            window.dock.position === DockPosition.right
+          ) {
+            window.dock.cfg.vWide += increment;
+          } else {
+            window.dock.cfg.hWide += increment;
+          }
+          result = true;
+        }
+        break;
+      case KrohnkiteAction.GrowHeight:
+      case KrohnkiteAction.ShrinkHeight:
+        if (window.dock !== null) {
+          const increment = action === KrohnkiteAction.GrowHeight ? 1 : -1;
+          if (
+            window.dock.position === DockPosition.left ||
+            window.dock.position === DockPosition.right
+          ) {
+            window.dock.cfg.vHeight += increment;
+          } else {
+            window.dock.cfg.hHeight += increment;
+          }
+          result = true;
+        }
+        break;
       case KrohnkiteAction.MoveLeft:
       case KrohnkiteAction.MoveUp:
       case KrohnkiteAction.MoveRight:
       case KrohnkiteAction.MoveDown:
         const srf = ctx.currentSurface;
         if (this.store[srf.id]) {
-          return this.store[srf.id].handleShortcut(window, shortcut);
+          result = this.store[srf.id].handleShortcut(window, action);
         }
-        return false;
-      default:
-        return false;
+        break;
     }
+    if (CONFIG.movePointerOnFocus && result) {
+      window.moveMouseToFocus();
+    }
+    return result;
   }
 
   public isNewWindowHaveDocked(window: WindowClass): boolean {

@@ -945,7 +945,7 @@ class TilingEngine {
   /**
    * Swap the position of the current window with a neighbor at the given direction.
    */
-  public swapDirection(
+  private _moveTiled(
     ctx: IDriverContext,
     direction: Direction,
     window: WindowClass,
@@ -1104,7 +1104,7 @@ class TilingEngine {
     );
   }
 
-  public swapDirOrMoveFloat(ctx: IDriverContext, dir: Direction): boolean {
+  public moveTiledWindow(ctx: IDriverContext, dir: Direction): boolean {
     const window = ctx.currentWindow;
     if (window === null) {
       /* if no current window, select the first tile. */
@@ -1116,14 +1116,10 @@ class TilingEngine {
       return false;
     }
 
-    const state = window.state;
-    if (WindowClass.isFloatingState(state)) {
-      this._moveFloat(ctx, window, dir);
-      return false;
-    } else if (WindowClass.isTiledState(state)) {
-      return this.swapDirection(ctx, dir, window);
+    if (window.isTiled) {
+      return this._moveTiled(ctx, dir, window);
     }
-    return true;
+    return false;
   }
 
   public toggleDock(window: WindowClass) {
@@ -1244,12 +1240,38 @@ class TilingEngine {
    *
    * @returns True if the layout overrides the shortcut. False, otherwise.
    */
-  public handleDockShortcut(
+  public handleDockWinShortcut(
     ctx: IDriverContext,
     window: WindowClass,
-    input: KrohnkiteAction,
+    action: KrohnkiteAction,
   ): boolean {
-    return this.docks.handleShortcut(ctx, window, input);
+    return this.docks.handleShortcut(ctx, window, action);
+  }
+  public handleFloatWinShortcut(
+    ctx: IDriverContext,
+    window: WindowClass,
+    action: KrohnkiteAction,
+  ): boolean {
+    switch (action) {
+      case KrohnkiteAction.Increase:
+      case KrohnkiteAction.Decrease:
+        break;
+      case KrohnkiteAction.MoveLeft:
+        this._moveFloat(ctx, window, "left");
+        break;
+      case KrohnkiteAction.MoveUp:
+        this._moveFloat(ctx, window, "up");
+        break;
+      case KrohnkiteAction.MoveRight:
+        this._moveFloat(ctx, window, "right");
+        break;
+      case KrohnkiteAction.MoveDown:
+        this._moveFloat(ctx, window, "down");
+        break;
+      default:
+        return false;
+    }
+    return true;
   }
 
   private getNeighborByDirection(
