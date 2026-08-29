@@ -81,13 +81,13 @@ class WindowClass implements IWindowClass {
     if (state === value || state === WindowState.Dragging) return;
 
     if (
-      (state === WindowState.Unmanaged || WindowClass.isTileableState(state)) &&
+      (state === WindowState.Unmanaged || this.isTileable || this.isDocked) &&
       WindowClass.isFloatingState(value)
     )
       this.shouldCommitFloat = true;
     else if (
-      WindowClass.isFloatingState(state) &&
-      WindowClass.isTileableState(value)
+      this.isFloating &&
+      (WindowClass.isTileableState(value) || WindowClass.isDockedState(value))
     )
       /* save the current geometry before leaving floating state */
       this.floatGeometry = this.actualGeometry;

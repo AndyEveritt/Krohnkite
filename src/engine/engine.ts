@@ -1162,7 +1162,7 @@ class TilingEngine {
    * Toggle float mode of window.
    */
   public toggleFloat(window: WindowClass) {
-    window.state = !window.isTileable
+    window.state = !(window.isTileable || window.isDocked)
       ? WindowState.Tiled
       : WindowState.Floating;
   }
