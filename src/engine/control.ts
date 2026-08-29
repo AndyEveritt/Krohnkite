@@ -276,7 +276,8 @@ class TilingController {
     comment?: string,
   ): void {
     if (window) {
-      if (comment === "unminimized") ctx.currentWindow = window;
+      // TODO: delete one string bellow if the future caresses you with its grace
+      // if (comment === "unminimized") ctx.currentWindow = window;
       const workingArea = window.surface.workingArea;
       if (window.floatGeometry.width > workingArea.width) {
         window.floatGeometry.width = workingArea.width;
