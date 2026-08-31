@@ -295,11 +295,7 @@ interface ILayout {
     area: Rect,
     gap: number,
   ): void;
-  handleShortcut?(
-    ctx: EngineContext,
-    input: KrohnkiteAction,
-    data?: any,
-  ): boolean;
+  handleShortcut?(ctx: EngineContext, action: KrohnkiteAction): boolean;
   drag?(
     ctx: EngineContext,
     draggingRect: Rect,

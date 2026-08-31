@@ -183,7 +183,7 @@ class TilingEngine {
    *
    * @param window a floating window
    */
-  private _resizeFloat(
+  public resizeFloat(
     ctx: IDriverContext,
     window: WindowClass,
     dir: "east" | "west" | "south" | "north",
@@ -292,27 +292,6 @@ class TilingEngine {
       );
     }
   }
-  /**
-   * Resize the given window, by moving border inward or outward.
-   *
-   * The actual behavior depends on the state of the given window.
-   *
-   * @param dir which border
-   * @param step which direction. 1 means outward, -1 means inward.
-   */
-  public resizeWindow(
-    ctx: IDriverContext,
-    window: WindowClass,
-    dir: "east" | "west" | "south" | "north",
-    step: -1 | 1,
-  ) {
-    const state = window.state;
-    if (WindowClass.isFloatingState(state))
-      this._resizeFloat(ctx, window, dir, step);
-    else if (WindowClass.isTiledState(state))
-      this.resizeTile(window, dir, step);
-  }
-
   /**
    * Arrange tiles on all screens.
    */
@@ -1221,40 +1200,44 @@ class TilingEngine {
   }
 
   /**
-   * Let the current layout override shortcut.
-   *
-   * @returns True if the layout overrides the shortcut. False, otherwise.
-   */
-  public handleLayoutShortcut(
-    ctx: IDriverContext,
-    input: KrohnkiteAction,
-    data?: any,
-  ): boolean {
-    const layout = this.layouts.getCurrentLayout(ctx.currentSurface);
-    if (layout.handleShortcut)
-      return layout.handleShortcut(new EngineContext(ctx, this), input, data);
-    return false;
-  }
-  /**
    * Let the docked window override shortcut.
    *
-   * @returns True if the layout overrides the shortcut. False, otherwise.
+   * @returns True if the docked window overrides the shortcut. False, otherwise.
    */
   public handleDockWinShortcut(
     ctx: IDriverContext,
-    window: WindowClass,
+    window: WindowClass | null,
     action: KrohnkiteAction,
+    reason: keyof typeof ArrangeReason,
   ): boolean {
-    return this.docks.handleShortcut(ctx, window, action);
+    if (window === null || !window.isDocked) return false;
+    const isHandled = this.docks.handleShortcut(ctx, window, action);
+    if (isHandled) {
+      this.arrange(ctx, reason, `${getMethodName()}:action=${action}`);
+    }
+    return isHandled;
   }
   public handleFloatWinShortcut(
     ctx: IDriverContext,
-    window: WindowClass,
+    window: WindowClass | null,
     action: KrohnkiteAction,
   ): boolean {
+    if (window === null || !window.isFloating) return false;
     switch (action) {
       case KrohnkiteAction.Increase:
       case KrohnkiteAction.Decrease:
+        break;
+      case KrohnkiteAction.GrowWidth:
+        this.resizeFloat(ctx, window, "east", 1);
+        break;
+      case KrohnkiteAction.ShrinkWidth:
+        this.resizeFloat(ctx, window, "east", -1);
+        break;
+      case KrohnkiteAction.GrowHeight:
+        this.resizeFloat(ctx, window, "south", 1);
+        break;
+      case KrohnkiteAction.ShrinkHeight:
+        this.resizeFloat(ctx, window, "south", -1);
         break;
       case KrohnkiteAction.MoveLeft:
         this._moveFloat(ctx, window, "left");
@@ -1270,6 +1253,78 @@ class TilingEngine {
         break;
       default:
         return false;
+    }
+    return true;
+  }
+  /**
+   * Let the current layout override shortcut.
+   *
+   * @returns True if the layout overrides the shortcut. False, otherwise.
+   */
+  public handleLayoutShortcut(
+    ctx: IDriverContext,
+    action: KrohnkiteAction,
+    reason: keyof typeof ArrangeReason,
+  ): boolean {
+    const layout = this.layouts.getCurrentLayout(ctx.currentSurface);
+    if (layout.handleShortcut) {
+      const isHandled = layout.handleShortcut(
+        new EngineContext(ctx, this),
+        action,
+      );
+      if (isHandled) {
+        this.arrange(ctx, reason, `${getMethodName()}:shortcut=${action}`);
+        return true;
+      }
+    }
+    return false;
+  }
+  public handleTiledWinShortcut(
+    ctx: IDriverContext,
+    window: WindowClass | null,
+    action: KrohnkiteAction,
+    reason: keyof typeof ArrangeReason,
+  ): boolean {
+    if (window === null || !window.isTiled) return false;
+    let isArrangeNeeded = true;
+    switch (action) {
+      case KrohnkiteAction.GrowWidth:
+        this.resizeTile(window, "east", 1);
+        break;
+      case KrohnkiteAction.ShrinkWidth:
+        this.resizeTile(window, "east", -1);
+        break;
+      case KrohnkiteAction.GrowHeight:
+        this.resizeTile(window, "south", 1);
+        break;
+      case KrohnkiteAction.ShrinkHeight:
+        this.resizeTile(window, "south", -1);
+        break;
+
+      case KrohnkiteAction.SwapUp:
+        this.swapOrder(window, -1);
+        break;
+      case KrohnkiteAction.SwapDown:
+        this.swapOrder(window, +1);
+        break;
+
+      case KrohnkiteAction.MoveUp:
+        isArrangeNeeded = this.moveTiledWindow(ctx, "up");
+        break;
+      case KrohnkiteAction.MoveDown:
+        isArrangeNeeded = this.moveTiledWindow(ctx, "down");
+        break;
+      case KrohnkiteAction.MoveLeft:
+        isArrangeNeeded = this.moveTiledWindow(ctx, "left");
+        break;
+      case KrohnkiteAction.MoveRight:
+        isArrangeNeeded = this.moveTiledWindow(ctx, "right");
+        break;
+      default:
+        return false;
+    }
+    if (isArrangeNeeded) {
+      this.arrange(ctx, reason, `${getMethodName()}:shortcut=${action}`);
     }
     return true;
   }

@@ -48,11 +48,7 @@ class MonocleLayout implements ILayout {
     return this;
   }
 
-  public handleShortcut(
-    ctx: EngineContext,
-    input: KrohnkiteAction,
-    data?: any,
-  ): boolean {
+  public handleShortcut(ctx: EngineContext, input: KrohnkiteAction): boolean {
     switch (input) {
       // case KrohnkiteAction.Up:
       // case KrohnkiteAction.Left:

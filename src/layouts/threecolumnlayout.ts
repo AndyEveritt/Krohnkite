@@ -187,11 +187,7 @@ class ThreeColumnLayout implements ILayout {
     return other;
   }
 
-  public handleShortcut(
-    ctx: EngineContext,
-    input: KrohnkiteAction,
-    data?: any,
-  ): boolean {
+  public handleShortcut(ctx: EngineContext, input: KrohnkiteAction): boolean {
     switch (input) {
       case KrohnkiteAction.Increase:
         this.resizeMaster(ctx, +1);

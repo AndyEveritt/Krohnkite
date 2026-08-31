@@ -310,39 +310,22 @@ class TilingController {
     ctx: IDriverContext,
     action: KrohnkiteAction | null,
     reason: keyof typeof ArrangeReason,
-    data?: any,
   ) {
     if (action === null) return;
 
     let isArrangeNeeded = true;
     let currentCapacity: number | null;
     const window = ctx.currentWindow;
+
     if (
-      window !== null &&
-      window.state === WindowState.Docked &&
-      this.engine.handleDockWinShortcut(ctx, window, action)
+      this.engine.handleDockWinShortcut(ctx, window, action, reason) ||
+      this.engine.handleFloatWinShortcut(ctx, window, action) ||
+      this.engine.handleLayoutShortcut(ctx, action, reason) ||
+      this.engine.handleTiledWinShortcut(ctx, window, action, reason)
     ) {
-      this.engine.arrange(
-        ctx,
-        reason,
-        `${getMethodName()}:windowState=${window.state}`,
-      );
-      return;
-    } else if (
-      window !== null &&
-      window.isFloating &&
-      this.engine.handleFloatWinShortcut(ctx, window, action)
-    ) {
-      return;
-    } else if (this.engine.handleLayoutShortcut(ctx, action, data)) {
       if (CONFIG.movePointerOnFocus) {
         window?.moveMouseToFocus();
       }
-      this.engine.arrange(
-        ctx,
-        reason,
-        `${getMethodName()}:LayoutOverrideShortcut`,
-      );
       return;
     }
     switch (action) {
@@ -373,47 +356,6 @@ class TilingController {
       case KrohnkiteAction.DWMRight:
       case KrohnkiteAction.FocusRight:
         isArrangeNeeded = this.engine.focusDir(ctx, "right");
-        break;
-
-      case KrohnkiteAction.GrowWidth:
-        if (window) {
-          this.engine.resizeWindow(ctx, window, "east", 1);
-        }
-        break;
-      case KrohnkiteAction.ShrinkWidth:
-        if (window) {
-          this.engine.resizeWindow(ctx, window, "east", -1);
-        }
-        break;
-      case KrohnkiteAction.GrowHeight:
-        if (window) {
-          this.engine.resizeWindow(ctx, window, "south", 1);
-        }
-        break;
-      case KrohnkiteAction.ShrinkHeight:
-        if (window) {
-          this.engine.resizeWindow(ctx, window, "south", -1);
-        }
-        break;
-
-      case KrohnkiteAction.SwapUp:
-        if (window) this.engine.swapOrder(window, -1);
-        break;
-      case KrohnkiteAction.SwapDown:
-        if (window) this.engine.swapOrder(window, +1);
-        break;
-
-      case KrohnkiteAction.MoveUp:
-        isArrangeNeeded = this.engine.moveTiledWindow(ctx, "up");
-        break;
-      case KrohnkiteAction.MoveDown:
-        isArrangeNeeded = this.engine.moveTiledWindow(ctx, "down");
-        break;
-      case KrohnkiteAction.MoveLeft:
-        isArrangeNeeded = this.engine.moveTiledWindow(ctx, "left");
-        break;
-      case KrohnkiteAction.MoveRight:
-        isArrangeNeeded = this.engine.moveTiledWindow(ctx, "right");
         break;
 
       case KrohnkiteAction.SetMaster:
@@ -469,10 +411,11 @@ class TilingController {
         isArrangeNeeded = false;
         break;
     }
-    if (!isArrangeNeeded) return;
+    if (isArrangeNeeded) {
+      this.engine.arrange(ctx, reason, `${getMethodName()}:shortcut=${action}`);
+    }
     if (CONFIG.movePointerOnFocus) {
       window?.moveMouseToFocus();
     }
-    this.engine.arrange(ctx, reason, `${getMethodName()}:shortcut=${action}`);
   }
 }

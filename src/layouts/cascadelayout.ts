@@ -96,11 +96,7 @@ class CascadeLayout implements ILayout {
     return new CascadeLayout(this.capacity, this.dir);
   }
 
-  public handleShortcut(
-    ctx: EngineContext,
-    input: KrohnkiteAction,
-    data?: any,
-  ): boolean {
+  public handleShortcut(ctx: EngineContext, input: KrohnkiteAction): boolean {
     switch (input) {
       case KrohnkiteAction.Increase:
         this.dir = (this.dir + 1 + 8) % 8;
