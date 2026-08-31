@@ -936,7 +936,7 @@ class KWinDriver implements IDriverContext {
           String(win.internalId),
         )?.focusTime;
         if (
-          (timestamp && fCTimeStamp && timestamp < fCTimeStamp) ||
+          (timestamp && fCTimeStamp && timestamp > fCTimeStamp) ||
           (timestamp && !fCTimeStamp)
         ) {
           fCTimeStamp = timestamp;
@@ -945,7 +945,10 @@ class KWinDriver implements IDriverContext {
       }
     }
     if (focusCandidate !== null) {
-      this.workspace.activeWindow = focusCandidate;
+      const focusWindow = this.windowMap.get(focusCandidate);
+      if (focusWindow !== null) {
+        this.currentWindow = focusWindow;
+      }
     }
     return true;
   }
