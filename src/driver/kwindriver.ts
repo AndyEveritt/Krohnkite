@@ -237,12 +237,6 @@ class KWinDriver implements IDriverContext {
       direction,
     );
     if (windows.length === 0) return null;
-    let idx = windows.indexOf(window);
-    if (idx < 0) {
-      this.workspace.activeWindow = windows[0];
-      return true;
-    }
-    if (windows.length === 1) return window;
 
     if (
       this._setFocusOnSurface(
@@ -810,22 +804,22 @@ class KWinDriver implements IDriverContext {
     switch (direction) {
       case "left":
         filterFunc = (r) => {
-          return rect.x >= r.x && rect.intersection(r, "y") > 0;
+          return r.x < rect.x && rect.intersection(r, "y") > 0;
         };
         break;
       case "right":
         filterFunc = (r) => {
-          return rect.x <= r.x && rect.intersection(r, "y") > 0;
+          return r.x > rect.x && rect.intersection(r, "y") > 0;
         };
         break;
       case "up":
         filterFunc = (r) => {
-          return rect.y >= r.y && rect.intersection(r, "x") > 0;
+          return r.y < rect.y && rect.intersection(r, "x") > 0;
         };
         break;
       case "down":
         filterFunc = (r) => {
-          return rect.y <= r.y && rect.intersection(r, "x") > 0;
+          return r.y > rect.y && rect.intersection(r, "x") > 0;
         };
         break;
     }
@@ -922,18 +916,17 @@ class KWinDriver implements IDriverContext {
     }
     let focusCandidate: KwinWindow | null = null;
     let fCTimeStamp: number | null | undefined = null;
-    let distance = null;
-    let d;
-    for (let win of windows) {
+    let distance: number | null = null;
+    for (const win of windows) {
       if (window !== null && win === window) continue;
       let winRect = toRect(win.frameGeometry);
-      d =
-        sourceRect.distance(winRect) +
-        sourceRect.overallDimension(winRect, direction);
+      const d =
+        direction === "left" ? sourceRect.x - winRect.maxX : direction === "right" ? winRect.x - sourceRect.maxX : direction === "up" ? sourceRect.y - winRect.maxY : winRect.y - sourceRect.maxY;
       if (focusCandidate === null || distance === null || d < distance) {
         distance = d;
         focusCandidate = win;
-      } else if (focusCandidate !== null && d === distance) {
+        fCTimeStamp = null;
+      } else if (d === distance) {
         if (fCTimeStamp === null) {
           fCTimeStamp = this.engine.windows.getWindowById(
             String(focusCandidate.internalId),
