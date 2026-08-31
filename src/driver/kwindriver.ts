@@ -926,7 +926,7 @@ class KWinDriver implements IDriverContext {
     let d;
     for (let win of windows) {
       if (window !== null && win === window) continue;
-      let winRect = toRect(win.bufferGeometry);
+      let winRect = toRect(win.frameGeometry);
       d =
         sourceRect.distance(winRect) +
         sourceRect.overallDimension(winRect, direction);
