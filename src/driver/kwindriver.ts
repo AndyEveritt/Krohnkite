@@ -227,35 +227,23 @@ class KWinDriver implements IDriverContext {
   public focusNeighborWindow(
     direction: Direction,
     winTypes: WinTypes,
-  ): KwinWindow | null | boolean {
+  ): boolean {
     let window = this.workspace.activeWindow;
-    if (!window) return null;
+    if (!window) return false;
     let windows = this._getWindowsByDirection(
       winTypes,
       this.currentSurface,
       toRect(window.frameGeometry),
       direction,
     );
-    if (windows.length === 0) return null;
-    let idx = windows.indexOf(window);
-    if (idx < 0) {
-      this.workspace.activeWindow = windows[0];
-      return true;
-    }
-    if (windows.length === 1) return window;
-
-    if (
-      this._setFocusOnSurface(
-        window,
-        this.currentSurface,
-        direction,
-        winTypes,
-        windows,
-      )
-    )
-      return true;
-
-    return window;
+    if (windows.length === 0) return false;
+    return this._setFocusOnSurface(
+      window,
+      this.currentSurface,
+      direction,
+      winTypes,
+      windows,
+    );
   }
   public focusOutput(
     window: KwinWindow | null,
@@ -810,22 +798,22 @@ class KWinDriver implements IDriverContext {
     switch (direction) {
       case "left":
         filterFunc = (r) => {
-          return rect.x >= r.x && rect.intersection(r, "y") > 0;
+          return r.x < rect.x && rect.intersection(r, "y") > 0;
         };
         break;
       case "right":
         filterFunc = (r) => {
-          return rect.x <= r.x && rect.intersection(r, "y") > 0;
+          return r.x > rect.x && rect.intersection(r, "y") > 0;
         };
         break;
       case "up":
         filterFunc = (r) => {
-          return rect.y >= r.y && rect.intersection(r, "x") > 0;
+          return r.y < rect.y && rect.intersection(r, "x") > 0;
         };
         break;
       case "down":
         filterFunc = (r) => {
-          return rect.y <= r.y && rect.intersection(r, "x") > 0;
+          return r.y > rect.y && rect.intersection(r, "x") > 0;
         };
         break;
     }
@@ -922,18 +910,23 @@ class KWinDriver implements IDriverContext {
     }
     let focusCandidate: KwinWindow | null = null;
     let fCTimeStamp: number | null | undefined = null;
-    let distance = null;
-    let d;
-    for (let win of windows) {
+    let distance: number | null = null;
+    for (const win of windows) {
       if (window !== null && win === window) continue;
-      let winRect = toRect(win.bufferGeometry);
-      d =
-        sourceRect.distance(winRect) +
-        sourceRect.overallDimension(winRect, direction);
+      let winRect = toRect(win.frameGeometry);
+      const d =
+        direction === "left"
+          ? sourceRect.x - winRect.maxX
+          : direction === "right"
+            ? winRect.x - sourceRect.maxX
+            : direction === "up"
+              ? sourceRect.y - winRect.maxY
+              : winRect.y - sourceRect.maxY;
       if (focusCandidate === null || distance === null || d < distance) {
         distance = d;
         focusCandidate = win;
-      } else if (focusCandidate !== null && d === distance) {
+        fCTimeStamp = null;
+      } else if (d === distance) {
         if (fCTimeStamp === null) {
           fCTimeStamp = this.engine.windows.getWindowById(
             String(focusCandidate.internalId),
@@ -943,7 +936,7 @@ class KWinDriver implements IDriverContext {
           String(win.internalId),
         )?.focusTime;
         if (
-          (timestamp && fCTimeStamp && timestamp < fCTimeStamp) ||
+          (timestamp && fCTimeStamp && timestamp > fCTimeStamp) ||
           (timestamp && !fCTimeStamp)
         ) {
           fCTimeStamp = timestamp;
@@ -952,9 +945,10 @@ class KWinDriver implements IDriverContext {
       }
     }
     if (focusCandidate !== null) {
-      this.workspace.activeWindow = focusCandidate;
+      const focusWindow = this.windowMap.get(focusCandidate);
+      this.currentWindow = focusWindow;
     }
-    return true;
+    return focusCandidate !== null;
   }
   /* Read the virtual desktop currently shown on a specific output. Uses KWin
   6.7's per-output API (workspace.currentDesktopForScreen) and falls back to
