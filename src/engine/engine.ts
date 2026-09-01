@@ -876,19 +876,17 @@ class TilingEngine {
     if (winTypes === WinTypes.special) {
       return ctx.focusSpecial(dir);
     }
-    let surfaceWin = ctx.focusNeighborWindow(dir, winTypes);
-    if (surfaceWin === true) {
+    if (ctx.focusNeighborWindow(dir, winTypes)) {
       if (CONFIG.movePointerOnFocus) {
         DBUS.moveMouseToFocus();
       }
       return false;
     }
-    if (surfaceWin === false) surfaceWin = null;
     if (
       (!ctx.isRegister && CONFIG.focusMoveScreensNormal) ||
       (ctx.isRegister && CONFIG.focusMoveScreensMeta)
     ) {
-      const result = ctx.focusOutput(surfaceWin, dir, winTypes);
+      const result = ctx.focusOutput(null, dir, winTypes);
       if (result) {
         if (CONFIG.movePointerOnFocus) {
           DBUS.moveMouseToCenter();
@@ -901,7 +899,7 @@ class TilingEngine {
       (!ctx.isRegister && CONFIG.focusMoveVDesktopsNormal) ||
       (ctx.isRegister && CONFIG.focusMoveVDesktopsMeta)
     ) {
-      return ctx.focusVDesktop(surfaceWin, dir, winTypes);
+      return ctx.focusVDesktop(null, dir, winTypes);
     }
     return false;
   }

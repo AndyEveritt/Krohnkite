@@ -227,29 +227,23 @@ class KWinDriver implements IDriverContext {
   public focusNeighborWindow(
     direction: Direction,
     winTypes: WinTypes,
-  ): KwinWindow | null | boolean {
+  ): boolean {
     let window = this.workspace.activeWindow;
-    if (!window) return null;
+    if (!window) return false;
     let windows = this._getWindowsByDirection(
       winTypes,
       this.currentSurface,
       toRect(window.frameGeometry),
       direction,
     );
-    if (windows.length === 0) return null;
-
-    if (
-      this._setFocusOnSurface(
-        window,
-        this.currentSurface,
-        direction,
-        winTypes,
-        windows,
-      )
-    )
-      return true;
-
-    return window;
+    if (windows.length === 0) return false;
+    return this._setFocusOnSurface(
+      window,
+      this.currentSurface,
+      direction,
+      winTypes,
+      windows,
+    );
   }
   public focusOutput(
     window: KwinWindow | null,
@@ -921,7 +915,13 @@ class KWinDriver implements IDriverContext {
       if (window !== null && win === window) continue;
       let winRect = toRect(win.frameGeometry);
       const d =
-        direction === "left" ? sourceRect.x - winRect.maxX : direction === "right" ? winRect.x - sourceRect.maxX : direction === "up" ? sourceRect.y - winRect.maxY : winRect.y - sourceRect.maxY;
+        direction === "left"
+          ? sourceRect.x - winRect.maxX
+          : direction === "right"
+            ? winRect.x - sourceRect.maxX
+            : direction === "up"
+              ? sourceRect.y - winRect.maxY
+              : winRect.y - sourceRect.maxY;
       if (focusCandidate === null || distance === null || d < distance) {
         distance = d;
         focusCandidate = win;
@@ -950,7 +950,7 @@ class KWinDriver implements IDriverContext {
         this.currentWindow = focusWindow;
       }
     }
-    return true;
+    return focusCandidate !== null;
   }
   /* Read the virtual desktop currently shown on a specific output. Uses KWin
   6.7's per-output API (workspace.currentDesktopForScreen) and falls back to
