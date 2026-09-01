@@ -946,9 +946,7 @@ class KWinDriver implements IDriverContext {
     }
     if (focusCandidate !== null) {
       const focusWindow = this.windowMap.get(focusCandidate);
-      if (focusWindow !== null) {
-        this.currentWindow = focusWindow;
-      }
+      this.currentWindow = focusWindow;
     }
     return focusCandidate !== null;
   }
