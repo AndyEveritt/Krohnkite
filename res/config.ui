@@ -57,7 +57,7 @@
       <string notr="true">font: 12pt &quot;Noto Sans&quot;;</string>
      </property>
      <property name="currentIndex">
-      <number>0</number>
+      <number>4</number>
      </property>
      <widget class="QWidget" name="_1_layoutsTab">
       <property name="sizePolicy">
@@ -3844,18 +3844,58 @@
              <property name="bottomMargin">
               <number>0</number>
              </property>
-             <item row="0" column="6">
-              <spacer name="horizontalSpacer_24">
-               <property name="orientation">
-                <enum>Qt::Orientation::Horizontal</enum>
+             <item row="2" column="1">
+              <widget class="QCheckBox" name="kcfg_focusMoveVDesktopsNormal">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
                </property>
-               <property name="sizeHint" stdset="0">
-                <size>
-                 <width>40</width>
-                 <height>20</height>
-                </size>
+               <property name="text">
+                <string>focusing/moving across Vdesktops</string>
                </property>
-              </spacer>
+               <property name="checked">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="2">
+              <widget class="QLabel" name="label_63">
+               <property name="text">
+                <string>Register</string>
+               </property>
+               <property name="margin">
+                <number>0</number>
+               </property>
+              </widget>
+             </item>
+             <item row="1" column="4">
+              <widget class="QCheckBox" name="kcfg_focusMoveScreensMeta">
+               <property name="text">
+                <string>focusing/moving across screens</string>
+               </property>
+               <property name="checked">
+                <bool>false</bool>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="4">
+              <widget class="QCheckBox" name="kcfg_focusMoveVDesktopsMeta">
+               <property name="text">
+                <string>focusing/moving across Vdesktops</string>
+               </property>
+               <property name="checked">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item row="0" column="0">
+              <widget class="QLabel" name="label_62">
+               <property name="text">
+                <string>Normal</string>
+               </property>
+              </widget>
              </item>
              <item row="0" column="1">
               <widget class="QComboBox" name="kcfg_focusNormal">
@@ -3909,7 +3949,7 @@
                </item>
               </widget>
              </item>
-             <item row="0" column="5">
+             <item row="0" column="4">
               <widget class="QComboBox" name="kcfg_focusMeta">
                <property name="toolTip">
                 <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;What types of window can be focused/moved using Krohnkite's focus/move keys in meta Mode. &lt;/p&gt;&lt;p&gt;Meta shortcuts: &lt;span style=&quot; font-weight:700;&quot;&gt;MetaFocusLeft&lt;/span&gt;, &lt;span style=&quot; font-weight:700;&quot;&gt;MetaFocusRight&lt;/span&gt;, &lt;span style=&quot; font-weight:700;&quot;&gt;MetaFocusUp&lt;/span&gt;, &lt;span style=&quot; font-weight:700;&quot;&gt;MetaFocusDown&lt;/span&gt;&lt;/p&gt;&lt;p&gt;These Meta Shortcuts have configured on the same Focus keys. Can be overridden in Krohnkite Meta Mode configuration settings (see wiki).&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Special : focus up - &lt;/span&gt;walk on screens. &lt;span style=&quot; font-weight:700;&quot;&gt;focus down - &lt;/span&gt;walk on all the windows, even those that are not managed and registered by Krohnkite. &lt;span style=&quot; font-weight:700;&quot;&gt;focus left/right - &lt;/span&gt;walk on Virtual Desktops.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -3964,13 +4004,10 @@
                </item>
               </widget>
              </item>
-             <item row="0" column="2">
-              <spacer name="horizontalSpacer_26">
+             <item row="0" column="5">
+              <spacer name="horizontalSpacer_24">
                <property name="orientation">
                 <enum>Qt::Orientation::Horizontal</enum>
-               </property>
-               <property name="sizeType">
-                <enum>QSizePolicy::Policy::Minimum</enum>
                </property>
                <property name="sizeHint" stdset="0">
                 <size>
@@ -3980,20 +4017,19 @@
                </property>
               </spacer>
              </item>
-             <item row="0" column="0">
-              <widget class="QLabel" name="label_62">
-               <property name="text">
-                <string>Normal</string>
+             <item row="1" column="1">
+              <widget class="QCheckBox" name="kcfg_focusMoveScreensNormal">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
                </property>
-              </widget>
-             </item>
-             <item row="0" column="3">
-              <widget class="QLabel" name="label_63">
                <property name="text">
-                <string>Alter Register</string>
+                <string>focusing/moving across screens</string>
                </property>
-               <property name="margin">
-                <number>0</number>
+               <property name="checked">
+                <bool>true</bool>
                </property>
               </widget>
              </item>
@@ -4008,48 +4044,8 @@
             <property name="flat">
              <bool>true</bool>
             </property>
-            <layout class="QGridLayout" name="gridLayout_35">
-             <item row="0" column="0">
-              <widget class="QCheckBox" name="kcfg_focusMoveScreensNormal">
-               <property name="text">
-                <string>focusing/moving across screens</string>
-               </property>
-               <property name="checked">
-                <bool>true</bool>
-               </property>
-              </widget>
-             </item>
-             <item row="1" column="1">
-              <widget class="QCheckBox" name="kcfg_focusMoveVDesktopsMeta">
-               <property name="text">
-                <string>focusing/moving across Vdesktops</string>
-               </property>
-               <property name="checked">
-                <bool>true</bool>
-               </property>
-              </widget>
-             </item>
-             <item row="0" column="1">
-              <widget class="QCheckBox" name="kcfg_focusMoveScreensMeta">
-               <property name="text">
-                <string>focusing/moving across screens</string>
-               </property>
-               <property name="checked">
-                <bool>false</bool>
-               </property>
-              </widget>
-             </item>
+            <layout class="QGridLayout" name="gridLayout_4">
              <item row="1" column="0">
-              <widget class="QCheckBox" name="kcfg_focusMoveVDesktopsNormal">
-               <property name="text">
-                <string>focusing/moving across Vdesktops</string>
-               </property>
-               <property name="checked">
-                <bool>true</bool>
-               </property>
-              </widget>
-             </item>
-             <item row="2" column="0">
               <widget class="QCheckBox" name="kcfg_movePointerOnFocus">
                <property name="toolTip">
                 <string>Move mouse cursor to the center of a window/screen when it becomes focused</string>
@@ -4058,19 +4054,6 @@
                 <string>Move pointer to window/screen center on focus</string>
                </property>
               </widget>
-             </item>
-             <item row="0" column="2">
-              <spacer name="horizontalSpacer_25">
-               <property name="orientation">
-                <enum>Qt::Orientation::Horizontal</enum>
-               </property>
-               <property name="sizeHint" stdset="0">
-                <size>
-                 <width>40</width>
-                 <height>20</height>
-                </size>
-               </property>
-              </spacer>
              </item>
             </layout>
            </widget>

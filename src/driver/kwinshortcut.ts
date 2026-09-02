@@ -19,19 +19,19 @@ const Shortcuts = {
   },
   FocusLeftSC: {
     defaultAction: KrohnkiteAction.FocusLeft,
-    defaultRegisterAction: KrohnkiteAction.DWMLeft,
+    defaultRegisterAction: KrohnkiteAction.FocusLeft,
   },
   FocusRightSC: {
     defaultAction: KrohnkiteAction.FocusRight,
-    defaultRegisterAction: KrohnkiteAction.DWMRight,
+    defaultRegisterAction: KrohnkiteAction.FocusRight,
   },
   FocusDownSC: {
     defaultAction: KrohnkiteAction.FocusDown,
-    defaultRegisterAction: KrohnkiteAction.FocusPrev,
+    defaultRegisterAction: KrohnkiteAction.FocusDown,
   },
   FocusUpSC: {
     defaultAction: KrohnkiteAction.FocusUp,
-    defaultRegisterAction: KrohnkiteAction.FocusNext,
+    defaultRegisterAction: KrohnkiteAction.FocusUp,
   },
   MoveDownSC: {
     defaultAction: KrohnkiteAction.MoveDown,
@@ -71,11 +71,11 @@ const Shortcuts = {
   },
   IncreaseSC: {
     defaultAction: KrohnkiteAction.Increase,
-    defaultRegisterAction: null,
+    defaultRegisterAction: KrohnkiteAction.FocusNext,
   },
   DecreaseSC: {
     defaultAction: KrohnkiteAction.Decrease,
-    defaultRegisterAction: null,
+    defaultRegisterAction: KrohnkiteAction.FocusPrev,
   },
   ToggleFloatSC: {
     defaultAction: KrohnkiteAction.ToggleFloat,
