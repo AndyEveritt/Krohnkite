@@ -104,6 +104,7 @@ tasks:
       - "{{.NODE_SCRIPT}}"
 
   install-deps:
+    if: "[ ! -f nodeps.bak ]"
     run: once
     cmds:
       - npm install --save-dev
