@@ -225,7 +225,6 @@ const WindowState = {
   Tiled: "Tiled",
   TiledAfloat: "TiledAfloat",
   Undecided: "Undecided",
-  Dragging: "Dragging",
   Docked: "Docked",
 } as const;
 type WindowState = (typeof WindowState)[keyof typeof WindowState];

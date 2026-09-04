@@ -198,8 +198,8 @@ interface IWindowClass {
   geometry: Rect;
   focusTime: number;
   isSendingToOutput: boolean;
+  isDragging: boolean;
 
-  setDraggingState(): void;
   setState(value: WindowState): void;
 
   commit(ctx: IDriverContext, noBorders?: boolean): void;

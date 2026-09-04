@@ -115,12 +115,10 @@ class TilingController {
     const srf = ctx.currentSurface;
     const layout = this.engine.layouts.getCurrentLayout(srf);
     if (!layout.drag) return;
-    // if (!(layout.drag && layout.isDragging && layout.isDragging(window)))
-    //   return;
     if (window.state === WindowState.Tiled) {
-      window.setDraggingState();
+      window.isDragging = true;
     }
-    if (window.state === WindowState.Dragging) {
+    if (window.isDragging) {
       if (
         layout.drag(
           new EngineContext(ctx, this.engine),
@@ -143,7 +141,8 @@ class TilingController {
     reason: keyof typeof ArrangeReason,
   ): void {
     /* swap window by dragging */
-    if (window.state === WindowState.Dragging) {
+    if (window.isDragging) {
+      window.isDragging = false;
       window.setState(WindowState.Tiled);
       this.engine.arrange(
         ctx,

@@ -8,7 +8,6 @@
 class WindowClass implements IWindowClass {
   public static isTileableState(state: WindowState): boolean {
     return (
-      state === WindowState.Dragging ||
       state === WindowState.Tiled ||
       state === WindowState.Maximized ||
       state === WindowState.TiledAfloat
@@ -78,7 +77,7 @@ class WindowClass implements IWindowClass {
     const state = this.state;
 
     /* cannot transit to the current state */
-    if (state === value || state === WindowState.Dragging) return;
+    if (state === value || this.isDragging) return;
 
     if (
       (state === WindowState.Unmanaged || this.isTileable || this.isDocked) &&
@@ -93,9 +92,6 @@ class WindowClass implements IWindowClass {
       this.floatGeometry = this.actualGeometry;
 
     this.internalState = value;
-  }
-  public setDraggingState() {
-    this.internalState = WindowState.Dragging;
   }
   public setState(value: WindowState) {
     this.internalState = value;
@@ -138,6 +134,7 @@ class WindowClass implements IWindowClass {
   public geometry: Rect;
   public focusTime: number;
   public isSendingToOutput: boolean;
+  public isDragging: boolean;
 
   private internalState: WindowState;
   private shouldCommitFloat: boolean;
@@ -152,6 +149,7 @@ class WindowClass implements IWindowClass {
     this.geometry = window.geometry;
     this.focusTime = 0;
     this.isSendingToOutput = false;
+    this.isDragging = false;
     this.internalState = WindowState.Unmanaged;
     this.shouldCommitFloat = this.shouldFloat;
     // this._floatGeometry =
@@ -170,6 +168,7 @@ class WindowClass implements IWindowClass {
   }
 
   public commit(ctx: IDriverContext, noBorders?: boolean) {
+    if (this.isDragging) return;
     if (!this.window.isCommittedEver) this.window.isCommittedEver = true;
     const state = this.state;
     LOG?.send(
@@ -180,8 +179,6 @@ class WindowClass implements IWindowClass {
       }, commitGeometry: ${this.geometry}, noBorders: ${noBorders}`,
     );
     switch (state) {
-      case WindowState.Dragging:
-        break;
       case WindowState.NativeMaximized:
         this.window.commit(ctx, undefined, undefined, undefined);
         break;
