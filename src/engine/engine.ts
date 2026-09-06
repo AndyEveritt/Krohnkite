@@ -1110,10 +1110,10 @@ class TilingEngine {
   }
 
   public toggleDock(window: WindowClass) {
-    window.state =
-      window.state !== WindowState.Docked
-        ? WindowState.Docked
-        : WindowState.Tiled;
+    if (WindowClass.isToggleableState(window.state)) {
+      if (window.isDocked) window.state = window.previousState;
+      else window.state = WindowState.Docked;
+    }
   }
 
   public raiseSurfaceCapacity(ctx: IDriverContext): number | null {
@@ -1149,9 +1149,10 @@ class TilingEngine {
    * Toggle float mode of window.
    */
   public toggleFloat(window: WindowClass) {
-    window.state = !(window.isTileable || window.isDocked)
-      ? WindowState.Tiled
-      : WindowState.Floating;
+    if (WindowClass.isToggleableState(window.state)) {
+      if (window.isFloating) window.state = window.previousState;
+      else window.state = WindowState.Floating;
+    }
   }
 
   /**
@@ -1169,12 +1170,14 @@ class TilingEngine {
 
     if (numFloats === 0) {
       windows.forEach((window) => {
-        window.state = WindowState.Floating;
+        if (WindowClass.isToggleableState(window.state))
+          window.state = WindowState.Floating;
       });
       ctx.showNotification("Float All");
     } else {
       windows.forEach((window) => {
-        window.state = WindowState.Tiled;
+        if (WindowClass.isToggleableState(window.state))
+          window.state = window.previousState;
       });
       ctx.showNotification("Tile All");
     }

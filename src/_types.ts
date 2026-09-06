@@ -228,6 +228,7 @@ const WindowState = {
   Docked: "Docked",
 } as const;
 type WindowState = (typeof WindowState)[keyof typeof WindowState];
+type ToggleableState = Extract<WindowState, "Tiled" | "Floating" | "Docked">;
 
 const KrohnkiteAction = {
   FocusNext: "FocusNext",

@@ -22,6 +22,15 @@ class WindowClass implements IWindowClass {
   public static isDockedState(state: WindowState): boolean {
     return state === WindowState.Docked;
   }
+  public static isToggleableState(
+    state: WindowState,
+  ): state is ToggleableState {
+    return (
+      state === WindowState.Tiled ||
+      state === WindowState.Floating ||
+      state === WindowState.Docked
+    );
+  }
 
   public get actualGeometry(): Readonly<Rect> {
     return this.window.geometry;
@@ -91,9 +100,13 @@ class WindowClass implements IWindowClass {
       /* save the current geometry before leaving floating state */
       this.floatGeometry = this.actualGeometry;
 
-    this.internalState = value;
-  }
-  public setState(value: WindowState) {
+    if (
+      state === WindowState.Tiled ||
+      state === WindowState.Floating ||
+      state === WindowState.Docked
+    ) {
+      this.previousState = state;
+    }
     this.internalState = value;
   }
   public get surface(): ISurface {
@@ -135,6 +148,7 @@ class WindowClass implements IWindowClass {
   public focusTime: number;
   public isSendingToOutput: boolean;
   public isDragging: boolean;
+  public previousState: ToggleableState;
 
   private internalState: WindowState;
   private shouldCommitFloat: boolean;
@@ -151,6 +165,7 @@ class WindowClass implements IWindowClass {
     this.isSendingToOutput = false;
     this.isDragging = false;
     this.internalState = WindowState.Unmanaged;
+    this.previousState = WindowState.Tiled;
     this.shouldCommitFloat = this.shouldFloat;
     // this._floatGeometry =
     //   this.shouldCommitFloat || CONFIG.floatConfig === null

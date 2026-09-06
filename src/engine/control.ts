@@ -112,6 +112,7 @@ class TilingController {
       Date.now() - this.dragCompleteTime < 100
     )
       return;
+    if (!window.isDragging) window.isDragging = true;
     const srf = ctx.currentSurface;
     const layout = this.engine.layouts.getCurrentLayout(srf);
     if (!layout.drag) return;
@@ -143,7 +144,6 @@ class TilingController {
     /* swap window by dragging */
     if (window.isDragging) {
       window.isDragging = false;
-      window.setState(WindowState.Tiled);
       this.engine.arrange(
         ctx,
         reason,
