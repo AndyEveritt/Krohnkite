@@ -88,6 +88,12 @@ class KWinConfig implements IConfig {
   public stairReverse: boolean;
   public layoutOrder: string[];
   public layoutFactories: { [key: string]: () => ILayout };
+  private layoutFactoryCapacities: { [key: string]: number | null };
+  private loggingConfig: {
+    enabled: boolean;
+    parts: [LogPartition, string[]][];
+    filters: string[];
+  };
   /*
    * Surfaces
    * */
@@ -238,7 +244,9 @@ class KWinConfig implements IConfig {
     const sortedLayouts: ISortedLayouts[] =
       KWinConfig.getSortedLayouts(layoutsList);
     this.layoutOrder = KWinConfig.getLayoutOrder(sortedLayouts);
-    this.layoutFactories = KWinConfig.getLayoutFactories(sortedLayouts);
+    const layoutConfig = KWinConfig.getLayoutFactories(sortedLayouts);
+    this.layoutFactories = layoutConfig.factories;
+    this.layoutFactoryCapacities = layoutConfig.capacities;
     sortedLayouts.forEach(({ layoutClass, isCapacity }) => {
       this.layoutOrder.push(layoutClass.id);
     });
@@ -569,7 +577,8 @@ class KWinConfig implements IConfig {
     //***************************
     //****************** Log
     //***************************
-    if (KWIN.readConfig("logging", false)) {
+    const loggingEnabled = KWIN.readConfig("logging", false);
+    if (loggingEnabled) {
       let logParts: [LogPartition, string[]][] = [];
       let newWindowSubmodules: string[] = [];
       if (KWIN.readConfig("logNewWindows", false))
@@ -608,8 +617,14 @@ class KWinConfig implements IConfig {
       const logFilters = KWIN.readConfig("logFilter", false)
         ? separate(KWIN.readConfig("logFilterStr", ""), ",")
         : [];
-      LOG = new Logging(logParts, logFilters);
-    } else LOG = undefined;
+      this.loggingConfig = {
+        enabled: true,
+        parts: logParts,
+        filters: logFilters,
+      };
+    } else {
+      this.loggingConfig = { enabled: false, parts: [], filters: [] };
+    }
     //***************************
     //***************************
     //***************************
@@ -716,9 +731,11 @@ class KWinConfig implements IConfig {
   }
 
   private static getLayoutFactories(sortedLayouts: ISortedLayouts[]): {
-    [key: string]: () => ILayout;
+    factories: { [key: string]: () => ILayout };
+    capacities: { [key: string]: number | null };
   } {
     let layoutFactories: { [key: string]: () => ILayout } = {};
+    let layoutFactoryCapacities: { [key: string]: number | null } = {};
     for (const { layoutClass, isCapacity } of sortedLayouts) {
       if (isCapacity) {
         const capacityConfigKey = `${unCapitalize(layoutClass.id)}Capacity`;
@@ -727,6 +744,7 @@ class KWinConfig implements IConfig {
             `kwinconfig: unrecognized config key "${capacityConfigKey}" for layout ${layoutClass.id}, skipping capacity config`,
           );
           layoutFactories[layoutClass.id] = () => new layoutClass(null);
+          layoutFactoryCapacities[layoutClass.id] = null;
           continue;
         }
         let capacity = validateNumber(
@@ -739,16 +757,45 @@ class KWinConfig implements IConfig {
             `kwinconfig: layout capacity for ${layoutClass.id} is invalid: ${capacity}`,
           );
           layoutFactories[layoutClass.id] = () => new layoutClass(null);
+          layoutFactoryCapacities[layoutClass.id] = null;
         } else if (capacity === 0 || capacity > 98) {
           layoutFactories[layoutClass.id] = () => new layoutClass(null);
+          layoutFactoryCapacities[layoutClass.id] = null;
         } else {
           layoutFactories[layoutClass.id] = () => new layoutClass(capacity);
+          layoutFactoryCapacities[layoutClass.id] = capacity;
         }
       } else {
         layoutFactories[layoutClass.id] = () => new layoutClass();
+        layoutFactoryCapacities[layoutClass.id] = null;
       }
     }
-    return layoutFactories;
+    return { factories: layoutFactories, capacities: layoutFactoryCapacities };
+  }
+
+  /** Stable representation of every effective value used by Krohnkite. */
+  public signature(): string {
+    const serializable: { [key: string]: any } = {};
+    for (const key of Object.keys(this).sort()) {
+      if (key !== "layoutFactories") serializable[key] = (this as any)[key];
+    }
+    return JSON.stringify(serializable);
+  }
+
+  public equals(other: KWinConfig): boolean {
+    return this.signature() === other.signature();
+  }
+
+  /** Build the logger only when this configuration becomes active. */
+  public createLogger(): ILogModules | undefined {
+    if (!this.loggingConfig.enabled) return undefined;
+
+    // Logging normalizes exclusion markers in-place, so keep the immutable
+    // configuration snapshot used by equals() isolated from those mutations.
+    const parts: [LogPartition, string[]][] = this.loggingConfig.parts.map(
+      ([partition, modules]) => [partition, [...modules]],
+    );
+    return new Logging(parts, [...this.loggingConfig.filters]);
   }
 
   public toString(): string {

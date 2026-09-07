@@ -111,10 +111,10 @@ class KWinDriver implements IDriverContext {
   private _started: boolean;
   private _disposed: boolean;
 
-  constructor(api: Api) {
+  constructor(api: Api, config?: KWinConfig) {
     KWIN = api.kwin;
-    CONFIG = KWINCONFIG = new KWinConfig();
-    DBUS = new DBusManager(api.dbus);
+    CONFIG = KWINCONFIG = config ?? new KWinConfig();
+    LOG = KWINCONFIG.createLogger();
     this.workspace = api.workspace;
     this._shortcuts = new Map(
       api.shortcuts.map((entry) => [entry.name, new Shortcut(entry)]),
@@ -143,6 +143,9 @@ class KWinDriver implements IDriverContext {
       toggleMode: CONFIG.altRegisterIsToggle,
       alterActionID: 0,
     };
+    // Create the signal-owning dependency last. If any of the data-only
+    // setup above fails, the constructor has not connected external callbacks.
+    DBUS = new DBusManager(api.dbus);
   }
   /*
    * Main
