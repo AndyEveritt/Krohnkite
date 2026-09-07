@@ -104,6 +104,12 @@ class KWinDriver implements IDriverContext {
   private entered: boolean;
   private _surfaceStore: KWinSurfaceStore;
   private _isRegister: IRegister;
+  private _connections: Array<{
+    signal: Signal<(...args: any[]) => void>;
+    callback: (...args: any[]) => void;
+  }>;
+  private _started: boolean;
+  private _disposed: boolean;
 
   constructor(api: Api) {
     KWIN = api.kwin;
@@ -127,6 +133,9 @@ class KWinDriver implements IDriverContext {
         ),
     );
     this.entered = false;
+    this._connections = [];
+    this._started = false;
+    this._disposed = false;
     this._surfaceStore = new KWinSurfaceStore(this.workspace);
     this._isRegister = {
       state: false,
@@ -139,6 +148,8 @@ class KWinDriver implements IDriverContext {
    * Main
    */
   public main() {
+    if (this._started || this._disposed) return;
+    this._started = true;
     LOG?.send(LogModules.printConfig, undefined, `Config: ${CONFIG}`);
     this._bindEvents();
     this._bindShortcut();
@@ -147,6 +158,26 @@ class KWinDriver implements IDriverContext {
     for (let i = 0; i < clients.length; i++) {
       this.addWindow(clients[i]);
     }
+  }
+  public dispose(): void {
+    if (this._disposed) return;
+    this._disposed = true;
+
+    for (const { signal, callback } of this._connections.splice(0)) {
+      try {
+        signal.disconnect(callback);
+      } catch (_) {
+        /* A window or QML shortcut object may already have been destroyed. */
+      }
+    }
+    for (const window of this.windowMap) window.window.dispose();
+    this.engine.relocationWindows.clear();
+    this.engine.windows.list = [];
+    this.windowMap.clear();
+    this._shortcutSequences.clear();
+    this._shortcuts.clear();
+    this._runningShortcutSequence = null;
+    DBUS.dispose();
   }
   private addWindow(client: KwinWindow): WindowClass | null {
     if (client.dock) {
@@ -1130,9 +1161,9 @@ class KWinDriver implements IDriverContext {
       for (const conf of list) conf.sequenceTime = maxTime;
     }
     for (const shortcut of this._shortcuts.values()) {
-      shortcut.hdl.activated.connect(() => {
+      this._connect(shortcut.hdl.activated, () => {
         LOG?.send(LogModules.shortcut, `Shortcut pressed:`, `${shortcut.name}`);
-        this._enter(() => this._onShortcut(shortcut));
+        this._onShortcut(shortcut);
       });
     }
   }
@@ -1146,10 +1177,12 @@ class KWinDriver implements IDriverContext {
   ): () => void {
     const wrapper = (...args: any[]) => {
       /* HACK: `workspace` become undefined when the script is disabled. */
-      if (typeof this.workspace === "undefined") signal.disconnect(wrapper);
+      if (this._disposed || typeof this.workspace === "undefined")
+        signal.disconnect(wrapper);
       else this._enter(() => handler.apply(this, args));
     };
     signal.connect(wrapper);
+    this._connections.push({ signal, callback: wrapper });
 
     return wrapper;
   }
@@ -1163,7 +1196,7 @@ class KWinDriver implements IDriverContext {
    * debugging.
    */
   private _enter(callback: () => void) {
-    if (this.entered) return;
+    if (this.entered || this._disposed) return;
 
     this.entered = true;
     try {

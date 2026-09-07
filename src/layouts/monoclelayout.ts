@@ -36,7 +36,7 @@ class MonocleLayout implements ILayout {
         if (current && current.isTiled) {
           tiles.forEach((window) => {
             if (window !== current)
-              (window.window as DriverWindow).window.minimized = true;
+              (window.window as DriverWindow).setMinimizedByScript(true);
           });
         }
       }, 50);
