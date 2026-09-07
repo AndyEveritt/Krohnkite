@@ -6,7 +6,7 @@
 */
 
 class DefaultGapsCfg implements IGaps {
-  static _gapsInstance: DefaultGapsCfg;
+  static _gapsInstance: DefaultGapsCfg | undefined;
 
   public readonly left: number;
   public readonly right: number;
@@ -46,6 +46,9 @@ class DefaultGapsCfg implements IGaps {
       DefaultGapsCfg._gapsInstance = new DefaultGapsCfg();
     }
     return DefaultGapsCfg._gapsInstance;
+  }
+  public static reset(): void {
+    DefaultGapsCfg._gapsInstance = undefined;
   }
   public cloneAndUpdate(cfg: Partial<IGaps>): IGaps {
     return Object.assign({} as IGaps, DefaultGapsCfg.instance, cfg);

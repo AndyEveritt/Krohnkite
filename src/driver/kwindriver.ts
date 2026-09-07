@@ -1321,9 +1321,13 @@ class KWinDriver implements IDriverContext {
       this._surfaceStore.checkVirtualDesktops();
     });
 
-    // TODO: options.configChanged.connect(this.onConfigChanged);
-    /* NOTE: How disappointing. This doesn't work at all. Even an official kwin script tries this.
-     *       https://github.com/KDE/kwin/blob/master/scripts/minimizeall/contents/code/main.js */
+    /* NOTE: Configuration reload is owned by KWinRuntime. KWin's generic
+     * script settings KCM does not emit Options.configChanged when Apply is
+     * clicked; an explicit KWin reconfigure does. Workaround:
+     * qdbus6 org.kde.KWin /KWin org.kde.KWin.reconfigure
+     * This is tracked upstream:
+     * https://bugs.kde.org/show_bug.cgi?id=463292
+     */
   }
   private _bindWindowEvents(window: WindowClass, client: KwinWindow) {
     let moving = false;

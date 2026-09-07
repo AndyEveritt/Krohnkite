@@ -15,6 +15,7 @@ import "../code/script.js" as K
 
 Item {
     id: scriptRoot
+    property var runtime: null
 
     TaskManager.ActivityInfo {
         id: activityInfo
@@ -40,7 +41,35 @@ Item {
             "dbus": dbusCallLoader.item
         };
 
-        (new K.KWinDriver(api)).main();
+        runtime = new K.KWinRuntime(api);
+        runtime.start();
+    }
+
+    Component.onDestruction: {
+        configReloadTimer.stop();
+        if (runtime !== null) {
+            runtime.dispose();
+            runtime = null;
+        }
+    }
+
+    Connections {
+        target: Options
+
+        function onConfigChanged() {
+            configReloadTimer.restart();
+        }
+    }
+
+    Timer {
+        id: configReloadTimer
+        interval: 100
+        repeat: false
+
+        onTriggered: {
+            if (runtime !== null)
+                runtime.reloadIfChanged();
+        }
     }
     Loader {
         id: shortcutsLoader;
