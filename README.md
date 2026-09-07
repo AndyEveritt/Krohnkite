@@ -33,18 +33,23 @@ K and looks cool.
 
 ## Look at me
 
-1. If you change the Krohnkite configuration, you will need to reboot. Do not toggle the script on and off, this will start multiple instances of it.
+1. After pressing `Apply`, ask KWin to reload its configuration:
+
+   ```sh
+   qdbus6 org.kde.KWin /KWin org.kde.KWin.reconfigure
+   ```
+
 2. Delete unused KWin shortcuts you can use any D-Bus program which can invoke D-Bus methods. Service name -`org.kde.kglobalaccel` path - `/component/kwin` method - `org.kde.kglobalaccel.Component.cleanUp`. ArchLinux example:
 
-```
-qdbus6 org.kde.kglobalaccel /component/kwin org.kde.kglobalaccel.Component.cleanUp
-```
+   ```sh
+   qdbus6 org.kde.kglobalaccel /component/kwin org.kde.kglobalaccel.Component.cleanUp
+   ```
 
 3. If you have a gap or vice versa you have gray(white etc) rectangle that means that there is a program with size 1x1 that have to be filtered by title or other ways. Make sure that the following programs, if you have them, have been added to the filter:
 
-```
-xwaylandvideobridge,plasmashell,ksplashqml
-```
+   ```
+   xwaylandvideobridge,plasmashell,ksplashqml
+   ```
 
 ## Installation
 
@@ -130,13 +135,14 @@ go-task uninstall
 - Type in filter string: `krohnkite`
 - Right after `KROHNKITE: starting the script` string you will see one if you have one monitor or multiple lines: Screen(output):`Screen Name`,Desktop(name):`Virtual Desktop Name`,Activity:`Activity Id`,layouts: `numbered layouts` (the case doesn't matter,`layout` ending can be omitted): `tilelayout`, `monoclelayout`, `columns`, `threecolumnlayout,` `spreadlayout`, `stairlayout`, `spirallayout`, `stackedlayout`, `floatinglayout`, `btreelayout`
 
-3. `Apply` -> `reboot`
+3. Press `Apply`, then run
+   `qdbus6 org.kde.KWin /KWin org.kde.KWin.reconfigure`.
 
 ### Search a window parameters to filter, float etc.
 
 1. Krohnkite options: ![options](img/conf.png)
 2. Options->Debug new Windows
-3. Reboot
+3. Press `Apply`, then run `qdbus6 org.kde.KWin /KWin org.kde.KWin.reconfigure`
 4. Run KSystemLog
 5. Push `Ignore` button
 6. Type in filter string: `krohnkite`
