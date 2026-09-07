@@ -159,8 +159,9 @@ class KWinDriver implements IDriverContext {
 
     const clients: KwinWindow[] = this.workspace.stackingOrder;
     for (let i = 0; i < clients.length; i++) {
-      this.addWindow(clients[i]);
+      this.addWindow(clients[i], false);
     }
+    this.control.onSurfaceUpdate(this, "forcedArrangeScreen");
   }
   public dispose(): void {
     if (this._disposed) return;
@@ -182,11 +183,14 @@ class KWinDriver implements IDriverContext {
     this._runningShortcutSequence = null;
     DBUS.dispose();
   }
-  private addWindow(client: KwinWindow): WindowClass | null {
+  private addWindow(
+    client: KwinWindow,
+    arrange: boolean = true,
+  ): WindowClass | null {
     if (client.dock) {
       // Docks reserve screen space but aren't tiled. Handle that reservation
       // separately and skip the normal window management path.
-      this.manageDock(client);
+      this.manageDock(client, arrange);
       return null;
     }
     if (
@@ -203,7 +207,8 @@ class KWinDriver implements IDriverContext {
         // it can set maximized to false when window start already with maximized flag
         // client.setMaximize(false, false);
       }
-      this.control.onWindowAdded(this, window, "windowAdded");
+      if (arrange) this.control.onWindowAdded(this, window, "windowAdded");
+      else this.engine.manage(window);
       if (window.state !== WindowState.Unmanaged) {
         this._bindWindowEvents(window, client);
         LOG?.send(LogModules.newWindowAdded, "", debugWin(client), {
@@ -223,7 +228,7 @@ class KWinDriver implements IDriverContext {
     }
     return null;
   }
-  private manageDock(client: KwinWindow): void {
+  private manageDock(client: KwinWindow, arrange: boolean = true): void {
     const placementArea = () =>
       toRect(
         this.workspace.clientArea(
@@ -237,7 +242,7 @@ class KWinDriver implements IDriverContext {
       area: placementArea(),
     };
     // Re-tile now to account for a dock whose area reservation already exists.
-    this.control.onSurfaceUpdate(this, "manageDock");
+    if (arrange) this.control.onSurfaceUpdate(this, "manageDock");
     // Subscribe to future area changes of each dock to make sure tiled
     // windows aren't overlapped by the dock or have an excessive gap.
     this._connect(client.frameGeometryChanged, () => {
