@@ -14,28 +14,36 @@ class DBusManager implements IDBus {
   private _vkCallbacks: Array<(isVisible: boolean) => void> = [];
   private _vkCallInFlight: boolean = false;
   private _entered: boolean = false;
+  private _disposed: boolean = false;
+  private _connections: Array<{ signal: Signal<any>; callback: any }> = [];
 
   constructor(dBusQml: IDBusQml) {
-    this._dBusMoveMouseToFocus = dBusQml.getDBusMoveMouseToFocus();
-    this._dBusMoveMouseToCenter = dBusQml.getDBusMoveMouseToCenter();
-    this._dBusMoveMouseToCenter.finished.connect(
-      this.moveMouseToFocusCallback.bind(this),
-    );
-    this._dBusMoveMouseToFocus.failed.connect(() => {
-      LOG?.send(LogModules.dbus, "callFailed", " 'MoveMouseToFocus' failed");
-    });
-    this._dBusMoveMouseToCenter.failed.connect(() => {
-      LOG?.send(LogModules.dbus, "callFailed", " 'MoveMouseToCenter' failed");
-    });
-    this._dBusConnectAttempts = 40;
-    this._existsCall = dBusQml.getDBusExists();
-    this._existsCall.finished.connect(this._dBusIsOn.bind(this));
-    this._existsCall.failed.connect(this._checkDBusConn.bind(this));
-    this._existsCall.call();
+    try {
+      this._dBusMoveMouseToFocus = dBusQml.getDBusMoveMouseToFocus();
+      this._dBusMoveMouseToCenter = dBusQml.getDBusMoveMouseToCenter();
+      this._connect(
+        this._dBusMoveMouseToCenter.finished,
+        this.moveMouseToFocusCallback.bind(this),
+      );
+      this._connect(this._dBusMoveMouseToFocus.failed, () => {
+        LOG?.send(LogModules.dbus, "callFailed", " 'MoveMouseToFocus' failed");
+      });
+      this._connect(this._dBusMoveMouseToCenter.failed, () => {
+        LOG?.send(LogModules.dbus, "callFailed", " 'MoveMouseToCenter' failed");
+      });
+      this._dBusConnectAttempts = 40;
+      this._existsCall = dBusQml.getDBusExists();
+      this._connect(this._existsCall.finished, this._dBusIsOn.bind(this));
+      this._connect(this._existsCall.failed, this._checkDBusConn.bind(this));
+      this._existsCall.call();
 
-    this._vkVisibleCall = dBusQml.getDBusVirtualKeyboardVisible();
-    this._vkVisibleCall.finished.connect(this._onVKResult.bind(this));
-    this._vkVisibleCall.failed.connect(this._onVKFailed.bind(this));
+      this._vkVisibleCall = dBusQml.getDBusVirtualKeyboardVisible();
+      this._connect(this._vkVisibleCall.finished, this._onVKResult.bind(this));
+      this._connect(this._vkVisibleCall.failed, this._onVKFailed.bind(this));
+    } catch (error) {
+      this.dispose();
+      throw error;
+    }
   }
 
   private _dBusIsOn() {
@@ -81,6 +89,7 @@ class DBusManager implements IDBus {
   public checkVirtualKeyboardVisible(
     callback: (isVisible: boolean) => void,
   ): void {
+    if (this._disposed) return;
     if (!this._isConnected) {
       callback(false);
       return;
@@ -93,7 +102,7 @@ class DBusManager implements IDBus {
   }
 
   private _enter(callback: () => void) {
-    if (this._entered) return;
+    if (this._entered || this._disposed) return;
 
     this._entered = true;
     try {
@@ -109,5 +118,24 @@ class DBusManager implements IDBus {
 
   private setTimeout(func: () => void, timeout: number) {
     KWinSetTimeout(() => this._enter(func), timeout);
+  }
+
+  public dispose(): void {
+    if (this._disposed) return;
+    this._disposed = true;
+    this._vkCallbacks = [];
+    this._vkCallInFlight = false;
+    for (const { signal, callback } of this._connections.splice(0)) {
+      try {
+        signal.disconnect(callback);
+      } catch (_) {
+        /* QML objects can disappear before the script's destruction hook. */
+      }
+    }
+  }
+
+  private _connect(signal: Signal<any>, callback: any): void {
+    signal.connect(callback);
+    this._connections.push({ signal, callback });
   }
 }

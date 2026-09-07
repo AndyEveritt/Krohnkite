@@ -23,6 +23,7 @@ interface IDBus {
   moveMouseToFocus(timeout?: number): void;
   moveMouseToCenter(timeout?: number): void;
   checkVirtualKeyboardVisible(callback: (isVisible: boolean) => void): void;
+  dispose(): void;
 }
 
 interface IConfig {
@@ -169,6 +170,8 @@ interface IDriverWindow {
   updateSrfTime(srfId: string): void;
   moveMouseToFocus(): void;
   visible(srf: ISurface): boolean;
+  dispose(): void;
+  setMinimizedByScript(minimized: boolean): void;
 }
 
 interface IWindowClass {

@@ -544,8 +544,18 @@ class TilingEngine {
           anchor,
           CONFIG.newWindowPosition === "second",
         );
-        tileables = this.windows.getVisibleTileables(srf);
+      } else {
+        // A batched startup has no committed anchor. Reproduce the order that
+        // sequential windowAdded arrangements would have produced without
+        // arranging the whole workspace once per existing window.
+        let bootstrapAnchor = newWins[0];
+        for (const window of newWins.slice(1)) {
+          const insertAfter = CONFIG.newWindowPosition === "second";
+          this.windows.move(window, bootstrapAnchor, insertAfter);
+          if (!insertAfter) bootstrapAnchor = window;
+        }
       }
+      tileables = this.windows.getVisibleTileables(srf);
     }
     let layout = this.layouts.getCurrentLayout(srf);
 

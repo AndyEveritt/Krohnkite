@@ -148,8 +148,16 @@ class DriverWindow implements IDriverWindow {
   private _floatGeometry: Rect | null;
   private _movePointerToCenter: { isMove: boolean; time: number };
   private _nativeFloatGeometry: Rect;
+  /* A runtime reload replaces DriverWindow instances but keeps the native
+   * KWin windows alive. Remember properties Krohnkite overrides so dispose()
+   * can remove this runtime's effects before the replacement snapshots them. */
   private noBorderManaged: boolean;
   private noBorderOriginal: boolean;
+  private layerManaged: boolean;
+  private keepAboveOriginal: boolean;
+  private keepBelowOriginal: boolean;
+  private minimizedManaged: boolean;
+  private minimizedOriginal: boolean;
 
   constructor(
     window: KwinWindow,
@@ -171,6 +179,11 @@ class DriverWindow implements IDriverWindow {
     this.maximized = false;
     this.noBorderManaged = false;
     this.noBorderOriginal = window.noBorder;
+    this.layerManaged = false;
+    this.keepAboveOriginal = window.keepAbove;
+    this.keepBelowOriginal = window.keepBelow;
+    this.minimizedManaged = false;
+    this.minimizedOriginal = window.minimized;
     this.floatConfig = this._getFloatConfig(window);
     this.isIgnoredByConfig =
       DriverWindow.isContain(KWINCONFIG.ignoreClass, window.resourceClass) ||
@@ -220,6 +233,7 @@ class DriverWindow implements IDriverWindow {
     }
 
     if (windowLayer !== undefined) {
+      this.layerManaged = true;
       if (windowLayer === WindowLayer.Above) this.window.keepAbove = true;
       else if (windowLayer === WindowLayer.Below) this.window.keepBelow = true;
       else if (windowLayer === WindowLayer.Normal) {
@@ -293,6 +307,35 @@ class DriverWindow implements IDriverWindow {
   }
   public toString(): string {
     return `${debugWin(this.window)}`;
+  }
+  public setMinimizedByScript(minimized: boolean): void {
+    if (this.window.deleted) return;
+    if (!this.minimizedManaged) {
+      // Capture on first write, not construction: the user or application may
+      // have changed this state before Monocle first takes control of it.
+      this.minimizedOriginal = this.window.minimized;
+      this.minimizedManaged = true;
+    }
+    this.window.minimized = minimized;
+  }
+
+  /** Restore only window properties that this driver instance managed. */
+  public dispose(): void {
+    if (!this.window || this.window.deleted) return;
+    try {
+      if (this.noBorderManaged) this.window.noBorder = this.noBorderOriginal;
+      if (this.layerManaged) {
+        this.window.keepAbove = this.keepAboveOriginal;
+        this.window.keepBelow = this.keepBelowOriginal;
+      }
+      if (this.minimizedManaged)
+        this.window.minimized = this.minimizedOriginal;
+    } catch (_) {
+      /* The KWin window may be destroyed while the runtime is reloading. */
+    }
+    this.noBorderManaged = false;
+    this.layerManaged = false;
+    this.minimizedManaged = false;
   }
   public visible(srf: ISurface): boolean {
     const ksrf = srf as KWinSurface;

@@ -17,9 +17,9 @@ class DockStore implements IDockStore {
 
   constructor() {
     this.store = {};
-    this.defaultCfg = null;
-    this.surfacesCfg = [];
-    this.windowClassesCfg = {};
+    this.defaultCfg = DefaultDockCfg.instance;
+    this.surfacesCfg = parseDockUserSurfacesCfg();
+    this.windowClassesCfg = parseDockUserWindowClassesCfg();
   }
 
   public render(
@@ -27,11 +27,6 @@ class DockStore implements IDockStore {
     visibles: WindowClass[],
     workingArea: Rect,
   ): Rect {
-    if (this.defaultCfg === null) {
-      this.defaultCfg = DefaultDockCfg.instance;
-      this.surfacesCfg = parseDockUserSurfacesCfg();
-      this.windowClassesCfg = parseDockUserWindowClassesCfg();
-    }
     if (!this.store[srf.id]) {
       this.store[srf.id] = new DockEntry(this.getSurfaceCfg(srf), srf.id);
     }
