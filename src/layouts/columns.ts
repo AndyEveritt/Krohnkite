@@ -125,20 +125,17 @@ class ColumnsLayout implements ILayout {
     }
   }
 
-  public drag(
-    ctx: EngineContext,
-    draggingRect: Rect,
-    window: WindowClass,
-    workingArea: Rect,
-  ): boolean {
-    const cursorOrActivationPoint =
-      ctx.cursorPos || draggingRect.activationPoint;
-    const cursorOrMiddlePoint = ctx.cursorPos || draggingRect.center;
+  public drag(ctx: EngineContext, dragAction: DragAction): void {
     if (
       this.columns.length === 0 ||
       (this.columns.length === 1 && this.columns[0].windowIds.size === 1)
     )
-      return false;
+      return;
+    const window = dragAction.window;
+    const workingArea =
+      dragAction.tilesArea !== null
+        ? dragAction.tilesArea
+        : dragAction.workingArea;
     const columnId = this.getColumnId(window);
     const windowId = window.id;
 
@@ -146,13 +143,13 @@ class ColumnsLayout implements ILayout {
     // Creates a new column at the beginning or reuses a hidden one and moves the window to it
     if (
       ((this.direction.north &&
-        workingArea.isTopZone(cursorOrActivationPoint)) ||
+        workingArea.isTopZone(dragAction.mousePointer)) ||
         (this.direction.south &&
-          workingArea.isBottomZone(cursorOrMiddlePoint)) ||
+          workingArea.isBottomZone(dragAction.middlePointer)) ||
         (this.direction.west &&
-          workingArea.isLeftZone(cursorOrActivationPoint)) ||
+          workingArea.isLeftZone(dragAction.mousePointer)) ||
         (this.direction.east &&
-          workingArea.isRightZone(cursorOrActivationPoint))) &&
+          workingArea.isRightZone(dragAction.mousePointer))) &&
       !(
         this.columns[0].windowIds.size === 1 &&
         this.columns[0].windowIds.has(windowId)
@@ -173,20 +170,21 @@ class ColumnsLayout implements ILayout {
         }
       }
       column.windowIds.add(windowId);
-      return true;
+      dragAction.result.isArrangeNeeded = true;
+      return;
     }
 
     // Handle drag to the secondary edge of the screen
     // Creates a new column at the end or reuses a hidden one and moves the window to it
     if (
       ((this.direction.north &&
-        workingArea.isBottomZone(cursorOrMiddlePoint)) ||
+        workingArea.isBottomZone(dragAction.middlePointer)) ||
         (this.direction.south &&
-          workingArea.isTopZone(cursorOrActivationPoint)) ||
+          workingArea.isTopZone(dragAction.mousePointer)) ||
         (this.direction.west &&
-          workingArea.isRightZone(cursorOrActivationPoint)) ||
+          workingArea.isRightZone(dragAction.mousePointer)) ||
         (this.direction.east &&
-          workingArea.isLeftZone(cursorOrActivationPoint))) &&
+          workingArea.isLeftZone(dragAction.mousePointer))) &&
       !(
         this.columns[this.columns.length - 1].windowIds.size === 1 &&
         this.columns[this.columns.length - 1].windowIds.has(windowId)
@@ -207,7 +205,8 @@ class ColumnsLayout implements ILayout {
         }
       }
       column.windowIds.add(windowId);
-      return true;
+      dragAction.result.isArrangeNeeded = true;
+      return;
     }
 
     // Handle drag over existing windows - iterate through all columns and their windows
@@ -220,74 +219,82 @@ class ColumnsLayout implements ILayout {
         if (
           (this.direction.west &&
             renderedRect.includesPoint(
-              cursorOrActivationPoint,
+              dragAction.mousePointer,
               RectParts.Top,
             )) ||
           (this.direction.north &&
             renderedRect.includesPoint(
-              cursorOrActivationPoint,
+              dragAction.mousePointer,
               RectParts.Left,
             )) ||
           (this.direction.east &&
             renderedRect.includesPoint(
-              cursorOrActivationPoint,
+              dragAction.mousePointer,
               RectParts.Top,
             )) ||
           (this.direction.south &&
-            renderedRect.includesPoint(cursorOrActivationPoint, RectParts.Left))
+            renderedRect.includesPoint(dragAction.mousePointer, RectParts.Left))
         ) {
-          if (column.renderedWindowsIds[i] === windowId) return false;
-          if (i > 0 && column.renderedWindowsIds[i - 1] === windowId)
-            return false;
+          if (column.renderedWindowsIds[i] === windowId) {
+            return;
+          }
+          if (i > 0 && column.renderedWindowsIds[i - 1] === windowId) {
+            return;
+          }
 
           const renderedId = column.renderedWindowsIds[i];
           if (columnId !== null && columnId !== colIdx)
             this.columns[columnId].windowIds.delete(windowId);
           column.windowIds.add(windowId);
           ctx.moveWindowByWinId(window, renderedId);
-          return true;
+          dragAction.result.isArrangeNeeded = true;
+          return;
         }
 
         // Check if dragged to bottom/right half of a window - place AFTER the target window
         if (
           (this.direction.west &&
             renderedRect.includesPoint(
-              cursorOrActivationPoint,
+              dragAction.mousePointer,
               RectParts.Bottom,
             )) ||
           (this.direction.north &&
             renderedRect.includesPoint(
-              cursorOrActivationPoint,
+              dragAction.mousePointer,
               RectParts.Right,
             )) ||
           (this.direction.east &&
             renderedRect.includesPoint(
-              cursorOrActivationPoint,
+              dragAction.mousePointer,
               RectParts.Bottom,
             )) ||
           (this.direction.south &&
             renderedRect.includesPoint(
-              cursorOrActivationPoint,
+              dragAction.mousePointer,
               RectParts.Right,
             ))
         ) {
-          if (column.renderedWindowsIds[i] === windowId) return false;
+          if (column.renderedWindowsIds[i] === windowId) {
+            return;
+          }
           if (
             i < column.renderedWindowsIds.length - 1 &&
             column.renderedWindowsIds[i + 1] === windowId
-          )
-            return false;
+          ) {
+            return;
+          }
 
           const renderedId = column.renderedWindowsIds[i];
           if (columnId !== null && columnId !== colIdx)
             this.columns[columnId].windowIds.delete(windowId);
           column.windowIds.add(windowId);
           ctx.moveWindowByWinId(window, renderedId, true);
-          return true;
+          dragAction.result.isArrangeNeeded = true;
+          return;
         }
       }
     }
-    return false;
+    return;
   }
 
   private arrangeTileables(ctx: EngineContext, tileables: WindowClass[]) {
@@ -450,8 +457,8 @@ class ColumnsLayout implements ILayout {
     }
     let idOnTarget: string | null;
     if (this.direction.north || this.direction.south)
-      idOnTarget = targetColumn.getWindowIdOnRight(center[0]);
-    else idOnTarget = targetColumn.getWindowIdOnTop(center[1]);
+      idOnTarget = targetColumn.getWindowIdOnRight(center.x);
+    else idOnTarget = targetColumn.getWindowIdOnTop(center.y);
     if (idOnTarget !== null) ctx.moveWindowByWinId(currentWindow, idOnTarget);
     else {
       const targetId =
@@ -506,8 +513,8 @@ class ColumnsLayout implements ILayout {
     }
     let idOnTarget: string | null;
     if (this.direction.north || this.direction.south)
-      idOnTarget = targetColumn.getWindowIdOnRight(center[0]);
-    else idOnTarget = targetColumn.getWindowIdOnTop(center[1]);
+      idOnTarget = targetColumn.getWindowIdOnRight(center.x);
+    else idOnTarget = targetColumn.getWindowIdOnTop(center.y);
     if (idOnTarget !== null) ctx.moveWindowByWinId(currentWindow, idOnTarget);
     else {
       const targetId =

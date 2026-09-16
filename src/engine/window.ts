@@ -41,6 +41,9 @@ class WindowClass implements IWindowClass {
   public get shouldIgnore(): boolean {
     return this.window.shouldIgnore;
   }
+  public isAlive(): boolean {
+    return !(this.window as DriverWindow).window.deleted;
+  }
   /** If this window ***can be*** tiled by layout. */
   public get isTileable(): boolean {
     return WindowClass.isTileableState(this.state);
@@ -86,7 +89,7 @@ class WindowClass implements IWindowClass {
     const state = this.state;
 
     /* cannot transit to the current state */
-    if (state === value || this.isDragging) return;
+    if (state === value) return;
 
     if (
       (state === WindowState.Unmanaged || this.isTileable || this.isDocked) &&
@@ -108,6 +111,13 @@ class WindowClass implements IWindowClass {
       this.previousState = state;
     }
     this.internalState = value;
+  }
+  /**
+   * Set the state directly, bypassing previousState and float-commit
+   * bookkeeping. For transient previews (e.g. during dragging).
+   */
+  public setTransientState(state: WindowState): void {
+    this.internalState = state;
   }
   public get surface(): ISurface {
     return this.window.surface;
@@ -140,10 +150,20 @@ class WindowClass implements IWindowClass {
   public set floatGeometry(value: Rect) {
     this.window.floatGeometry = value;
   }
+  /**
+   * The dock state of the window, instantiated lazily from the configured
+   * template on first access.
+   */
+  public get dock(): Dock {
+    if (this._dock === null) this._dock = this._dockTemplate.clone();
+    return this._dock;
+  }
+  public setDockTemplate(template: Dock): void {
+    this._dockTemplate = template;
+  }
 
   public readonly id: string;
   public readonly window: IDriverWindow;
-  public dock: Dock | null;
   public geometry: Rect;
   public focusTime: number;
   public isSendingToOutput: boolean;
@@ -155,6 +175,8 @@ class WindowClass implements IWindowClass {
   private weightMap: { [key: string]: number };
   private _minSize: ISize;
   private _maxSize: ISize;
+  private _dock: Dock | null;
+  private _dockTemplate: Dock;
 
   constructor(window: IDriverWindow) {
     this.id = window.id;
@@ -172,7 +194,8 @@ class WindowClass implements IWindowClass {
     //     ? this.geometry
     //     : null;
     this.weightMap = {};
-    this.dock = null;
+    this._dock = null;
+    this._dockTemplate = new Dock(DefaultDockCfg.instance);
 
     this._minSize = window.minSize;
     this._maxSize = window.maxSize;

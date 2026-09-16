@@ -83,9 +83,11 @@ class KWinDriver implements IDriverContext {
     });
     return currentSurfaces;
   }
-  public get cursorPosition(): [number, number] | null {
+  public get cursorPosition(): QPoint | null {
     const workspacePos = this.workspace.cursorPos;
-    return workspacePos !== null ? [workspacePos.x, workspacePos.y] : null;
+    return workspacePos !== null
+      ? { x: workspacePos.x, y: workspacePos.y }
+      : null;
   }
   public get isRegister(): boolean {
     return this._isRegister.state;
@@ -178,6 +180,7 @@ class KWinDriver implements IDriverContext {
     this.engine.relocationWindows.clear();
     this.engine.windows.list = [];
     this.windowMap.clear();
+    this.hideDragPreview();
     this._shortcutSequences.clear();
     this._shortcuts.clear();
     this._runningShortcutSequence = null;
@@ -536,6 +539,24 @@ class KWinDriver implements IDriverContext {
   public showNotification(text: string) {
     if (CONFIG.notificationDuration > 0)
       popupDialog.showNotification(text, CONFIG.notificationDuration);
+  }
+  public showDragPreview(area: Rect, rect: Rect) {
+    if (!CONFIG.dragPreview) return;
+    dragPreview.showRect(
+      area.x,
+      area.y,
+      area.width,
+      area.height,
+      rect.x,
+      rect.y,
+      rect.width,
+      rect.height,
+      CONFIG.dockFrameColor,
+      CONFIG.dockBorderColor,
+    );
+  }
+  public hideDragPreview() {
+    dragPreview.hide();
   }
   public shortcutSequencesArrange() {}
   private _setRegisterTimeout(timeId: number, timeout?: number) {

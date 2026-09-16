@@ -159,10 +159,10 @@ class TilingEngine {
     if (basis.actualGeometry === basis.geometry) return;
     let widthDiff = basis.actualGeometry.width - basis.geometry.width;
     let heightDiff = basis.actualGeometry.height - basis.geometry.height;
-    let dockCfg = basis.dock!.cfg;
+    let dockCfg = basis.dock.cfg;
     const workingArea = basis.surface.workingArea;
 
-    switch (basis.dock!.position) {
+    switch (basis.dock.position) {
       case DockPosition.left:
       case DockPosition.right:
         dockCfg.vHeight =
@@ -822,6 +822,7 @@ class TilingEngine {
    */
   public manage(window: WindowClass) {
     if (!window.shouldIgnore) {
+      this.docks.attachWindow(window);
       if (this.docks.isNewWindowHaveDocked(window)) {
         window.state = WindowState.Docked;
       } else window.state = WindowState.Undecided;

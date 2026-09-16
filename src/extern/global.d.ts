@@ -29,6 +29,23 @@ interface PopupDialog {
 }
 declare var popupDialog: PopupDialog;
 
+interface DragPreview {
+  showRect(
+    areaX: number,
+    areaY: number,
+    areaWidth: number,
+    areaHeight: number,
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    frameColor: string,
+    borderColor: string,
+  ): void;
+  hide(): void;
+}
+declare var dragPreview: DragPreview;
+
 /* Common Javascript globals */
 declare let console: any;
 declare let setTimeout: any;

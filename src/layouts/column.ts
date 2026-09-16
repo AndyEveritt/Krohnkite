@@ -82,14 +82,14 @@ class ColumnLayout implements ILayout {
 
   public getWindowIdOnRight(x: number): string | null {
     for (let i = 0; i < this.renderedWindowsIds.length; i++) {
-      if (x < this.renderedWindowsRects[i].center[0] + 10)
+      if (x < this.renderedWindowsRects[i].center.x + 10)
         return this.renderedWindowsIds[i];
     }
     return null;
   }
   public getWindowIdOnTop(y: number): string | null {
     for (let i = 0; i < this.renderedWindowsIds.length; i++) {
-      if (y < this.renderedWindowsRects[i].center[1] + 10)
+      if (y < this.renderedWindowsRects[i].center.y + 10)
         return this.renderedWindowsIds[i];
     }
     return null;

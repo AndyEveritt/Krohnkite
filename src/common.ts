@@ -110,6 +110,12 @@ interface IConfig {
   dockVEdgeAlignment: number;
   dockSurfacesConfig: string[];
   dockWindowClassConfig: string[];
+  dockFrameColor: string;
+  dockBorderColor: string;
+  dockTopDragZone: number;
+  dockBottomDragZone: number;
+  dockLeftDragZone: number;
+  dockRightDragZone: number;
 
   //Options
   tiledWindowsLayer: WindowLayer;
@@ -128,6 +134,7 @@ interface IConfig {
   noTileBorder: boolean;
   optVKeyboardSupport: boolean;
   keepTilingOnDrag: boolean;
+  dragPreview: boolean;
   preventMinimize: boolean;
   preventProtrusion: boolean;
   floatSkipPager: boolean;
@@ -194,17 +201,20 @@ interface IWindowClass {
   surface: ISurface;
   weight: number;
   floatGeometry: Rect;
-  dock: Dock | null;
+  readonly dock: Dock;
   geometry: Rect;
   focusTime: number;
   isSendingToOutput: boolean;
   isDragging: boolean;
   previousState: ToggleableState;
 
+  setTransientState(state: WindowState): void;
+  setDockTemplate(template: Dock): void;
   commit(ctx: IDriverContext, noBorders?: boolean): void;
   forceSetGeometry(ctx: IDriverContext, geometry: Rect): void;
   moveMouseToFocus(): void;
   visible(srf: ISurface): boolean;
+  isAlive(): boolean;
 }
 
 interface ISurfaceStore {
@@ -234,7 +244,7 @@ interface ISurface {
 interface IDriverContext {
   readonly backend: string;
   readonly currentSurfaces: ISurface[];
-  readonly cursorPosition: [number, number] | null;
+  readonly cursorPosition: QPoint | null;
 
   currentDesktop: VirtualDesktop;
   currentSurface: ISurface;
@@ -270,6 +280,8 @@ interface IDriverContext {
   relocateWindows(): boolean;
   setTimeout(func: () => void, timeout: number): void;
   showNotification(text: string): void;
+  showDragPreview(area: Rect, rect: Rect): void;
+  hideDragPreview(): void;
   shortcutSequencesArrange(): void;
 }
 
@@ -298,12 +310,7 @@ interface ILayout {
     gap: number,
   ): void;
   handleShortcut?(ctx: EngineContext, action: KrohnkiteAction): boolean;
-  drag?(
-    ctx: EngineContext,
-    draggingRect: Rect,
-    window: WindowClass,
-    workingArea: Rect,
-  ): boolean;
+  drag?(ctx: EngineContext, dragAction: DragAction): void;
 
   toString(): string;
 }

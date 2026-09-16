@@ -599,6 +599,41 @@
         <default>true</default>
     </entry>
 
+    <entry name="dragPreview" type="Bool">
+	    <label>Show a preview rectangle when dragging a window over a dock slot</label>
+        <default>true</default>
+    </entry>
+
+    <entry name="dockFrameColor" type="Color">
+	    <label>Fill color of the drag preview rectangle</label>
+        <default>61, 135, 240, 77</default>
+    </entry>
+
+    <entry name="dockBorderColor" type="Color">
+	    <label>Border color of the drag preview rectangle</label>
+        <default>61, 135, 240, 230</default>
+    </entry>
+
+    <entry name="dockTopDragZone" type="Int">
+	    <label>Top drag zone thickness in pixels</label>
+        <default>15</default>
+    </entry>
+
+    <entry name="dockBottomDragZone" type="Int">
+	    <label>Bottom drag zone thickness in pixels</label>
+        <default>15</default>
+    </entry>
+
+    <entry name="dockLeftDragZone" type="Int">
+	    <label>Left drag zone thickness in pixels</label>
+        <default>15</default>
+    </entry>
+
+    <entry name="dockRightDragZone" type="Int">
+	    <label>Right drag zone thickness in pixels</label>
+        <default>15</default>
+    </entry>
+
     <entry name="preventMinimize" type="Bool">
         <label>Prevent windows from minimizing</label>
         <default>false</default>

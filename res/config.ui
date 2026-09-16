@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>824</width>
-    <height>1177</height>
+    <width>837</width>
+    <height>1250</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -18,7 +18,7 @@
   </property>
   <property name="minimumSize">
    <size>
-    <width>440</width>
+    <width>0</width>
     <height>0</height>
    </size>
   </property>
@@ -57,7 +57,7 @@
       <string notr="true">font: 12pt &quot;Noto Sans&quot;;</string>
      </property>
      <property name="currentIndex">
-      <number>4</number>
+      <number>0</number>
      </property>
      <widget class="QWidget" name="_1_layoutsTab">
       <property name="sizePolicy">
@@ -4628,23 +4628,19 @@
        <string>Dock</string>
       </attribute>
       <layout class="QGridLayout" name="gridLayout_12">
-       <item row="2" column="0" alignment="Qt::AlignmentFlag::AlignHCenter">
-        <widget class="QLabel" name="label_27">
-         <property name="toolTip">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;hv - short name&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-         </property>
-         <property name="text">
-          <string>Surfaces configuration</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="0">
+       <item row="1" column="0">
         <widget class="QGroupBox" name="groupBox_16">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Minimum" vsizetype="Maximum">
            <horstretch>0</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>0</height>
+          </size>
          </property>
          <property name="toolTip">
           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;hv - short name&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -4659,43 +4655,23 @@
           <bool>true</bool>
          </property>
          <layout class="QGridLayout" name="gridLayout_16">
-          <item row="0" column="0" alignment="Qt::AlignmentFlag::AlignHCenter">
-           <widget class="QLabel" name="label_17">
+          <item row="0" column="3" alignment="Qt::AlignmentFlag::AlignHCenter">
+           <widget class="QLabel" name="label_30">
             <property name="toolTip">
              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;hv - short name&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="text">
-             <string>Left</string>
+             <string>Bottom</string>
             </property>
            </widget>
           </item>
-          <item row="0" column="2" alignment="Qt::AlignmentFlag::AlignHCenter">
-           <widget class="QLabel" name="label_29">
-            <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;hv - short name&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-            </property>
-            <property name="text">
-             <string>Right</string>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="1" alignment="Qt::AlignmentFlag::AlignHCenter">
-           <widget class="QLabel" name="label_18">
-            <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;hv - short name&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-            </property>
-            <property name="text">
-             <string>Top</string>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="0">
-           <widget class="QComboBox" name="kcfg_dockOrderLeft">
+          <item row="1" column="3">
+           <widget class="QComboBox" name="kcfg_dockOrderBottom">
             <property name="focusPolicy">
              <enum>Qt::FocusPolicy::ClickFocus</enum>
             </property>
             <property name="currentIndex">
-             <number>1</number>
+             <number>4</number>
             </property>
             <item>
              <property name="text">
@@ -4722,16 +4698,6 @@
               <string>Fourth</string>
              </property>
             </item>
-           </widget>
-          </item>
-          <item row="0" column="3" alignment="Qt::AlignmentFlag::AlignHCenter">
-           <widget class="QLabel" name="label_30">
-            <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;hv - short name&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-            </property>
-            <property name="text">
-             <string>Bottom</string>
-            </property>
            </widget>
           </item>
           <item row="1" column="1">
@@ -4807,13 +4773,23 @@
             </item>
            </widget>
           </item>
-          <item row="1" column="3">
-           <widget class="QComboBox" name="kcfg_dockOrderBottom">
+          <item row="0" column="0" alignment="Qt::AlignmentFlag::AlignHCenter">
+           <widget class="QLabel" name="label_17">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;hv - short name&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="text">
+             <string>Left</string>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="0">
+           <widget class="QComboBox" name="kcfg_dockOrderLeft">
             <property name="focusPolicy">
              <enum>Qt::FocusPolicy::ClickFocus</enum>
             </property>
             <property name="currentIndex">
-             <number>4</number>
+             <number>1</number>
             </property>
             <item>
              <property name="text">
@@ -4842,10 +4818,30 @@
             </item>
            </widget>
           </item>
+          <item row="0" column="2" alignment="Qt::AlignmentFlag::AlignHCenter">
+           <widget class="QLabel" name="label_29">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;hv - short name&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="text">
+             <string>Right</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1" alignment="Qt::AlignmentFlag::AlignHCenter">
+           <widget class="QLabel" name="label_18">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;hv - short name&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="text">
+             <string>Top</string>
+            </property>
+           </widget>
+          </item>
          </layout>
         </widget>
        </item>
-       <item row="6" column="0">
+       <item row="7" column="0">
         <spacer name="verticalSpacer_6">
          <property name="toolTip">
           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;hv - short name&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -4861,14 +4857,17 @@
          </property>
         </spacer>
        </item>
-       <item row="3" column="0">
-        <widget class="QPlainTextEdit" name="kcfg_dockSurfacesConfig">
+       <item row="3" column="0" alignment="Qt::AlignmentFlag::AlignHCenter">
+        <widget class="QLabel" name="label_27">
          <property name="toolTip">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;Overriding default parameters for every surface. Format: &lt;/span&gt;&lt;span style=&quot; font-size:12pt; font-weight:700;&quot;&gt;OuputName:ActivityId:VirtualDesktopName:shortname=value,shortname=value... &amp;lt;Enter&amp;gt;&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;You can only write down parameters you want to change. You can see the short name of the parameter if you hover over any default parameter above.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;Next example override three params on all surfaces with OutputName=HDMI-A-1 &lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt; font-weight:700;&quot;&gt;HDMI-A-1:::hh=80,vw=80,ha=left&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;this one, will override two params only for defined display, virtual desktop and activity&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt; font-weight:700;&quot;&gt;HDMI-A-1:99e10d31-e8f3-44aa-bbed-2a543f13fa54:Desktop 1:vg=5,va=2&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;hv - short name&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+         <property name="text">
+          <string>Surfaces configuration</string>
          </property>
         </widget>
        </item>
-       <item row="1" column="0">
+       <item row="2" column="0">
         <widget class="QGroupBox" name="groupBox_15">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
@@ -4932,7 +4931,7 @@
                 <item row="0" column="0">
                  <spacer name="horizontalSpacer_5">
                   <property name="toolTip">
-                   <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;hv - short name&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                   <string>Horizontal Spacer 'horizontalSpacer_5', 40 x 20</string>
                   </property>
                   <property name="orientation">
                    <enum>Qt::Orientation::Horizontal</enum>
@@ -5602,7 +5601,7 @@
          </layout>
         </widget>
        </item>
-       <item row="4" column="0" alignment="Qt::AlignmentFlag::AlignHCenter">
+       <item row="5" column="0" alignment="Qt::AlignmentFlag::AlignHCenter">
         <widget class="QLabel" name="label_28">
          <property name="toolTip">
           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;hv - short name&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
@@ -5612,11 +5611,262 @@
          </property>
         </widget>
        </item>
-       <item row="5" column="0">
+       <item row="6" column="0">
         <widget class="QPlainTextEdit" name="kcfg_dockWindowClassConfig">
          <property name="toolTip">
           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Overriding default parameters for the specified WindowClass. Format:&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;WindowClass&lt;/span&gt;&lt;span style=&quot; font-weight:700; color:#ff0000;&quot;&gt;:&lt;/span&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;SpecialFlag,SpecialFlag...&lt;/span&gt;&lt;span style=&quot; font-weight:700; color:#ff0000;&quot;&gt;:&lt;/span&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;shortname=value,shortname=value...&amp;lt;Enter&amp;gt;&lt;/span&gt;&lt;/p&gt;&lt;p&gt;format with specified titlе, you can specify only part of the title by writing it in square brackets:&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;WindowClass&lt;/span&gt;&lt;span style=&quot; font-weight:700; color:#ff0000;&quot;&gt;:&lt;/span&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Title&lt;/span&gt;&lt;span style=&quot; font-weight:700; color:#ff0000;&quot;&gt;:&lt;/span&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;SpecialFlag,SpecialFlag...&lt;/span&gt;&lt;span style=&quot; font-weight:700; color:#ff0000;&quot;&gt;:&lt;/span&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;shortname=value,shortname=value...&amp;lt;Enter&amp;gt;&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;pin - &lt;/span&gt;docked window with this flag will displace another if their positions are equal.&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;left,right,top,bottom&lt;/span&gt; - you can use one them to explicitly set the initial position.&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;auto&lt;/span&gt; - automatically makes a window docked. Krohnkite version &amp;gt;=0.9.9.1&lt;/p&gt;&lt;p&gt;You can only write down the parameters you want to change. You can see the short name of the parameter if you hover over any default parameter above.&lt;/p&gt;&lt;p&gt;Examples:&lt;/p&gt;&lt;p&gt;1. if Elisa switches to dock it will have higher priority, top dock position and 10% of screen height &lt;/p&gt;&lt;p&gt;org.kde.elisa&lt;span style=&quot; font-weight:700;&quot;&gt;:pin,top:hh=10&lt;/span&gt;&lt;/p&gt;&lt;p&gt;2. Conky automatic docking:     &lt;span style=&quot; font-family:'Hack'; font-weight:700;&quot;&gt;Conky&lt;/span&gt;&lt;span style=&quot; font-weight:700; color:#ff0000;&quot;&gt;:&lt;/span&gt;&lt;span style=&quot; font-family:'Hack'; font-weight:700;&quot;&gt;auto&lt;/span&gt;&lt;span style=&quot; font-weight:700; color:#ff0000;&quot;&gt;:&lt;/span&gt;&lt;span style=&quot; font-family:'Hack'; font-weight:700;&quot;/&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-family:'Hack';&quot;&gt;3.With title specified: &lt;/span&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;com.obsproject.Studio&lt;/span&gt;&lt;span style=&quot; font-weight:700; color:#ff0000;&quot;&gt;:&lt;/span&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;Scripts&lt;/span&gt;&lt;span style=&quot; font-weight:700; color:#ff0000;&quot;&gt;:&lt;/span&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;auto,left&lt;/span&gt;&lt;span style=&quot; font-weight:700; color:#ff0000;&quot;&gt;:&lt;/span&gt;&lt;span style=&quot; font-weight:700;&quot;&gt;vw=50&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
+        </widget>
+       </item>
+       <item row="4" column="0">
+        <widget class="QPlainTextEdit" name="kcfg_dockSurfacesConfig">
+         <property name="toolTip">
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;Overriding default parameters for every surface. Format: &lt;/span&gt;&lt;span style=&quot; font-size:12pt; font-weight:700;&quot;&gt;OuputName:ActivityId:VirtualDesktopName:shortname=value,shortname=value... &amp;lt;Enter&amp;gt;&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;You can only write down parameters you want to change. You can see the short name of the parameter if you hover over any default parameter above.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;Next example override three params on all surfaces with OutputName=HDMI-A-1 &lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt; font-weight:700;&quot;&gt;HDMI-A-1:::hh=80,vw=80,ha=left&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt;&quot;&gt;this one, will override two params only for defined display, virtual desktop and activity&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:12pt; font-weight:700;&quot;&gt;HDMI-A-1:99e10d31-e8f3-44aa-bbed-2a543f13fa54:Desktop 1:vg=5,va=2&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         </property>
+        </widget>
+       </item>
+       <item row="0" column="0">
+        <widget class="QGroupBox" name="groupBox_34">
+         <property name="title">
+          <string>Dragging settings</string>
+         </property>
+         <layout class="QGridLayout" name="gridLayout_35">
+          <item row="0" column="2">
+           <widget class="QLabel" name="label_6">
+            <property name="text">
+             <string>Border</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignmentFlag::AlignCenter</set>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="3">
+           <widget class="QLabel" name="label_2">
+            <property name="text">
+             <string>Left</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignmentFlag::AlignCenter</set>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="1">
+           <widget class="KColorButton" name="kcfg_dockFrameColor">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Minimum" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Fill color of the rectangle shown while dragging a window over a dock slot. &lt;span style=&quot; font-weight:700; text-decoration: underline;&quot;&gt;Default value&lt;/span&gt;: Red:&lt;span style=&quot; font-weight:700;&quot;&gt;61&lt;/span&gt;, Green:&lt;span style=&quot; font-weight:700;&quot;&gt;135&lt;/span&gt;, Blue:&lt;span style=&quot; font-weight:700;&quot;&gt;240&lt;/span&gt;, Alpha:&lt;span style=&quot; font-weight:700;&quot;&gt;77&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="default">
+             <bool>true</bool>
+            </property>
+            <property name="flat">
+             <bool>true</bool>
+            </property>
+            <property name="color">
+             <color alpha="77">
+              <red>61</red>
+              <green>135</green>
+              <blue>240</blue>
+             </color>
+            </property>
+            <property name="defaultColor">
+             <color alpha="77">
+              <red>61</red>
+              <green>135</green>
+              <blue>240</blue>
+             </color>
+            </property>
+            <property name="alphaChannelEnabled">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="7">
+           <widget class="QLabel" name="label_5">
+            <property name="text">
+             <string>Bottom</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignmentFlag::AlignCenter</set>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="7">
+           <widget class="mySpinBox" name="kcfg_dockBottomDragZone">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Thickness in pixels of the bottom screen edge that docks a dragged window. Set to 0 to disable docking to the bottom edge.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
+            </property>
+            <property name="suffix">
+             <string>px</string>
+            </property>
+            <property name="minimum">
+             <number>0</number>
+            </property>
+            <property name="maximum">
+             <number>999</number>
+            </property>
+            <property name="value">
+             <number>15</number>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="6">
+           <widget class="QLabel" name="label_4">
+            <property name="text">
+             <string>Right</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignmentFlag::AlignCenter</set>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="5">
+           <widget class="QLabel" name="label_3">
+            <property name="text">
+             <string>Top </string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignmentFlag::AlignCenter</set>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="6">
+           <widget class="mySpinBox" name="kcfg_dockRightDragZone">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Thickness in pixels of the right screen edge that docks a dragged window. Set to 0 to disable docking to the right edge.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
+            </property>
+            <property name="suffix">
+             <string>px</string>
+            </property>
+            <property name="minimum">
+             <number>0</number>
+            </property>
+            <property name="maximum">
+             <number>999</number>
+            </property>
+            <property name="value">
+             <number>15</number>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="5">
+           <widget class="mySpinBox" name="kcfg_dockTopDragZone">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Thickness in pixels of the top screen edge that docks a dragged window. Set to 0 to disable docking to the top edge.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
+            </property>
+            <property name="suffix">
+             <string>px</string>
+            </property>
+            <property name="minimum">
+             <number>0</number>
+            </property>
+            <property name="maximum">
+             <number>999</number>
+            </property>
+            <property name="value">
+             <number>15</number>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="3">
+           <widget class="mySpinBox" name="kcfg_dockLeftDragZone">
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Thickness in pixels of the left screen edge that docks a dragged window. Set to 0 to disable docking to the left edge.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
+            </property>
+            <property name="suffix">
+             <string>px</string>
+            </property>
+            <property name="minimum">
+             <number>0</number>
+            </property>
+            <property name="maximum">
+             <number>999</number>
+            </property>
+            <property name="value">
+             <number>15</number>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QLabel" name="label">
+            <property name="text">
+             <string>Frame</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignmentFlag::AlignCenter</set>
+            </property>
+           </widget>
+          </item>
+          <item row="1" column="2">
+           <widget class="KColorButton" name="kcfg_dockBorderColor">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Border color of the rectangle shown while dragging a window over a dock slot. &lt;span style=&quot; font-weight:700; text-decoration: underline;&quot;&gt;Default value&lt;/span&gt;: Red:&lt;span style=&quot; font-weight:700;&quot;&gt;61&lt;/span&gt;, Green:&lt;span style=&quot; font-weight:700;&quot;&gt;135&lt;/span&gt;, Blue:&lt;span style=&quot; font-weight:700;&quot;&gt;240&lt;/span&gt;, Alpha:&lt;span style=&quot; font-weight:700;&quot;&gt;230&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="autoDefault">
+             <bool>true</bool>
+            </property>
+            <property name="default">
+             <bool>true</bool>
+            </property>
+            <property name="flat">
+             <bool>true</bool>
+            </property>
+            <property name="color">
+             <color alpha="230">
+              <red>61</red>
+              <green>135</green>
+              <blue>240</blue>
+             </color>
+            </property>
+            <property name="defaultColor">
+             <color alpha="230">
+              <red>61</red>
+              <green>135</green>
+              <blue>240</blue>
+             </color>
+            </property>
+            <property name="alphaChannelEnabled">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+         </layout>
         </widget>
        </item>
       </layout>
@@ -5961,6 +6211,19 @@
         <widget class="QCheckBox" name="kcfg_keepTilingOnDrag">
          <property name="text">
           <string>Always preserve the tiling status of a window upon dragging</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="kcfg_dragPreview">
+         <property name="toolTip">
+          <string>Draw a translucent rectangle at the dock slot a dragged window will occupy when the drag is over.</string>
+         </property>
+         <property name="text">
+          <string>Show a preview rectangle when dragging a window over a dock slot</string>
+         </property>
+         <property name="checked">
+          <bool>true</bool>
          </property>
         </widget>
        </item>
@@ -6313,6 +6576,11 @@
   </layout>
  </widget>
  <customwidgets>
+  <customwidget>
+   <class>KColorButton</class>
+   <extends>QPushButton</extends>
+   <header>kcolorbutton.h</header>
+  </customwidget>
   <customwidget>
    <class>mySpinBox</class>
    <extends>QSpinBox</extends>

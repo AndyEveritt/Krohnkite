@@ -31,6 +31,19 @@ Item {
         }
     }
 
+    Loader {
+        id: dragPreview
+        source: "dragpreview.qml"
+
+        function showRect(areaX, areaY, areaWidth, areaHeight, x, y, width, height, frameColor, borderColor) {
+            if (this.item) this.item.showRect(areaX, areaY, areaWidth, areaHeight, x, y, width, height, frameColor, borderColor);
+        }
+
+        function hide() {
+            if (this.item) this.item.hide();
+        }
+    }
+
     Component.onCompleted: {
         console.log("KROHNKITE: starting the script");
         const api = {

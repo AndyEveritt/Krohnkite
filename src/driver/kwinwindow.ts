@@ -210,7 +210,7 @@ class DriverWindow implements IDriverWindow {
       "KwinWindow#commit",
       `geometry:${geometry}, noBorder:${noBorder}, windowLayer:${windowLayer}`,
     );
-    if (this.window.move || this.window.resize) return;
+    if (this.window.resize) return;
 
     if (noBorder !== undefined) {
       if (!this.noBorderManaged && noBorder)
@@ -328,8 +328,7 @@ class DriverWindow implements IDriverWindow {
         this.window.keepAbove = this.keepAboveOriginal;
         this.window.keepBelow = this.keepBelowOriginal;
       }
-      if (this.minimizedManaged)
-        this.window.minimized = this.minimizedOriginal;
+      if (this.minimizedManaged) this.window.minimized = this.minimizedOriginal;
     } catch (_) {
       /* The KWin window may be destroyed while the runtime is reloading. */
     }

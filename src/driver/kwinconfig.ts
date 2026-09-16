@@ -72,6 +72,29 @@ function isValidConfigKey(key: string): key is keyof typeof ConfigVariables {
   return key in ConfigVariables;
 }
 
+function toCssColor(value: unknown, fallback: string): string {
+  if (typeof value !== "string") return fallback;
+  const str = value.trim();
+  if (str.length === 0) return fallback;
+  if (str.charAt(0) === "#") return str;
+  if (str.indexOf(",") !== -1) {
+    const parts = str.split(",").map((part) => parseInt(part.trim(), 10));
+    if (
+      (parts.length === 3 || parts.length === 4) &&
+      parts.every((part) => !isNaN(part))
+    ) {
+      const clamp = (n: number) => Math.max(0, Math.min(255, n));
+      const r = clamp(parts[0]);
+      const g = clamp(parts[1]);
+      const b = clamp(parts[2]);
+      const a = clamp(parts.length === 4 ? parts[3] : 255);
+      const hex = (n: number) => (n < 16 ? "0" : "") + n.toString(16);
+      return "#" + hex(a) + hex(r) + hex(g) + hex(b);
+    }
+  }
+  return fallback;
+}
+
 class KWinConfig implements IConfig {
   /*
    * Layouts
@@ -174,6 +197,12 @@ class KWinConfig implements IConfig {
   public dockVEdgeAlignment: number;
   public dockSurfacesConfig: string[];
   public dockWindowClassConfig: string[];
+  public dockFrameColor: string;
+  public dockBorderColor: string;
+  public dockTopDragZone: number;
+  public dockBottomDragZone: number;
+  public dockLeftDragZone: number;
+  public dockRightDragZone: number;
   /*
    * Options
    * */
@@ -193,6 +222,7 @@ class KWinConfig implements IConfig {
   public noTileBorder: boolean;
   public optVKeyboardSupport: boolean;
   public keepTilingOnDrag: boolean;
+  public dragPreview: boolean;
   public preventMinimize: boolean;
   public preventProtrusion: boolean;
   public floatSkipPager: boolean;
@@ -517,6 +547,42 @@ class KWinConfig implements IConfig {
       KWIN.readConfig("dockWindowClassConfig", ""),
       "\n",
     );
+    this.dockFrameColor = toCssColor(
+      KWIN.readConfig("dockFrameColor", "61,135,240,77"),
+      "#4d3d87f0",
+    );
+    this.dockBorderColor = toCssColor(
+      KWIN.readConfig("dockBorderColor", "61,135,240,230"),
+      "#e63d87f0",
+    );
+    this.dockTopDragZone = validateNumberWithDefault(
+      KWIN.readConfig("dockTopDragZone", 15),
+      15,
+      "dockTopDragZone",
+      0,
+      999,
+    );
+    this.dockBottomDragZone = validateNumberWithDefault(
+      KWIN.readConfig("dockBottomDragZone", 15),
+      15,
+      "dockBottomDragZone",
+      0,
+      999,
+    );
+    this.dockLeftDragZone = validateNumberWithDefault(
+      KWIN.readConfig("dockLeftDragZone", 15),
+      15,
+      "dockLeftDragZone",
+      0,
+      999,
+    );
+    this.dockRightDragZone = validateNumberWithDefault(
+      KWIN.readConfig("dockRightDragZone", 15),
+      15,
+      "dockRightDragZone",
+      0,
+      999,
+    );
 
     //***************************
     //****************** Options
@@ -567,6 +633,7 @@ class KWinConfig implements IConfig {
     this.optVKeyboardSupport = KWIN.readConfig("optVKeyboardSupport", false);
 
     this.keepTilingOnDrag = KWIN.readConfig("keepTilingOnDrag", true);
+    this.dragPreview = KWIN.readConfig("dragPreview", true);
     this.preventMinimize = KWIN.readConfig("preventMinimize", false);
     if (this.preventMinimize && this.monocleMinimizeRest) {
       this.preventMinimize = false;

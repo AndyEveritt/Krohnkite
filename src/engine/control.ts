@@ -27,15 +27,36 @@ const LayoutShortcutIds: Partial<Record<KrohnkiteAction, string>> = {
   ["SetCascadeLayout"]: "CascadeLayout",
 };
 
+interface DragAction {
+  result: {
+    isProcessed: boolean;
+    isArrangeNeeded: boolean;
+  };
+  actionTime: number;
+  srf: ISurface;
+  initialSrfId: string;
+  workingArea: Rect;
+  tilesArea: Rect | null;
+  window: WindowClass;
+  dockTarget: DockPosition | null;
+  mousePointer: QPoint;
+  middlePointer: QPoint;
+  swapping: {
+    window: WindowClass | null;
+    position: DockPosition | null;
+  };
+  initialState: ToggleableState;
+  initialDockPosition: DockPosition | null;
+  isLayoutHasDragStep: boolean;
+}
+
 class TilingController {
   public engine: TilingEngine;
-  private isDragging: boolean;
-  private dragCompleteTime: number | null;
+  private dragAction: DragAction | null;
 
   public constructor(engine: TilingEngine) {
     this.engine = engine;
-    this.isDragging = false;
-    this.dragCompleteTime = null;
+    this.dragAction = null;
   }
 
   public onSurfaceUpdate(
@@ -87,6 +108,8 @@ class TilingController {
     window: WindowClass,
     reason: keyof typeof ArrangeReason,
   ): void {
+    if (this.dragAction !== null && this.dragAction.window === window)
+      this.finishDrag(ctx);
     this.engine.unmanage(window);
     this.engine.arrange(ctx, reason, getMethodName());
   }
@@ -105,35 +128,107 @@ class TilingController {
     windowRect: Rect,
     reason: keyof typeof ArrangeReason,
   ): void {
-    if (this.isDragging) return;
-    // 100 milliseconds - min interval between run this function
-    if (
-      this.dragCompleteTime !== null &&
-      Date.now() - this.dragCompleteTime < 100
-    )
-      return;
-    if (!window.isDragging) window.isDragging = true;
-    const srf = ctx.currentSurface;
-    const layout = this.engine.layouts.getCurrentLayout(srf);
-    if (!layout.drag) return;
-    if (window.state === WindowState.Tiled) {
+    if (!(window.isTiled || window.isDocked)) return;
+    const srf = window.surface;
+    const workingArea = srf.workingArea.clone();
+    const draggingRect = toRect(windowRect);
+    const mousePointer: QPoint =
+      ctx.cursorPosition || draggingRect.activationPoint;
+    const middlePointer: QPoint = ctx.cursorPosition || draggingRect.center;
+    const markActionTime = () => {
+      if (this.dragAction === null) return;
+      this.dragAction.actionTime = getTime();
+    };
+    const getDragAction = () => {
       window.isDragging = true;
+      const initialState = window.state as ToggleableState;
+      return {
+        result: { isProcessed: false, isArrangeNeeded: false },
+        actionTime: getTime(),
+        srf,
+        initialSrfId: srf.id,
+        workingArea,
+        tilesArea: null,
+        window,
+        dockTarget: null,
+        mousePointer,
+        middlePointer,
+        swapping: { window: null, position: null },
+        initialState,
+        initialDockPosition:
+          initialState === WindowState.Docked ? window.dock.position : null,
+        isLayoutHasDragStep: false,
+      };
+    };
+    if (this.dragAction === null) {
+      window.window.commit(
+        ctx,
+        new Rect(
+          window.actualGeometry.x,
+          window.actualGeometry.y,
+          Math.max(window.minSize.width, workingArea.width * 0.25),
+          Math.max(window.minSize.height, workingArea.height * 0.25),
+        ),
+      );
+      this.dragAction = getDragAction();
     }
-    if (window.isDragging) {
-      if (
-        layout.drag(
-          new EngineContext(ctx, this.engine),
-          toRect(windowRect),
-          window,
-          srf.workingArea as Rect,
-        )
-      ) {
-        this.engine.arrange(ctx, reason, getMethodName());
+    // 100 milliseconds - min interval between run this function
+    // else if (getTime() - this.dragAction.actionTime < 100) return;
+    else {
+      if (window === this.dragAction.window) {
+        this.dragAction.actionTime = getTime();
+        this.dragAction.mousePointer = mousePointer;
+        this.dragAction.middlePointer = middlePointer;
+        this.dragAction.srf = srf;
+        this.dragAction.workingArea = workingArea;
+      } else {
+        this.finishDrag(ctx);
+        this.dragAction = getDragAction();
       }
-
-      this.dragCompleteTime = Date.now();
     }
-    this.isDragging = false;
+    this.dragAction.result = { isProcessed: false, isArrangeNeeded: false };
+    this.dragAction.dockTarget = null;
+
+    this.engine.docks.drag(this.dragAction);
+    if (this.dragAction.result.isProcessed) {
+      if (this.dragAction.result.isArrangeNeeded)
+        this.engine.arrange(ctx, reason, getMethodName());
+      this.updateDragPreview(ctx);
+      return markActionTime();
+    }
+
+    const layout = this.engine.layouts.getCurrentLayout(srf);
+    if (!layout.drag) {
+      this.updateDragPreview(ctx);
+      return markActionTime();
+    }
+    this.dragAction.isLayoutHasDragStep = true;
+    layout.drag(new EngineContext(ctx, this.engine), this.dragAction);
+    if (this.dragAction.result.isArrangeNeeded)
+      this.engine.arrange(ctx, reason, getMethodName());
+    this.updateDragPreview(ctx);
+    return markActionTime();
+  }
+
+  /**
+   * Draw (or clear) the dock-slot preview rectangle for the active drag. The
+   * dragged window's geometry has already been computed by the engine but is
+   * not committed while `isDragging` is set, so it is the exact drop target.
+   */
+  private updateDragPreview(ctx: IDriverContext): void {
+    const dragAction = this.dragAction;
+    if (
+      dragAction === null ||
+      dragAction.dockTarget === null ||
+      dragAction.window.state !== WindowState.Docked
+    ) {
+      ctx.hideDragPreview();
+      return;
+    }
+    ctx.showDragPreview(
+      toRect(dragAction.srf.output.geometry),
+      dragAction.window.geometry,
+    );
   }
 
   public onWindowMoveOver(
@@ -142,14 +237,18 @@ class TilingController {
     reason: keyof typeof ArrangeReason,
   ): void {
     /* swap window by dragging */
-    if (window.isDragging) {
-      window.isDragging = false;
-      this.engine.arrange(
-        ctx,
-        reason,
-        `${getMethodName()}:windowState=${window.state}`,
-      );
-      return;
+    window.isDragging = false;
+    if (this.dragAction !== null && this.dragAction.window === window) {
+      const isLayoutHasDragStep = this.dragAction.isLayoutHasDragStep;
+      this.finishDrag(ctx);
+      if (isLayoutHasDragStep) {
+        this.engine.arrange(
+          ctx,
+          reason,
+          `${getMethodName()}:windowState=${window.state}`,
+        );
+        return;
+      }
     }
 
     if (window.state === WindowState.Tiled) {
@@ -191,6 +290,31 @@ class TilingController {
 
     /* ... or return to the previous position */
     window.commit(ctx);
+  }
+
+  /**
+   * Finalize the active drag: restore the pre-drag state of the dragged and
+   * swapped windows, then clear the drag context. Safe to call when no drag
+   * is active or when the dragged window is already gone.
+   */
+  private finishDrag(ctx: IDriverContext): void {
+    const dragAction = this.dragAction;
+    if (dragAction === null) return;
+    ctx.hideDragPreview();
+    const { window, initialState, swapping } = dragAction;
+    this.dragAction = null;
+    if (window.isAlive()) {
+      window.isDragging = false;
+      // previousState is unchanged during drag (setTransientState), so it
+      // still holds the pre-drag value; only overwrite it if the state changed.
+      if (window.state !== initialState) window.previousState = initialState;
+    }
+    if (
+      swapping.window !== null &&
+      swapping.window.isAlive() &&
+      swapping.window.state !== WindowState.Docked
+    )
+      swapping.window.previousState = WindowState.Docked;
   }
 
   public onWindowResizeStart(window: WindowClass): void {
