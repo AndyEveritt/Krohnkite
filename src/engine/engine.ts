@@ -1190,6 +1190,10 @@ class TilingEngine {
    * The "master" window is simply the first window in the window list.
    * Some layouts depend on this assumption, and will make such windows more
    * visible than others.
+   *
+   * The target is swapped with the current master of its surface. Calling
+   * this on the window that is already master toggles back to the previous
+   * master.
    */
   public setMaster(window: WindowClass) {
     this.windows.setMaster(window);
