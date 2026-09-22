@@ -109,6 +109,7 @@ class KWinConfig implements IConfig {
   public columnsApplyConfOnNewColumns: boolean;
   public columnsLimitColumns: boolean;
   public stairReverse: boolean;
+  public spreadLayoutSpace: number;
   public layoutOrder: string[];
   public layoutFactories: { [key: string]: () => ILayout };
   private layoutFactoryCapacities: { [key: string]: number | null };
@@ -256,6 +257,13 @@ class KWinConfig implements IConfig {
     );
     this.columnsLimitColumns = KWIN.readConfig("columnsLimitColumns", false);
     this.stairReverse = KWIN.readConfig("stairReverse", false);
+    this.spreadLayoutSpace = validateNumberWithDefault(
+      KWIN.readConfig("spreadLayoutSpace", 4),
+      4,
+      "spreadLayoutSpace",
+      0,
+      15,
+    );
 
     const layoutsList = [
       [TileLayout, true],

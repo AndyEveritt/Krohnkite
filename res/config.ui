@@ -1434,22 +1434,41 @@
           <property name="verticalSpacing">
            <number>0</number>
           </property>
-          <item row="0" column="1">
-           <widget class="QLabel" name="label_105">
+          <item row="0" column="6">
+           <widget class="QSpinBox" name="kcfg_spreadLayoutOrder">
             <property name="font">
              <font>
               <family>Noto Sans</family>
               <pointsize>12</pointsize>
               <italic>false</italic>
               <bold>false</bold>
-              <underline>true</underline>
+              <underline>false</underline>
+             </font>
+            </property>
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;0 - to disable&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="maximum">
+             <number>12</number>
+            </property>
+            <property name="value">
+             <number>8</number>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="3">
+           <widget class="QLabel" name="label_55">
+            <property name="font">
+             <font>
+              <family>Noto Sans</family>
+              <pointsize>12</pointsize>
+              <italic>false</italic>
+              <bold>false</bold>
+              <underline>false</underline>
              </font>
             </property>
             <property name="text">
-             <string>Spread Layout</string>
-            </property>
-            <property name="margin">
-             <number>0</number>
+             <string>Capacity</string>
             </property>
            </widget>
           </item>
@@ -1475,41 +1494,6 @@
             </property>
            </widget>
           </item>
-          <item row="0" column="6">
-           <widget class="QSpinBox" name="kcfg_spreadLayoutOrder">
-            <property name="font">
-             <font>
-              <family>Noto Sans</family>
-              <pointsize>12</pointsize>
-              <italic>false</italic>
-              <bold>false</bold>
-              <underline>false</underline>
-             </font>
-            </property>
-            <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;0 - to disable&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-            </property>
-            <property name="maximum">
-             <number>12</number>
-            </property>
-            <property name="value">
-             <number>8</number>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="2">
-           <spacer name="horizontalSpacer_56">
-            <property name="orientation">
-             <enum>Qt::Orientation::Horizontal</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>40</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
-          </item>
           <item row="0" column="5">
            <widget class="QLabel" name="label_106">
             <property name="font">
@@ -1526,8 +1510,102 @@
             </property>
            </widget>
           </item>
-          <item row="0" column="3">
-           <widget class="QLabel" name="label_55">
+          <item row="0" column="1">
+           <widget class="QLabel" name="label_105">
+            <property name="font">
+             <font>
+              <family>Noto Sans</family>
+              <pointsize>12</pointsize>
+              <italic>false</italic>
+              <bold>false</bold>
+              <underline>true</underline>
+             </font>
+            </property>
+            <property name="text">
+             <string>Spread Layout</string>
+            </property>
+            <property name="margin">
+             <number>0</number>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="2">
+           <spacer name="horizontalSpacer_56">
+            <property name="orientation">
+             <enum>Qt::Orientation::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+         </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QGroupBox" name="groupBox_35">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Minimum" vsizetype="Maximum">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="title">
+          <string/>
+         </property>
+         <property name="flat">
+          <bool>true</bool>
+         </property>
+         <layout class="QGridLayout" name="gridLayout_41">
+          <property name="leftMargin">
+           <number>25</number>
+          </property>
+          <property name="topMargin">
+           <number>0</number>
+          </property>
+          <property name="rightMargin">
+           <number>6</number>
+          </property>
+          <property name="bottomMargin">
+           <number>0</number>
+          </property>
+          <item row="0" column="2">
+           <spacer name="horizontalSpacer_57">
+            <property name="orientation">
+             <enum>Qt::Orientation::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item row="0" column="1">
+           <widget class="QSpinBox" name="kcfg_spreadLayoutSpace">
+            <property name="alignment">
+             <set>Qt::AlignmentFlag::AlignCenter</set>
+            </property>
+            <property name="suffix">
+             <string>%</string>
+            </property>
+            <property name="maximum">
+             <number>15</number>
+            </property>
+            <property name="singleStep">
+             <number>1</number>
+            </property>
+            <property name="value">
+             <number>4</number>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="0">
+           <widget class="QLabel" name="label_74">
             <property name="font">
              <font>
               <family>Noto Sans</family>
@@ -1538,7 +1616,7 @@
              </font>
             </property>
             <property name="text">
-             <string>Capacity</string>
+             <string>Space</string>
             </property>
            </widget>
           </item>
@@ -6486,7 +6564,7 @@
                 </font>
                </property>
                <property name="toolTip">
-                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;h5 style=&quot; margin-top:12px; margin-bottom:4px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:11pt; font-weight:700;&quot;&gt;Window signals log modules&lt;/span&gt;&lt;/h5&gt;&lt;p&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;1. activitiesChanged&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;2. bufferGeometryChanged&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;3. desktopsChanged&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;4. fullScreenChanged&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;5. interactiveMoveResizeStepped&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;6. maximizedAboutToChange&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;7. minimizedChanged&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;8. moveResizedChanged&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;9. outputChanged&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;h5 style=&quot; margin-top:12px; margin-bottom:4px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-size:11pt; font-weight:700;&quot;&gt;Window signals log modules&lt;/span&gt;&lt;/h5&gt;&lt;p&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;1. activitiesChanged&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;2. bufferGeometryChanged&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;3. desktopsChanged&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;4. fullScreenChanged&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;5. interactiveMoveResizeStepped&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;6. maximizedAboutToChange&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;7. minimizedChanged&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;8. moveResizedChanged&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;9. outputChanged&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:11pt;&quot;&gt;10. stackingOrderChanged&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                </property>
               </widget>
              </item>

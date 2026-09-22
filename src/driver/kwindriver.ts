@@ -1549,6 +1549,22 @@ class KWinDriver implements IDriverContext {
         "screen=" + client.output.name,
       );
     });
+    this._connect(client.stackingOrderChanged, () => {
+      if (!client || client.deleted) return;
+      if (this.currentWindow === window) {
+        LOG?.send(
+          LogModules.stackingOrderChanged,
+          "eventFired",
+          `window: caption:${client.caption} internalID:${client.internalId} stackingOrder:${client.stackingOrder}`,
+          { winClass: [`${client.resourceClass}`] },
+        );
+        this.control.onStackingOrderChanged(
+          this,
+          window,
+          "stackingOrderChanged",
+        );
+      }
+    });
 
     if (CONFIG.floatSkipPager) {
       this._connect(client.skipPagerChanged, () => {

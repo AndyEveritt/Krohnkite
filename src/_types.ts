@@ -48,6 +48,7 @@ const ArrangeReason = {
   windowMoveResizedChangedCB: "windowMoveResizedChangedCB",
   windowBufferGeometryChangedCB: "windowBufferGeometryChangedCB",
   windowMaximizeAboutChangeCB: "windowMaximizeAboutChangeCB",
+  stackingOrderChanged: "stackingOrderChanged",
   shortcutCB: "shortcutCB",
   shortcutLayoutCB: "shortcutLayoutCB",
 } as const;
@@ -65,6 +66,7 @@ const ConfigVariables = {
   columnsApplyConfOnNewColumns: "columnsApplyConfOnNewColumns",
   columnsLimitColumns: "columnsLimitColumns",
   stairReverse: "stairReverse",
+  spreadLayoutSpace: "spreadLayoutSpace",
   /* Layout orders */
   tileLayoutOrder: "tileLayoutOrder",
   monocleLayoutOrder: "monocleLayoutOrder",
@@ -321,6 +323,7 @@ const LogModules = {
   minimizedChanged: "minimizedChanged",
   moveResizedChanged: "moveResizedChanged",
   outputChanged: "outputChanged",
+  stackingOrderChanged: "stackingOrderChanged",
   shortcut: "shortcut",
   arrangeScreen: "arrangeScreen",
   printConfig: "printConfig",
@@ -367,6 +370,7 @@ const LogPartitions = {
       LogModules.minimizedChanged,
       LogModules.moveResizedChanged,
       LogModules.outputChanged,
+      LogModules.stackingOrderChanged,
     ],
   },
   other: {

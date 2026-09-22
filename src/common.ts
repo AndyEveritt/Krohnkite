@@ -38,6 +38,7 @@ interface IConfig {
   columnsApplyConfOnNewColumns: boolean;
   columnsLimitColumns: boolean;
   stairReverse: boolean;
+  spreadLayoutSpace: number;
   layoutOrder: string[];
   layoutFactories: { [key: string]: () => ILayout };
 
@@ -156,6 +157,7 @@ interface IDriverWindow {
   readonly id: string;
   readonly windowClassName: string;
   readonly windowCaption: string;
+  readonly stackingOrder: number;
   readonly nativeFloatGeometry: Rect;
   readonly maximized: boolean;
   readonly minimized: boolean;

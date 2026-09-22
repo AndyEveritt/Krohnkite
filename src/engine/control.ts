@@ -73,6 +73,17 @@ class TilingController {
     this.engine.arrange(ctx, reason, getMethodName());
   }
 
+  public onStackingOrderChanged(
+    ctx: IDriverContext,
+    window: WindowClass,
+    reason: keyof typeof ArrangeReason,
+  ): void {
+    const layout = this.engine.layouts.getCurrentLayout(window.surface);
+    if (layout instanceof SpreadLayout) {
+      this.engine.arrange(ctx, reason, getMethodName());
+    }
+  }
+
   public onWindowAdded(
     ctx: IDriverContext,
     window: WindowClass,

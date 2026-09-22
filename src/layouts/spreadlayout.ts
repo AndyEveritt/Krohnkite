@@ -16,7 +16,7 @@ class SpreadLayout implements ILayout {
 
   constructor(capacity?: number | null) {
     this.capacity = capacity !== undefined ? capacity : null;
-    this.space = 0.07;
+    this.space = KWINCONFIG.spreadLayoutSpace / 100;
   }
 
   public apply(
@@ -27,7 +27,9 @@ class SpreadLayout implements ILayout {
   ): void {
     /* Tile all tileables */
     tileables.forEach((tileable) => (tileable.state = WindowState.Tiled));
-    const tiles = tileables;
+    const tiles = [...tileables].sort(
+      (a, b) => a.window.stackingOrder - b.window.stackingOrder,
+    );
 
     let numTiles = tiles.length;
     const spaceWidth = Math.floor(area.width * this.space);

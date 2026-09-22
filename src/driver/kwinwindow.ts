@@ -47,6 +47,9 @@ class DriverWindow implements IDriverWindow {
   public get windowCaption(): string {
     return this.window.caption;
   }
+  public get stackingOrder(): number {
+    return this.window.stackingOrder;
+  }
   public get shouldIgnore(): boolean {
     if (this.window.deleted) return true;
     return (

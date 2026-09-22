@@ -108,6 +108,10 @@
 	    <label>How many tiles can a layout contain before windows start floating or moving to another screen</label>
         <default>0</default>
     </entry>
+    <entry name="spreadLayoutSpace" type="Int">
+	    <label>Spread layout space between tiles (percent)</label>
+        <default>4</default>
+    </entry>
 
     <entry name="floatingLayoutOrder" type="Int">
 	    <label> Floating layout order</label>
