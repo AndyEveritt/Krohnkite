@@ -60,6 +60,14 @@ class EngineContext {
     return this.engine.windows.getWindowById(id);
   }
 
+  public setPrevMaster(window: WindowClass, prev: WindowClass): void {
+    this.engine.windows.setPrevMaster(window, prev);
+  }
+
+  public getPrevMaster(window: WindowClass): WindowClass | null {
+    return this.engine.windows.getPrevMaster(window);
+  }
+
   public showNotification(text: string) {
     this.drvctx.showNotification(text);
   }

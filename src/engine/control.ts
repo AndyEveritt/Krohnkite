@@ -493,7 +493,7 @@ class TilingController {
         break;
 
       case KrohnkiteAction.SetMaster:
-        if (window) this.engine.setMaster(window);
+        if (window) this.engine.setMaster(ctx, window);
         break;
       case KrohnkiteAction.ToggleFloat:
         if (window) this.engine.toggleFloat(window);

@@ -61,7 +61,7 @@ class WindowStore {
   }
 
   /** First window on the same surface, i.e. that surface's master. */
-  private surfaceMaster(window: WindowClass): WindowClass | null {
+  public surfaceMaster(window: WindowClass): WindowClass | null {
     const id = window.surface.id;
     for (const win of this.list) {
       if (win.surface.id === id) return win;
@@ -70,7 +70,7 @@ class WindowStore {
   }
 
   /** Previous master of this surface, if still usable. */
-  private prevMaster(window: WindowClass): WindowClass | null {
+  public getPrevMaster(window: WindowClass): WindowClass | null {
     const id = window.surface.id;
     const prev = this._prevMaster.get(id);
     if (
@@ -86,12 +86,20 @@ class WindowStore {
     return prev;
   }
 
+  /** Record `prev` as the previous master of the surface of `window`. */
+  public setPrevMaster(window: WindowClass, prev: WindowClass): void {
+    if (prev === null || prev === window || !prev.isAlive()) return;
+    const id = window.surface.id;
+    if (prev.surface.id !== id || this.list.indexOf(prev) === -1) return;
+    this._prevMaster.set(id, prev);
+  }
+
   public setMaster(window: WindowClass) {
     if (this.list.indexOf(window) === -1) return;
     const id = window.surface.id;
     const master = this.surfaceMaster(window);
     if (master === null || master === window) {
-      const prev = this.prevMaster(window);
+      const prev = this.getPrevMaster(window);
       if (prev === null) return;
       this.swap(window, prev);
       this._prevMaster.set(id, window);

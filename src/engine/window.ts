@@ -42,7 +42,7 @@ class WindowClass implements IWindowClass {
     return this.window.shouldIgnore;
   }
   public isAlive(): boolean {
-    return !(this.window as DriverWindow).window.deleted;
+    return this.window.isAlive();
   }
   /** If this window ***can be*** tiled by layout. */
   public get isTileable(): boolean {

@@ -1195,8 +1195,12 @@ class TilingEngine {
    * this on the window that is already master toggles back to the previous
    * master.
    */
-  public setMaster(window: WindowClass) {
+  public setMaster(ctx: IDriverContext, window: WindowClass) {
     this.windows.setMaster(window);
+    const master = this.windows.surfaceMaster(window);
+    if (master === null) return;
+    ctx.currentWindow = master;
+    if (CONFIG.movePointerOnFocus) DBUS.moveMouseToFocus();
   }
 
   /**

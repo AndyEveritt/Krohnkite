@@ -21,6 +21,8 @@ class TileLayout implements ILayout {
     HalfSplitLayoutPart<RotateLayoutPart<StackLayoutPart>, StackLayoutPart>
   >;
 
+  private master: WindowClass | null = null;
+
   private get numMaster(): number {
     return this.parts.inner.primarySize;
   }
@@ -77,6 +79,23 @@ class TileLayout implements ILayout {
     area: Rect,
     gap: number,
   ): void {
+    const master = tileables.length > 0 ? tileables[0] : null;
+    if (
+      master !== null &&
+      this.master !== null &&
+      this.master !== master &&
+      this.master.isAlive()
+    ) {
+      ctx.setPrevMaster(master, this.master);
+    }
+    if (master !== null && tileables.length > 1) {
+      const prev = ctx.getPrevMaster(master);
+      if (prev === null || tileables.indexOf(prev) === -1) {
+        ctx.setPrevMaster(master, tileables[1]);
+      }
+    }
+    this.master = master;
+
     tileables.forEach((tileable) => (tileable.state = WindowState.Tiled));
 
     this.parts.apply(area, tileables, gap).forEach((geometry, i) => {

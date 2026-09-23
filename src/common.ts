@@ -181,6 +181,7 @@ interface IDriverWindow {
   visible(srf: ISurface): boolean;
   dispose(): void;
   setMinimizedByScript(minimized: boolean): void;
+  isAlive(): boolean;
 }
 
 interface IWindowClass {

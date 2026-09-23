@@ -196,6 +196,17 @@ class DriverWindow implements IDriverWindow {
       (KWINCONFIG.tileNothing &&
         !DriverWindow.isContain(KWINCONFIG.tilingClass, window.resourceClass));
   }
+  /* A destroyed KwinWindow wrapper reads its properties as undefined or throws
+   * instead of exposing deleted === true, so `!deleted` would wrongly report a
+   * dead window as alive. Only a valid wrapper reporting deleted === false is
+   * alive; a missing/undefined/erroring read means dead. Mirrors outputIsAlive. */
+  public isAlive(): boolean {
+    try {
+      return !!this.window && this.window.deleted === false;
+    } catch (_) {
+      return false;
+    }
+  }
   public moveMouseToFocus() {
     const time = getTime();
     this._movePointerToCenter.isMove = this.isActive;
