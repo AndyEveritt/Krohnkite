@@ -11,6 +11,7 @@ class ColumnLayout implements ILayout {
   public renderedWindowsIds: Array<string>;
   public renderedWindowsRects: Array<Rect>;
   public weight: number;
+  public minWeight: number;
   public timestamp: number;
   private parts: RotateLayoutPart<StackLayoutPart>;
   private numberFloatedOrMinimized: number;
@@ -27,6 +28,7 @@ class ColumnLayout implements ILayout {
 
   constructor() {
     this.weight = 1.0;
+    this.minWeight = 0.0;
     this.parts = new RotateLayoutPart(new StackLayoutPart());
     this.windowIds = new Set();
     this.renderedWindowsIds = [];

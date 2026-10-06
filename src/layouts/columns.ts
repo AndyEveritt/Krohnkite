@@ -52,22 +52,23 @@ class ColumnsLayout implements ILayout {
       ((this.direction.north || this.direction.south) &&
         (delta.north !== 0 || delta.south !== 0))
     ) {
-      let oldWeights: Array<number>;
-      if (isReverse) {
-        oldWeights = this.columns
-          .slice(0)
-          .reverse()
-          .map((column) => column.weight);
-      } else {
-        oldWeights = this.columns.map((column) => column.weight);
-      }
-      const weights = LayoutUtils.adjustAreaWeights(
+      const horizontal = this.direction.east || this.direction.west;
+      const orderedColumns = isReverse
+        ? this.columns.slice(0).reverse()
+        : this.columns;
+      const oldWeights = orderedColumns.map((column) => column.weight);
+      const minLengths = orderedColumns.map((column) => column.minWeight);
+      const axisLength = horizontal ? area.width : area.height;
+      const availableLength = axisLength - (columnsLength - 1) * gap;
+      const totalMin = minLengths.reduce((sum, min) => sum + min, 0);
+      const weights = LayoutUtils.adjustAreaWeightsProportional(
         area,
         oldWeights,
         gap,
         isReverse ? columnsLength - 1 - columnId : columnId,
         delta,
-        this.direction.east || this.direction.west,
+        horizontal,
+        totalMin <= availableLength ? minLengths : undefined,
       );
 
       weights.forEach((weight, i) => {
@@ -95,20 +96,22 @@ class ColumnsLayout implements ILayout {
       this._columnsConfiguration = this.getDefaultConfig(ctx);
     this.arrangeTileables(ctx, tileables);
     if (this.columns.length === 0) return;
-    let weights: Array<number>;
-    if (this.direction.east || this.direction.south) {
-      weights = this.columns
-        .slice(0)
-        .reverse()
-        .map((tile) => tile.weight);
-    } else {
-      weights = this.columns.map((tile) => tile.weight);
-    }
+    const horizontal = this.direction.east || this.direction.west;
+    const orderedColumns =
+      this.direction.east || this.direction.south
+        ? this.columns.slice(0).reverse()
+        : this.columns;
+    const weights = orderedColumns.map((column) => column.weight);
+    const minLengths = orderedColumns.map((column) => column.minWeight);
+    const axisLength = horizontal ? area.width : area.height;
+    const availableLength = axisLength - (this.columns.length - 1) * gap;
+    const totalMin = minLengths.reduce((sum, min) => sum + min, 0);
     const rects = LayoutUtils.splitAreaWeighted(
       area,
       weights,
       gap,
-      this.direction.east || this.direction.west,
+      horizontal,
+      totalMin <= availableLength ? minLengths : undefined,
     );
     if (this.direction.east || this.direction.south) {
       let i = 0;
@@ -365,6 +368,21 @@ class ColumnsLayout implements ILayout {
     this.parts = this.parts.filter((column) => column.windowIds.size !== 0);
     if (this.parts.length === 0) this.insertColumn(true);
     this.applyColumnsPosition();
+    this.updateColumnsMinWeight(ctx);
+  }
+
+  private updateColumnsMinWeight(ctx: EngineContext) {
+    const horizontal = this.direction.east || this.direction.west;
+    this.columns.forEach((column) => {
+      let min = 0;
+      column.windowIds.forEach((id) => {
+        const win = ctx.getWindowById(id);
+        if (win === null || win.isFloating || win.minimized) return;
+        const size = horizontal ? win.minSize.width : win.minSize.height;
+        if (size > min) min = size;
+      });
+      column.minWeight = Math.max(1, min);
+    });
   }
 
   private getColumnId(t: WindowClass | string | null): number | null {
