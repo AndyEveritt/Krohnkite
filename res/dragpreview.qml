@@ -30,7 +30,7 @@ PlasmaCore.Dialog {
     outputOnly: true
     hideOnWindowDeactivate: false
 
-    visible: true
+    visible: false
 
     /* Output(full screen) area the overlay is anchored to. */
     property int areaX: 0
@@ -72,12 +72,15 @@ PlasmaCore.Dialog {
         previewRect.y = y - areaY;
         previewRect.width = w;
         previewRect.height = h;
-        if (!areaChanged)
+        if (!areaChanged) {
+            dragPreview.visible = true;
             previewRect.visible = true;
+        }
     }
 
     function hide() {
         previewRect.visible = false;
+        dragPreview.visible = false;
     }
 
     mainItem: Item {
