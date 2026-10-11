@@ -32,20 +32,28 @@ K and looks cool.
 - p7zip (7z)
 
 ## Look at me
-
-1. After pressing `Apply`, ask KWin to reload its configuration:
-
+### Reload Krohnkite configuration
+&emsp;<b>Important:</b> After changing the configuration, simply clicking `Apply` is not enough, ask KWin to reload its configuration
    ```sh
    qdbus6 org.kde.KWin /KWin org.kde.KWin.reconfigure
    ```
+### Enable Krohnkite
+```
+kwriteconfig6 --file kwinrc --group Plugins --key krohnkiteEnabled true && qdbus6 org.kde.KWin /KWin reconfigure
+```
+### Disable Krohnkite 
+```
+kwriteconfig6 --file kwinrc --group Plugins --key krohnkiteEnabled false && qdbus6 org.kde.KWin /KWin reconfigure
+```
+### Troubleshooting
 
-2. Delete unused KWin shortcuts you can use any D-Bus program which can invoke D-Bus methods. Service name -`org.kde.kglobalaccel` path - `/component/kwin` method - `org.kde.kglobalaccel.Component.cleanUp`. ArchLinux example:
+1. Delete unused KWin shortcuts you can use any D-Bus program which can invoke D-Bus methods. Service name -`org.kde.kglobalaccel` path - `/component/kwin` method - `org.kde.kglobalaccel.Component.cleanUp`. ArchLinux example:
 
    ```sh
    qdbus6 org.kde.kglobalaccel /component/kwin org.kde.kglobalaccel.Component.cleanUp
    ```
 
-3. If you have a gap or vice versa you have gray(white etc) rectangle that means that there is a program with size 1x1 that have to be filtered by title or other ways. Make sure that the following programs, if you have them, have been added to the filter:
+2. If you have a gap or vice versa you have gray(white etc) rectangle that means that there is a program with size 1x1 that have to be filtered by title or other ways. Make sure that the following programs, if you have them, have been added to the filter:
 
    ```
    xwaylandvideobridge,plasmashell,ksplashqml
