@@ -23,6 +23,10 @@ install: package
 		&& kpackagetool6 -t KWin/Script -u $(KWINPKG_FILE) \
 		|| kpackagetool6 -t KWin/Script -i $(KWINPKG_FILE)
 
+# Reinstall and load a complete fresh-path bundle; no KWin restart/logout needed.
+reload: install
+	python3 tools/reload-script.py "$(KWINPKG_DIR)"
+
 uninstall:
 	kpackagetool6 -t kwinscript -r $(PROJECT_NAME)
 
@@ -86,4 +90,4 @@ $(NODE_SCRIPT): $(SRC)
 package_json: package.json
 	sed -i 's/"version": [^,]*/"version": "$(PROJECT_VER)"/' package.json
 
-.PHONY: all clean install package test run stop package_json
+.PHONY: all clean install reload package test run stop package_json

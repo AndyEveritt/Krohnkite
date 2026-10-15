@@ -33,6 +33,11 @@ tasks:
     cmds:
       - "kpackagetool6 -t KWin/Script -s {{.PROJECT_NAME}} && kpackagetool6 -t KWin/Script -u {{.PACKAGE}} || kpackagetool6 -t KWin/Script -i {{.PACKAGE}}"
 
+  reload:
+    deps: [install]
+    cmds:
+      - python3 tools/reload-script.py {{.KWINPKG_DIR}}
+
   uninstall:
     cmds:
       - "kpackagetool6 -t KWin/Script -r  {{.PROJECT_NAME}}"

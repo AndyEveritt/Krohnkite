@@ -37,6 +37,20 @@ K and looks cool.
    ```sh
    qdbus6 org.kde.KWin /KWin org.kde.KWin.reconfigure
    ```
+
+### Apply code changes without logout
+
+```sh
+make reload
+# Or: task reload
+```
+
+This builds, installs, and reloads Kröhnkite through KWin's scripting interface.
+Every reload copies the complete bundle to a fresh cache directory, bypassing
+cached QML and JavaScript. No logout or compositor restart is required. The copied
+bundle stays available for lazy resource loading. For a command preview:
+`python3 tools/reload-script.py pkg --dry-run`.
+
 ### Enable Krohnkite
 ```
 kwriteconfig6 --file kwinrc --group Plugins --key krohnkiteEnabled true && qdbus6 org.kde.KWin /KWin reconfigure
