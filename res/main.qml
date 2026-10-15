@@ -17,6 +17,22 @@ Item {
     id: scriptRoot
     property var runtime: null
 
+    Plasma5Support.DataSource {
+        id: layoutIconInstaller
+        engine: "executable"
+        connectedSources: []
+        onNewData: function(sourceName, data) {
+            disconnectSource(sourceName);
+            if (data["exit code"] !== 0)
+                console.warn("KROHNKITE: SVG icon installation failed: " + data.stderr);
+        }
+        function install() {
+            var path = decodeURIComponent(String(Qt.resolvedUrl("../code/install-layout-icons.py")))
+                .replace(/^file:\/\//, "");
+            connectSource("python3 '" + path.replace(/'/g, "'\\''") + "'");
+        }
+    }
+
     TaskManager.ActivityInfo {
         id: activityInfo
     }
@@ -46,6 +62,7 @@ Item {
 
     Component.onCompleted: {
         console.log("KROHNKITE: starting the script");
+        layoutIconInstaller.install();
         const api = {
             "workspace": Workspace,
             // "options": Options,

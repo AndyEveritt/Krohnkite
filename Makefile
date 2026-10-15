@@ -22,9 +22,11 @@ install: package
 	kpackagetool6 -t KWin/Script -s $(PROJECT_NAME) \
 		&& kpackagetool6 -t KWin/Script -u $(KWINPKG_FILE) \
 		|| kpackagetool6 -t KWin/Script -i $(KWINPKG_FILE)
+	python3 tools/install-layout-icons.py
 
 uninstall:
 	kpackagetool6 -t kwinscript -r $(PROJECT_NAME)
+	python3 tools/install-layout-icons.py --uninstall
 
 package: $(KWINPKG_FILE) package_json
 
@@ -48,6 +50,8 @@ $(KWINPKG_DIR): $(KWIN_QML)
 $(KWINPKG_DIR): $(KWINPKG_DIR)/contents/ui/config.ui
 $(KWINPKG_DIR): $(KWINPKG_DIR)/contents/ui/dbus.qml
 $(KWINPKG_DIR): $(KWINPKG_DIR)/contents/ui/popup.qml
+$(KWINPKG_DIR): $(patsubst res/%,$(KWINPKG_DIR)/contents/ui/%,$(wildcard res/layouts/*.svg))
+$(KWINPKG_DIR): $(KWINPKG_DIR)/contents/code/install-layout-icons.py
 $(KWINPKG_DIR): $(KWINPKG_DIR)/contents/ui/dragpreview.qml
 $(KWINPKG_DIR): $(KWINPKG_DIR)/contents/ui/shortcuts.qml
 $(KWINPKG_DIR): $(KWINPKG_DIR)/contents/code/main.js
@@ -70,6 +74,10 @@ $(KWIN_QML): res/main.qml
 $(KWINPKG_DIR)/contents/ui/config.ui: res/config.ui
 $(KWINPKG_DIR)/contents/ui/dbus.qml: res/dbus.qml
 $(KWINPKG_DIR)/contents/ui/popup.qml: res/popup.qml
+$(KWINPKG_DIR)/contents/ui/layouts/%.svg: res/layouts/%.svg
+	@mkdir -p $(dir $@)
+	@cp $< $@
+$(KWINPKG_DIR)/contents/code/install-layout-icons.py: tools/install-layout-icons.py
 $(KWINPKG_DIR)/contents/ui/dragpreview.qml: res/dragpreview.qml
 $(KWINPKG_DIR)/contents/ui/shortcuts.qml: res/shortcuts.qml
 $(KWINPKG_DIR)/contents/code/script.js: $(NODE_SCRIPT)

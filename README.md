@@ -188,6 +188,14 @@ go-task uninstall
 | _unbound_        | Use Stair Layout   |
 | _unbound_        | Use Cascade Layout |
 
+### Layout icons
+
+The settings page uses shared SVG layout pictograms from `res/layouts/`. Install
+registers `krohnkite-layout-*` icons under `$XDG_DATA_HOME/icons/hicolor`
+(normally `~/.local/share/icons`); direct `.kwinscript` installs register them
+when the script starts. Python 3 and `xdg-icon-resource` are required. Reopen
+settings after installation. `make uninstall` removes only these icons.
+
 ## Tips
 
 ### Unsupported animations

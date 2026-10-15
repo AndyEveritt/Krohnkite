@@ -32,10 +32,12 @@ tasks:
     deps: [kwin-pkg-file]
     cmds:
       - "kpackagetool6 -t KWin/Script -s {{.PROJECT_NAME}} && kpackagetool6 -t KWin/Script -u {{.PACKAGE}} || kpackagetool6 -t KWin/Script -i {{.PACKAGE}}"
+      - python3 tools/install-layout-icons.py
 
   uninstall:
     cmds:
       - "kpackagetool6 -t KWin/Script -r  {{.PROJECT_NAME}}"
+      - python3 tools/install-layout-icons.py --uninstall
 
   kwin-pkg-file:
     aliases: [package]
@@ -60,6 +62,8 @@ tasks:
       - cp res/main.qml {{.KWINPKG_DIR}}/contents/ui/main.qml
       - cp res/config.ui {{.KWINPKG_DIR}}/contents/ui/config.ui
       - cp res/popup.qml  {{.KWINPKG_DIR}}/contents/ui/popup.qml
+      - cp -r res/layouts {{.KWINPKG_DIR}}/contents/ui/
+      - cp tools/install-layout-icons.py {{.KWINPKG_DIR}}/contents/code/install-layout-icons.py
       - cp res/dragpreview.qml  {{.KWINPKG_DIR}}/contents/ui/dragpreview.qml
       - cp res/shortcuts.qml  {{.KWINPKG_DIR}}/contents/ui/shortcuts.qml
       - cp res/dbus.qml  {{.KWINPKG_DIR}}/contents/ui/dbus.qml
@@ -71,6 +75,8 @@ tasks:
       - res/main.qml
       - res/config.ui
       - res/popup.qml
+      - res/layouts/*.svg
+      - tools/install-layout-icons.py
       - res/dragpreview.qml
       - res/shortcuts.qml
       - res/dbus.qml
@@ -81,6 +87,8 @@ tasks:
       - "{{.KWINPKG_DIR}}/contents/ui/main.qml"
       - "{{.KWINPKG_DIR}}/contents/ui/config.ui"
       - "{{.KWINPKG_DIR}}/contents/ui/popup.qml"
+      - "{{.KWINPKG_DIR}}/contents/ui/layouts/*.svg"
+      - "{{.KWINPKG_DIR}}/contents/code/install-layout-icons.py"
       - "{{.KWINPKG_DIR}}/contents/ui/dragpreview.qml"
       - "{{.KWINPKG_DIR}}/contents/ui/shortcuts.qml"
       - "{{.KWINPKG_DIR}}/contents/ui/dbus.qml"
