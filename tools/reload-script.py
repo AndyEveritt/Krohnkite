@@ -7,6 +7,7 @@ from pathlib import Path
 import shlex
 import shutil
 import subprocess
+import sys
 import tempfile
 
 SERVICE = "org.kde.KWin"
@@ -37,16 +38,62 @@ def stage_package(package, cache):
     return bundle / "contents/ui/main.qml"
 
 
-def reload_script(main_qml):
-    if invoke("isScriptLoaded", PLUGIN) == "true":
-        if invoke("unloadScript", PLUGIN) != "true":
-            raise RuntimeError("KWin refused to unload Kröhnkite; no replacement loaded.")
+def read_last_good(last_good_file):
+    if last_good_file is None:
+        return None
+    try:
+        main_qml = Path(last_good_file.read_text().strip())
+    except OSError:
+        return None
+    return main_qml if main_qml.is_file() else None
+
+
+def remember_last_good(last_good_file, main_qml):
+    if last_good_file is None:
+        return
+    last_good_file.parent.mkdir(parents=True, exist_ok=True)
+    temporary = last_good_file.with_suffix(f".tmp-{os.getpid()}")
+    try:
+        temporary.write_text(str(main_qml))
+        os.replace(temporary, last_good_file)
+    finally:
+        temporary.unlink(missing_ok=True)
+
+
+def load_and_start(main_qml):
     script_id = invoke("loadDeclarativeScript", str(main_qml), PLUGIN)
     if not script_id.isdecimal():
         raise RuntimeError(f"KWin refused to load {main_qml}: {script_id}")
     invoke("start")
     if invoke("isScriptLoaded", PLUGIN) != "true":
         raise RuntimeError("Kröhnkite did not load. Inspect KWin's user journal for QML errors.")
+
+
+def reload_script(main_qml, last_good_file=None):
+    was_loaded = invoke("isScriptLoaded", PLUGIN) == "true"
+    previous_main_qml = read_last_good(last_good_file) if was_loaded else None
+    if was_loaded and invoke("unloadScript", PLUGIN) != "true":
+        raise RuntimeError("KWin refused to unload Kröhnkite; no replacement loaded.")
+    try:
+        load_and_start(main_qml)
+    except (RuntimeError, OSError, subprocess.CalledProcessError) as primary_error:
+        if not was_loaded:
+            raise
+        if previous_main_qml is None:
+            recovery = "No known prior working bundle is available for recovery."
+        else:
+            try:
+                load_and_start(previous_main_qml)
+                recovery = f"Recovered using prior bundle {previous_main_qml}."
+            except (RuntimeError, OSError, subprocess.CalledProcessError) as recovery_error:
+                detail = getattr(recovery_error, "stderr", None) or str(recovery_error)
+                recovery = f"Recovery from {previous_main_qml} failed: {detail}"
+        detail = getattr(primary_error, "stderr", None) or str(primary_error)
+        raise RuntimeError(f"Replacement reload failed: {detail} {recovery}") from primary_error
+    try:
+        remember_last_good(last_good_file, main_qml)
+    except OSError as error:
+        print(f"Warning: could not record last working bundle: {error}", file=sys.stderr)
 
 
 def main():
@@ -66,7 +113,7 @@ def main():
             print(shlex.join(["qdbus6", SERVICE, "/Scripting", f"{INTERFACE}.{method}", *values]))
         return
     main_qml = stage_package(package, cache)
-    reload_script(main_qml)
+    reload_script(main_qml, cache / "last-good-main-qml")
     # Keep the bundle: QML and images can be loaded lazily while the script runs.
     print(f"Kröhnkite reloaded without logout: {main_qml}")
 

@@ -86,6 +86,70 @@ class ReloadTests(unittest.TestCase):
             with self.assertRaises(RuntimeError):
                 reload.reload_script(Path("/cache/main.qml"))
 
+    def test_successful_reload_records_bundle_for_future_recovery(self):
+        with tempfile.TemporaryDirectory() as directory:
+            marker = Path(directory) / "cache/last-good-main-qml"
+            main_qml = Path(directory) / "bundle/contents/ui/main.qml"
+            with patch.object(reload, "invoke", side_effect=["false", "12", "", "true"]):
+                reload.reload_script(main_qml, marker)
+            self.assertEqual(marker.read_text(), str(main_qml))
+            self.assertFalse(marker.with_suffix(f".tmp-{reload.os.getpid()}").exists())
+
+    def test_rejected_replacement_recovers_last_good_bundle(self):
+        with tempfile.TemporaryDirectory() as directory:
+            previous = Path(directory) / "previous/contents/ui/main.qml"
+            previous.parent.mkdir(parents=True)
+            previous.touch()
+            marker = Path(directory) / "last-good-main-qml"
+            marker.write_text(str(previous))
+            with patch.object(reload, "invoke", side_effect=[
+                "true", "true", "-1", str(31), "", "true",
+            ]) as invoke:
+                with self.assertRaisesRegex(RuntimeError, "Recovered using prior bundle"):
+                    reload.reload_script(Path("/replacement/main.qml"), marker)
+            self.assertEqual(invoke.call_args_list[2].args,
+                             ("loadDeclarativeScript", "/replacement/main.qml", "krohnkite"))
+            self.assertEqual(invoke.call_args_list[3].args,
+                             ("loadDeclarativeScript", str(previous), "krohnkite"))
+
+    def test_dbus_replacement_failure_reports_recovery_failure_and_primary(self):
+        with tempfile.TemporaryDirectory() as directory:
+            previous = Path(directory) / "previous/contents/ui/main.qml"
+            previous.parent.mkdir(parents=True)
+            previous.touch()
+            marker = Path(directory) / "last-good-main-qml"
+            marker.write_text(str(previous))
+            dbus_error = reload.subprocess.CalledProcessError(1, "qdbus6", stderr="DBus unavailable")
+            with patch.object(reload, "invoke", side_effect=[
+                "true", "true", dbus_error, "22", RuntimeError("recovery start failed"),
+            ]):
+                with self.assertRaises(RuntimeError) as raised:
+                    reload.reload_script(Path("/replacement/main.qml"), marker)
+            self.assertIn("DBus unavailable", str(raised.exception))
+            self.assertIn("Recovery from", str(raised.exception))
+            self.assertIn("recovery start failed", str(raised.exception))
+
+    def test_start_failure_recovers_last_good_bundle(self):
+        with tempfile.TemporaryDirectory() as directory:
+            previous = Path(directory) / "previous/contents/ui/main.qml"
+            previous.parent.mkdir(parents=True)
+            previous.touch()
+            marker = Path(directory) / "last-good-main-qml"
+            marker.write_text(str(previous))
+            with patch.object(reload, "invoke", side_effect=[
+                "true", "true", "12", "", "false", "13", "", "true",
+            ]):
+                with self.assertRaisesRegex(RuntimeError, "Recovered using prior bundle"):
+                    reload.reload_script(Path("/replacement/main.qml"), marker)
+
+    def test_missing_last_good_bundle_is_reported_without_recovery(self):
+        with tempfile.TemporaryDirectory() as directory:
+            marker = Path(directory) / "last-good-main-qml"
+            marker.write_text(str(Path(directory) / "missing.qml"))
+            with patch.object(reload, "invoke", side_effect=["true", "true", "-1"]):
+                with self.assertRaisesRegex(RuntimeError, "No known prior working bundle"):
+                    reload.reload_script(Path("/replacement/main.qml"), marker)
+
 
 if __name__ == "__main__":
     unittest.main()
