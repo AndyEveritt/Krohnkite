@@ -635,7 +635,7 @@ class TilingEngine {
       `output:processID: ${outputName}:${processID}`,
     );
     screenData.overCapacity.forEach((win) => {
-      win.state = WindowState.Floating;
+      win.floatInPlace();
     });
     const gaps = this.getGaps(screenData.srf);
 
@@ -728,7 +728,7 @@ class TilingEngine {
                 tile.maxSize.height < tile.geometry.height
               }, widthUnfit: ${tile.maxSize.width < tile.geometry.width}`,
             );
-            tile.state = WindowState.Floating;
+            tile.floatInPlace();
             return false;
           } else if (
             CONFIG.unfitGreater &&
@@ -757,7 +757,7 @@ class TilingEngine {
           }
           while (screenData.tileables.length > 0 && unfitGreaterQuantity > 0) {
             let tile = screenData.tileables.shift();
-            tile!.state = WindowState.Floating;
+            tile!.floatInPlace();
             layoutApply();
             unfitGreaterQuantity = getNumberTileablesGreaterThenMin(
               screenData.tileables,

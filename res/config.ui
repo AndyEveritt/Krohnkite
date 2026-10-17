@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>837</width>
+    <width>900</width>
     <height>1250</height>
    </rect>
   </property>
@@ -3113,7 +3113,7 @@
        </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="tab_2">
+     <widget class="QWidget" name="_ShortcutTab">
       <attribute name="title">
        <string>Shortcuts</string>
       </attribute>
@@ -4342,7 +4342,7 @@
        </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="tab">
+     <widget class="QWidget" name="_FloatTab">
       <attribute name="title">
        <string>Float</string>
       </attribute>
@@ -6166,19 +6166,6 @@
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_18">
           <item>
-           <widget class="QCheckBox" name="kcfg_unfitGreater">
-            <property name="toolTip">
-             <string>If enable make all windows floating if they minimum size to large for tile</string>
-            </property>
-            <property name="text">
-             <string>make floating if  min. size of window greater than Tile size </string>
-            </property>
-            <property name="checked">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-          <item>
            <widget class="QCheckBox" name="kcfg_unfitLess">
             <property name="toolTip">
              <string>If enable make all windows floating if the maximum size to small for tile</string>
@@ -6188,6 +6175,19 @@
             </property>
             <property name="checked">
              <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="kcfg_unfitGreater">
+            <property name="toolTip">
+             <string>If enable make all windows floating if they minimum size to large for tile</string>
+            </property>
+            <property name="text">
+             <string>(Experimental)make floating if  min. size of window greater than Tile size </string>
+            </property>
+            <property name="checked">
+             <bool>false</bool>
             </property>
            </widget>
           </item>

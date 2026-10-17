@@ -213,8 +213,8 @@ class KWinConfig implements IConfig {
   public soleWindowDefaultProps: ISoleWindowProps;
   public soleWindowOutputOverride: { [outputName: string]: ISoleWindowProps };
 
-  public unfitGreater: boolean;
   public unfitLess: boolean;
+  public unfitGreater: boolean;
 
   public notificationDuration: number;
 
@@ -629,8 +629,8 @@ class KWinConfig implements IConfig {
       this.soleWindowDefaultProps,
     );
 
-    this.unfitGreater = KWIN.readConfig("unfitGreater", true);
     this.unfitLess = KWIN.readConfig("unfitLess", true);
+    this.unfitGreater = KWIN.readConfig("unfitGreater", false);
 
     this.notificationDuration = KWIN.readConfig("notificationDuration", 1000);
 
