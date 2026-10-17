@@ -1057,6 +1057,11 @@ class TilingEngine {
    * @param dir which direction
    */
   private _moveFloat(ctx: IDriverContext, window: WindowClass, dir: Direction) {
+    /* Declare these before the helpers: the helpers close over them and
+     * QJSEngine warns about the temporal-dead-zone ordering at load time. */
+    const relocation = this.relocationWindows;
+    const srcOutput = window.surface.output;
+
     function isRelocationReady(): boolean {
       if (relocation.isSending) {
         if (
@@ -1090,8 +1095,6 @@ class TilingEngine {
       winArr.push(window);
       return true;
     }
-    const relocation = this.relocationWindows;
-    const srcOutput = window.surface.output;
     const srf = window.surface;
     const srfRect = srf.workingArea;
 
