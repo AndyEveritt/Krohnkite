@@ -62,8 +62,9 @@ class TilingController {
   public onSurfaceUpdate(
     ctx: IDriverContext,
     reason: keyof typeof ArrangeReason,
+    extraSurfaces?: ISurface[],
   ): void {
-    this.engine.arrange(ctx, reason, getMethodName());
+    this.engine.arrange(ctx, reason, getMethodName(), extraSurfaces);
   }
 
   public onCurrentActivityChanged(

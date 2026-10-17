@@ -763,8 +763,13 @@ class KWinDriver implements IDriverContext {
     let targetVDesktop = this.getNeighborVDesktop(direction);
     if (targetVDesktop === null) return false;
     let client = (window.window as DriverWindow).window;
-    this.workspace.currentDesktop = targetVDesktop;
+    /* Move the window before switching desktops. desktopsChanged then fires
+     * while the source desktop is still the current one, so the regular
+     * arrange re-tiles the windows left behind. Switching first would make
+     * the source desktop invisible to arrange() and leave a hole in its
+     * layout until the user switches back. */
     this._moveWinToVDesktop(window, targetVDesktop);
+    this.workspace.currentDesktop = targetVDesktop;
     this.workspace.activeWindow = client;
     return true;
   }
@@ -1041,6 +1046,28 @@ class KWinDriver implements IDriverContext {
     }
     this.workspace.currentDesktop = desktop;
   }
+  /* Build the surfaces of the desktop a switch just left. KWin 6.0-6.6 emits
+   * only the previous desktop, shared by every output; 6.7+ also passes the
+   * output whose desktop changed (per-output virtual desktops). Arranging
+   * these surfaces re-tiles the windows left behind when a window is moved to
+   * another desktop with a shortcut that switches at the same time. */
+  private _previousDesktopSurfaces(
+    previousDesktop: VirtualDesktop | undefined,
+    output: Output | undefined,
+  ): ISurface[] {
+    if (previousDesktop === undefined || previousDesktop === null) return [];
+    const outputs: Output[] =
+      output !== undefined && output !== null
+        ? [output]
+        : this.workspace.screens;
+    return outputs.map((out) =>
+      this._surfaceStore.getSurface(
+        out,
+        this.workspace.currentActivity,
+        previousDesktop,
+      ),
+    );
+  }
   private _onShortcut(shortcut: Shortcut) {
     this._shortcutPressTime = getTime();
     const token = ++this._shortcutFinishToken;
@@ -1268,13 +1295,21 @@ class KWinDriver implements IDriverContext {
 
     this._connect(
       this.workspace.currentDesktopChanged,
-      (virtualDesktop: VirtualDesktop) => {
+      (
+        previousDesktop?: VirtualDesktop,
+        _currentDesktop?: VirtualDesktop,
+        output?: Output,
+      ) => {
         LOG?.send(
           LogModules.currentDesktopChanged,
           "eventFired",
-          `Virtual Desktop. name:${virtualDesktop.name}, id:${virtualDesktop.id}`,
+          `Virtual Desktop. previous name:${previousDesktop?.name}, id:${previousDesktop?.id}`,
         );
-        this.control.onSurfaceUpdate(this, "currentDesktopChangedCB");
+        this.control.onSurfaceUpdate(
+          this,
+          "currentDesktopChangedCB",
+          this._previousDesktopSurfaces(previousDesktop, output),
+        );
       },
     );
 

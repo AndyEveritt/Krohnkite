@@ -299,6 +299,7 @@ class TilingEngine {
     ctx: IDriverContext,
     reason: keyof typeof ArrangeReason,
     message?: string,
+    extraSurfaces?: ISurface[],
   ) {
     this.arrangeProcessId = getRandomInt(1000000);
     if (LOG?.isModuleOn(LogModules.arrangeScreen)) {
@@ -309,6 +310,25 @@ class TilingEngine {
       );
     }
     const surfaces = ctx.currentSurfaces;
+    /* Surfaces vacated by a window that moved to another desktop as part of
+     * a desktop switch (e.g. KWin's "Window One Desktop to the ..."). By the
+     * time the event reaches us, the source desktop is no longer current, so
+     * it is not part of ctx.currentSurfaces and the windows left behind keep
+     * the old layout. Arrange the vacated surfaces explicitly and first: a
+     * window on all desktops is visible on both surfaces and must finish with
+     * the layout of the surface that is actually current now. */
+    const extraScreensData: ScreenData[] = [];
+    if (extraSurfaces !== undefined) {
+      const knownSrfIds = new Set(surfaces.map((srf) => srf.id));
+      for (const srf of extraSurfaces) {
+        if (knownSrfIds.has(srf.id)) continue;
+        knownSrfIds.add(srf.id);
+        extraScreensData.push(this.getTileables(srf));
+      }
+    }
+    extraScreensData.forEach((screenData: ScreenData) => {
+      this.arrangeScreen(ctx, screenData, reason, this.arrangeProcessId!);
+    });
     let screensData: ScreenData[] = [];
     surfaces.forEach((srf) => {
       screensData.push(this.getTileables(srf));
@@ -360,13 +380,15 @@ class TilingEngine {
   }
 
   private _isCheckCapacity(reason: keyof typeof ArrangeReason) {
-    const reasons = [
+    /* These reasons are part of the relocation process itself; checking
+     * capacity again while they run would re-enter the relocation logic. */
+    const reasons: string[] = [
       "forcedArrangeScreen",
       "moveWindowToOutput",
       "transferWindowToVDesktop",
       "sendToOutputProcessFinish",
     ];
-    return !(reason in [reasons]);
+    return reasons.indexOf(reason) < 0;
   }
 
   private _searchAvailableSlotsForOvercapacity(
