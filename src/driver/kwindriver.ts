@@ -792,20 +792,25 @@ class KWinDriver implements IDriverContext {
     let client = (window.window as DriverWindow).window;
     /* Capture the surface while the window is still on it. */
     const sourceSurface = window.surface;
-    this.workspace.currentDesktop = targetVDesktop;
-    this._moveWinToVDesktop(window, targetVDesktop);
-    this.workspace.activeWindow = client;
     /* currentDesktopChanged fires before the window leaves the source
      * surface, and desktopsChanged fires after the switch, when the source
-     * desktop is no longer current. Neither event can re-tile the source
-     * correctly, so arrange explicitly with the captured surface. Returning
-     * false tells the caller that no additional arrange is needed. */
-    this.engine.arrange(
-      this,
-      "shortcutCB",
-      `${getMethodName()}:moveToVDesktop`,
-      [sourceSurface],
-    );
+     * desktop is no longer current. Batch both so they only record their
+     * arrange requests, then lay out once, after the window has moved, with
+     * the captured source surface. Returning false tells the caller that no
+     * additional arrange is needed. */
+    this.engine.beginArrangeBatch();
+    try {
+      this.workspace.currentDesktop = targetVDesktop;
+      this._moveWinToVDesktop(window, targetVDesktop);
+      this.workspace.activeWindow = client;
+    } finally {
+      this.engine.endArrangeBatch(
+        this,
+        "shortcutCB",
+        `${getMethodName()}:moveToVDesktop`,
+        [sourceSurface],
+      );
+    }
     return false;
   }
   private _moveWinToVDesktop(

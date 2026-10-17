@@ -122,6 +122,7 @@ class TilingEngine {
   private _arranging: boolean;
   private _arrangePending: boolean;
   private _pendingExtraSurfaces: Map<string, ISurface>;
+  private _batchDepth: number;
 
   constructor() {
     this.layouts = new LayoutStore();
@@ -135,6 +136,7 @@ class TilingEngine {
     this._arranging = false;
     this._arrangePending = false;
     this._pendingExtraSurfaces = new Map();
+    this._batchDepth = 0;
   }
 
   /**
@@ -301,6 +303,32 @@ class TilingEngine {
     }
   }
   /**
+   * Defer arrange requests until endArrangeBatch().
+   *
+   * Used for multi-step actions (e.g. moving a window to another virtual
+   * desktop) where the intermediate state is not worth laying out and only
+   * the final state matters. Requests made by the events fired inside the
+   * batch are coalesced, and any extra surfaces are kept for the final pass.
+   * Batches can be nested; the outermost endArrangeBatch() flushes.
+   */
+  public beginArrangeBatch(): void {
+    this._batchDepth++;
+  }
+
+  public endArrangeBatch(
+    ctx: IDriverContext,
+    reason: keyof typeof ArrangeReason,
+    message?: string,
+    extraSurfaces?: ISurface[],
+  ): void {
+    if (this._batchDepth === 0) return;
+    this._batchDepth--;
+    this._addPendingExtraSurfaces(extraSurfaces);
+    if (this._batchDepth > 0) return;
+    this.arrange(ctx, reason, message);
+  }
+
+  /**
    * Arrange tiles on all screens.
    *
    * Arranging is not re-entrant: KWin emits signals synchronously while
@@ -316,7 +344,7 @@ class TilingEngine {
     extraSurfaces?: ISurface[],
   ) {
     this._addPendingExtraSurfaces(extraSurfaces);
-    if (this._arranging) {
+    if (this._arranging || this._batchDepth > 0) {
       this._arrangePending = true;
       return;
     }
