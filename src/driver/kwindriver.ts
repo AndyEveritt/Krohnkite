@@ -763,15 +763,23 @@ class KWinDriver implements IDriverContext {
     let targetVDesktop = this.getNeighborVDesktop(direction);
     if (targetVDesktop === null) return false;
     let client = (window.window as DriverWindow).window;
-    /* Move the window before switching desktops. desktopsChanged then fires
-     * while the source desktop is still the current one, so the regular
-     * arrange re-tiles the windows left behind. Switching first would make
-     * the source desktop invisible to arrange() and leave a hole in its
-     * layout until the user switches back. */
-    this._moveWinToVDesktop(window, targetVDesktop);
+    /* Capture the surface while the window is still on it. */
+    const sourceSurface = window.surface;
     this.workspace.currentDesktop = targetVDesktop;
+    this._moveWinToVDesktop(window, targetVDesktop);
     this.workspace.activeWindow = client;
-    return true;
+    /* This runs inside a shortcut callback, where _enter() suppresses the
+     * nested currentDesktopChanged/desktopsChanged events. Arrange explicitly
+     * with the vacated surface, otherwise its remaining windows keep the old
+     * layout until the user switches back. Returning false tells the caller
+     * that no additional arrange is needed. */
+    this.engine.arrange(
+      this,
+      "shortcutCB",
+      `${getMethodName()}:moveToVDesktop`,
+      [sourceSurface],
+    );
+    return false;
   }
   private _moveWinToVDesktop(
     window: WindowClass,
