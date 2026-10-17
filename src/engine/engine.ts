@@ -108,6 +108,8 @@ class RelocationWindows implements IRelocationWindows {
 class TilingEngine {
   // max time for waiting KWin to move relocated windows to outputs calling KWin func sendClientToScreen() and to Virtual Desktops
   static SENDING_WINDOWS_MAX_WAIT_TIME = 100;
+  // upper bound for coalesced arrange passes to stop a genuine layout loop
+  static MAX_ARRANGE_PASSES = 10;
 
   public layouts: LayoutStore;
   public windows: WindowStore;
@@ -117,6 +119,10 @@ class TilingEngine {
   public arrangeProcessId: number | null;
   private _defaultGaps: DefaultGapsCfg | null;
   private _gapsSurfacesCfg: SurfaceCfg<IGaps>[];
+  private _arranging: boolean;
+  private _arrangePending: boolean;
+  private _pendingExtraSurfaces: Map<string, ISurface>;
+  private _batchDepth: number;
 
   constructor() {
     this.layouts = new LayoutStore();
@@ -127,6 +133,10 @@ class TilingEngine {
     this.makeWinActive = null;
     this._defaultGaps = null;
     this._gapsSurfacesCfg = [];
+    this._arranging = false;
+    this._arrangePending = false;
+    this._pendingExtraSurfaces = new Map();
+    this._batchDepth = 0;
   }
 
   /**
@@ -293,12 +303,86 @@ class TilingEngine {
     }
   }
   /**
+   * Defer arrange requests until endArrangeBatch().
+   *
+   * Used for multi-step actions (e.g. moving a window to another virtual
+   * desktop) where the intermediate state is not worth laying out and only
+   * the final state matters. Requests made by the events fired inside the
+   * batch are coalesced, and any extra surfaces are kept for the final pass.
+   * Batches can be nested; the outermost endArrangeBatch() flushes.
+   */
+  public beginArrangeBatch(): void {
+    this._batchDepth++;
+  }
+
+  public endArrangeBatch(
+    ctx: IDriverContext,
+    reason: keyof typeof ArrangeReason,
+    message?: string,
+    extraSurfaces?: ISurface[],
+  ): void {
+    if (this._batchDepth === 0) return;
+    this._batchDepth--;
+    this._addPendingExtraSurfaces(extraSurfaces);
+    if (this._batchDepth > 0) return;
+    this.arrange(ctx, reason, message);
+  }
+
+  /**
    * Arrange tiles on all screens.
+   *
+   * Arranging is not re-entrant: KWin emits signals synchronously while
+   * windows are committed, and some of those handlers request another
+   * arrange. Running one inside another would interleave layout passes and
+   * commit stale geometries over the inner pass, so nested requests are
+   * coalesced into another pass of the current arrange instead.
    */
   public arrange(
     ctx: IDriverContext,
     reason: keyof typeof ArrangeReason,
     message?: string,
+    extraSurfaces?: ISurface[],
+  ) {
+    this._addPendingExtraSurfaces(extraSurfaces);
+    if (this._arranging || this._batchDepth > 0) {
+      this._arrangePending = true;
+      return;
+    }
+
+    this._arranging = true;
+    try {
+      let passes = 0;
+      do {
+        this._arrangePending = false;
+        const extras = [...this._pendingExtraSurfaces.values()];
+        this._pendingExtraSurfaces.clear();
+        this._arrangeOnce(ctx, reason, message, extras);
+      } while (
+        this._arrangePending &&
+        ++passes < TilingEngine.MAX_ARRANGE_PASSES
+      );
+      if (this._arrangePending) {
+        warning(
+          `${getMethodName()}: arrange did not settle after ${TilingEngine.MAX_ARRANGE_PASSES} passes.`,
+        );
+      }
+    } finally {
+      this._arranging = false;
+      this._arrangePending = false;
+      this._pendingExtraSurfaces.clear();
+    }
+  }
+
+  private _addPendingExtraSurfaces(extraSurfaces?: ISurface[]) {
+    if (extraSurfaces === undefined) return;
+    for (const srf of extraSurfaces) this._pendingExtraSurfaces.set(srf.id, srf);
+  }
+
+  private _arrangeOnce(
+    ctx: IDriverContext,
+    reason: keyof typeof ArrangeReason,
+    message: string | undefined,
+    extraSurfaces: ISurface[],
   ) {
     this.arrangeProcessId = getRandomInt(1000000);
     if (LOG?.isModuleOn(LogModules.arrangeScreen)) {
@@ -309,6 +393,23 @@ class TilingEngine {
       );
     }
     const surfaces = ctx.currentSurfaces;
+    /* Surfaces vacated by a window that moved to another desktop as part of
+     * a desktop switch (e.g. KWin's "Window One Desktop to the ..."). By the
+     * time the event reaches us, the source desktop is no longer current, so
+     * it is not part of ctx.currentSurfaces and the windows left behind keep
+     * the old layout. Arrange the vacated surfaces explicitly and first: a
+     * window on all desktops is visible on both surfaces and must finish with
+     * the layout of the surface that is actually current now. */
+    const extraScreensData: ScreenData[] = [];
+    const knownSrfIds = new Set(surfaces.map((srf) => srf.id));
+    for (const srf of extraSurfaces) {
+      if (knownSrfIds.has(srf.id)) continue;
+      knownSrfIds.add(srf.id);
+      extraScreensData.push(this.getTileables(srf));
+    }
+    extraScreensData.forEach((screenData: ScreenData) => {
+      this.arrangeScreen(ctx, screenData, reason, this.arrangeProcessId!);
+    });
     let screensData: ScreenData[] = [];
     surfaces.forEach((srf) => {
       screensData.push(this.getTileables(srf));
@@ -360,13 +461,15 @@ class TilingEngine {
   }
 
   private _isCheckCapacity(reason: keyof typeof ArrangeReason) {
-    const reasons = [
+    /* These reasons are part of the relocation process itself; checking
+     * capacity again while they run would re-enter the relocation logic. */
+    const reasons: string[] = [
       "forcedArrangeScreen",
       "moveWindowToOutput",
       "transferWindowToVDesktop",
       "sendToOutputProcessFinish",
     ];
-    return !(reason in [reasons]);
+    return reasons.indexOf(reason) < 0;
   }
 
   private _searchAvailableSlotsForOvercapacity(
@@ -982,6 +1085,11 @@ class TilingEngine {
    * @param dir which direction
    */
   private _moveFloat(ctx: IDriverContext, window: WindowClass, dir: Direction) {
+    /* Declare these before the helpers: the helpers close over them and
+     * QJSEngine warns about the temporal-dead-zone ordering at load time. */
+    const relocation = this.relocationWindows;
+    const srcOutput = window.surface.output;
+
     function isRelocationReady(): boolean {
       if (relocation.isSending) {
         if (
@@ -1015,8 +1123,6 @@ class TilingEngine {
       winArr.push(window);
       return true;
     }
-    const relocation = this.relocationWindows;
-    const srcOutput = window.surface.output;
     const srf = window.surface;
     const srfRect = srf.workingArea;
 
