@@ -21,6 +21,35 @@ type RunningShortcutSeq = {
   actionCandidate: KrohnkiteAction | null;
 };
 
+function logProtectedError(e: any) {
+  const line = e && e.lineNumber !== undefined ? e.lineNumber : "unknown";
+  warning(`ProtectFunc: Error raised line: ${line}. Error: ${String(e)}`);
+}
+
+/**
+ * Prevents a single event callback from re-entering itself.
+ *
+ * KWin emits signals synchronously, including for state this script changes
+ * itself. Each connection owns a guard so feedback loops are still broken,
+ * while unrelated events (e.g. a desktop change triggered by a shortcut) are
+ * delivered instead of being dropped by a driver-wide guard.
+ */
+class ReentrancyGuard {
+  private _entered = false;
+
+  public run(callback: () => void) {
+    if (this._entered) return;
+    this._entered = true;
+    try {
+      callback();
+    } catch (e: any) {
+      logProtectedError(e);
+    } finally {
+      this._entered = false;
+    }
+  }
+}
+
 class KWinDriver implements IDriverContext {
   public static backendName: string = "kwin";
   public get backend(): string {
@@ -103,7 +132,6 @@ class KWinDriver implements IDriverContext {
   private engine: TilingEngine;
   private control: TilingController;
   private windowMap: WrapperMap<KwinWindow, WindowClass>;
-  private entered: boolean;
   private _surfaceStore: KWinSurfaceStore;
   private _isRegister: IRegister;
   private _connections: Array<{
@@ -134,7 +162,6 @@ class KWinDriver implements IDriverContext {
           new DriverWindow(client, this.workspace, this._surfaceStore),
         ),
     );
-    this.entered = false;
     this._connections = [];
     this._started = false;
     this._disposed = false;
@@ -534,7 +561,7 @@ class KWinDriver implements IDriverContext {
     );
   }
   public setTimeout(func: () => void, timeout: number) {
-    KWinSetTimeout(() => this._enter(func), timeout);
+    KWinSetTimeout(() => this._runProtected(func), timeout);
   }
   public showNotification(text: string) {
     if (CONFIG.notificationDuration > 0)
@@ -768,11 +795,11 @@ class KWinDriver implements IDriverContext {
     this.workspace.currentDesktop = targetVDesktop;
     this._moveWinToVDesktop(window, targetVDesktop);
     this.workspace.activeWindow = client;
-    /* This runs inside a shortcut callback, where _enter() suppresses the
-     * nested currentDesktopChanged/desktopsChanged events. Arrange explicitly
-     * with the vacated surface, otherwise its remaining windows keep the old
-     * layout until the user switches back. Returning false tells the caller
-     * that no additional arrange is needed. */
+    /* currentDesktopChanged fires before the window leaves the source
+     * surface, and desktopsChanged fires after the switch, when the source
+     * desktop is no longer current. Neither event can re-tile the source
+     * correctly, so arrange explicitly with the captured surface. Returning
+     * false tells the caller that no additional arrange is needed. */
     this.engine.arrange(
       this,
       "shortcutCB",
@@ -1234,16 +1261,21 @@ class KWinDriver implements IDriverContext {
   /**
    * Binds callback to the signal w/ extra fail-safe measures, like re-entry
    * prevention and auto-disconnect on termination.
+   *
+   * Each connection gets its own ReentrancyGuard: only the same callback is
+   * blocked from re-entering, so a handler may still observe events caused by
+   * its own action (e.g. a shortcut moving a window to another desktop).
    */
   private _connect(
     signal: Signal<(...args: any[]) => void>,
     handler: (..._: any[]) => void,
   ): () => void {
+    const guard = new ReentrancyGuard();
     const wrapper = (...args: any[]) => {
       /* HACK: `workspace` become undefined when the script is disabled. */
       if (this._disposed || typeof this.workspace === "undefined")
         signal.disconnect(wrapper);
-      else this._enter(() => handler.apply(this, args));
+      else guard.run(() => handler.apply(this, args));
     };
     signal.connect(wrapper);
     this._connections.push({ signal, callback: wrapper });
@@ -1251,25 +1283,16 @@ class KWinDriver implements IDriverContext {
     return wrapper;
   }
   /**
-   * Run the given function in a protected(?) context to prevent nested event
-   * handling.
-   *
-   * KWin emits signals as soon as window states are changed, even when
-   * those states are modified by the script. This causes multiple re-entry
-   * during event handling, resulting in performance degradation and harder
-   * debugging.
+   * Run the given function in a protected context, logging script errors.
+   * Re-entrancy is handled by the per-connection guards; timers run after the
+   * originating callback has returned, so they need only the error boundary.
    */
-  private _enter(callback: () => void) {
-    if (this.entered || this._disposed) return;
-
-    this.entered = true;
+  private _runProtected(callback: () => void) {
+    if (this._disposed) return;
     try {
       callback();
     } catch (e: any) {
-      const line = e && e.lineNumber !== undefined ? e.lineNumber : "unknown";
-      warning(`ProtectFunc: Error raised line: ${line}. Error: ${String(e)}`);
-    } finally {
-      this.entered = false;
+      logProtectedError(e);
     }
   }
   //TODO: add signal Vdesktop.aboutToBeDestroyed

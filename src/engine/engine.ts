@@ -108,6 +108,8 @@ class RelocationWindows implements IRelocationWindows {
 class TilingEngine {
   // max time for waiting KWin to move relocated windows to outputs calling KWin func sendClientToScreen() and to Virtual Desktops
   static SENDING_WINDOWS_MAX_WAIT_TIME = 100;
+  // upper bound for coalesced arrange passes to stop a genuine layout loop
+  static MAX_ARRANGE_PASSES = 10;
 
   public layouts: LayoutStore;
   public windows: WindowStore;
@@ -117,6 +119,9 @@ class TilingEngine {
   public arrangeProcessId: number | null;
   private _defaultGaps: DefaultGapsCfg | null;
   private _gapsSurfacesCfg: SurfaceCfg<IGaps>[];
+  private _arranging: boolean;
+  private _arrangePending: boolean;
+  private _pendingExtraSurfaces: Map<string, ISurface>;
 
   constructor() {
     this.layouts = new LayoutStore();
@@ -127,6 +132,9 @@ class TilingEngine {
     this.makeWinActive = null;
     this._defaultGaps = null;
     this._gapsSurfacesCfg = [];
+    this._arranging = false;
+    this._arrangePending = false;
+    this._pendingExtraSurfaces = new Map();
   }
 
   /**
@@ -294,12 +302,59 @@ class TilingEngine {
   }
   /**
    * Arrange tiles on all screens.
+   *
+   * Arranging is not re-entrant: KWin emits signals synchronously while
+   * windows are committed, and some of those handlers request another
+   * arrange. Running one inside another would interleave layout passes and
+   * commit stale geometries over the inner pass, so nested requests are
+   * coalesced into another pass of the current arrange instead.
    */
   public arrange(
     ctx: IDriverContext,
     reason: keyof typeof ArrangeReason,
     message?: string,
     extraSurfaces?: ISurface[],
+  ) {
+    this._addPendingExtraSurfaces(extraSurfaces);
+    if (this._arranging) {
+      this._arrangePending = true;
+      return;
+    }
+
+    this._arranging = true;
+    try {
+      let passes = 0;
+      do {
+        this._arrangePending = false;
+        const extras = [...this._pendingExtraSurfaces.values()];
+        this._pendingExtraSurfaces.clear();
+        this._arrangeOnce(ctx, reason, message, extras);
+      } while (
+        this._arrangePending &&
+        ++passes < TilingEngine.MAX_ARRANGE_PASSES
+      );
+      if (this._arrangePending) {
+        warning(
+          `${getMethodName()}: arrange did not settle after ${TilingEngine.MAX_ARRANGE_PASSES} passes.`,
+        );
+      }
+    } finally {
+      this._arranging = false;
+      this._arrangePending = false;
+      this._pendingExtraSurfaces.clear();
+    }
+  }
+
+  private _addPendingExtraSurfaces(extraSurfaces?: ISurface[]) {
+    if (extraSurfaces === undefined) return;
+    for (const srf of extraSurfaces) this._pendingExtraSurfaces.set(srf.id, srf);
+  }
+
+  private _arrangeOnce(
+    ctx: IDriverContext,
+    reason: keyof typeof ArrangeReason,
+    message: string | undefined,
+    extraSurfaces: ISurface[],
   ) {
     this.arrangeProcessId = getRandomInt(1000000);
     if (LOG?.isModuleOn(LogModules.arrangeScreen)) {
@@ -318,13 +373,11 @@ class TilingEngine {
      * window on all desktops is visible on both surfaces and must finish with
      * the layout of the surface that is actually current now. */
     const extraScreensData: ScreenData[] = [];
-    if (extraSurfaces !== undefined) {
-      const knownSrfIds = new Set(surfaces.map((srf) => srf.id));
-      for (const srf of extraSurfaces) {
-        if (knownSrfIds.has(srf.id)) continue;
-        knownSrfIds.add(srf.id);
-        extraScreensData.push(this.getTileables(srf));
-      }
+    const knownSrfIds = new Set(surfaces.map((srf) => srf.id));
+    for (const srf of extraSurfaces) {
+      if (knownSrfIds.has(srf.id)) continue;
+      knownSrfIds.add(srf.id);
+      extraScreensData.push(this.getTileables(srf));
     }
     extraScreensData.forEach((screenData: ScreenData) => {
       this.arrangeScreen(ctx, screenData, reason, this.arrangeProcessId!);
