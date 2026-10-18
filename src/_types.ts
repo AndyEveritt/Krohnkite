@@ -31,6 +31,7 @@ const ArrangeReason = {
   transferWindowToVDesktop: "transferWindowToVDesktop",
   quickRelocationWindows: "quickRelocationWindows",
   relocationOutputChangedCB: "relocationOutputChangedCB",
+  relocationCompletionCB: "relocationCompletionCB",
   manageDock: "manageDock",
   outputChangedCB: "outputChangedCB",
   activitiesChangedCB: "activitiesChangedCB",

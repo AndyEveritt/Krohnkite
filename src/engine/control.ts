@@ -409,6 +409,7 @@ class TilingController {
     window: WindowClass | null,
     reason: keyof typeof ArrangeReason,
     comment?: string,
+    extraSurfaces?: ISurface[],
   ): void {
     if (window) {
       // TODO: delete one string bellow if the future caresses you with its grace
@@ -428,6 +429,7 @@ class TilingController {
         ctx,
         reason,
         `${getMethodName()}:windowState=${window.state}`,
+        extraSurfaces,
       );
     }
   }

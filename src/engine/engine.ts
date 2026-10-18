@@ -92,7 +92,10 @@ class RelocationWindows implements IRelocationWindows {
   }
   public clear() {
     for (const windows of this.toOutputs) {
-      windows.forEach((w) => (w.isSendingToOutput = false));
+      windows.forEach((w) => {
+        w.isSendingToOutput = false;
+        w.relocationTargetOutput = null;
+      });
     }
     this.isSending = false;
     this.startTime = 0;
@@ -914,10 +917,28 @@ class TilingEngine {
    * move/resize such windows back to where/how they should be.
    */
   public enforceSize(ctx: IDriverContext, window: WindowClass) {
-    if (window.isTiled && !window.actualGeometry.equals(window.geometry))
+    /* While a window is being relocated between outputs or desktops, its
+     * geometry legitimately differs from the last layout rect. Enforcing the
+     * old rect here would undo the relocation. */
+    if (window.isRelocationPending || window.isSendingToOutput) return;
+    if (window.isTiled && !window.actualGeometry.equals(window.geometry)) {
+      /* The deferred commit is meant to undo application-driven geometry
+       * changes on the current surface. If the window moves to another
+       * surface in the meantime (e.g. KWin's Grid View drag), the remembered
+       * geometry belongs to the old output/desktop; committing it would move
+       * the window back and undo the relocation. */
+      const srfId = window.surface.id;
       ctx.setTimeout(() => {
-        if (window.isTiled) window.commit(ctx);
+        if (
+          window.isAlive() &&
+          !window.isRelocationPending &&
+          !window.isSendingToOutput &&
+          window.isTiled &&
+          window.surface.id === srfId
+        )
+          window.commit(ctx);
       }, 10);
+    }
   }
 
   /**

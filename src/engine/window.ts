@@ -181,6 +181,9 @@ class WindowClass implements IWindowClass {
   public geometry: Rect;
   public focusTime: number;
   public isSendingToOutput: boolean;
+  public isRelocationPending: boolean;
+  public surfaceArrangeToken: number;
+  public relocationTargetOutput: Output | null;
   public isDragging: boolean;
   public previousState: ToggleableState;
 
@@ -199,6 +202,9 @@ class WindowClass implements IWindowClass {
     this.geometry = window.geometry;
     this.focusTime = 0;
     this.isSendingToOutput = false;
+    this.isRelocationPending = false;
+    this.surfaceArrangeToken = 0;
+    this.relocationTargetOutput = null;
     this.isDragging = false;
     this.internalState = WindowState.Unmanaged;
     this.previousState = WindowState.Tiled;
