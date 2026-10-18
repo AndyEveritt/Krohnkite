@@ -214,8 +214,8 @@ class ShortcutSequence extends ShortcutBase {
   constructor(shortcutConf: IShortcutConfEntry) {
     super();
     this.sequence = shortcutConf.shortcuts;
-    this.action = shortcutConf.mainAction;
-    this.registerAction = shortcutConf.registerAction;
+    this.action = shortcutConf.mainAction ?? null;
+    this.registerAction = shortcutConf.registerAction ?? null;
     this._currentIndex = 0;
     this.timeout =
       shortcutConf.sequenceTime !== null

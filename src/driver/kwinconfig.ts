@@ -63,8 +63,10 @@ interface IFloatWindow {
 
 interface IShortcutConfEntry {
   shortcuts: ShortcutName[];
-  mainAction: KrohnkiteAction | null;
-  registerAction: KrohnkiteAction | null;
+  /** undefined: flag not specified; null: explicitly cleared with "null". */
+  mainAction: KrohnkiteAction | null | undefined;
+  /** undefined: flag not specified; null: explicitly cleared with "null". */
+  registerAction: KrohnkiteAction | null | undefined;
   sequenceTime: number | null;
 }
 

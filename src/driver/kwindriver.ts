@@ -1372,8 +1372,8 @@ class KWinDriver implements IDriverContext {
       if (conf.shortcuts.length === 1) {
         const shortcut = this._shortcuts.get(conf.shortcuts[0]);
         if (shortcut === undefined) continue;
-        if (conf.mainAction !== null) shortcut.action = conf.mainAction;
-        if (conf.registerAction !== null)
+        if (conf.mainAction !== undefined) shortcut.action = conf.mainAction;
+        if (conf.registerAction !== undefined)
           shortcut.registerAction = conf.registerAction;
       } else {
         const first = conf.shortcuts[0];
