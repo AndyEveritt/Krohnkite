@@ -31,6 +31,9 @@ K and looks cool.
 - [go-task](https://github.com/go-task/task)
 - p7zip (7z)
 
+Run the automated Node.js tests with `npm test` or `make test`. The reload
+helper tests use an isolated fake `qdbus6`; they do not contact KWin.
+
 ## Look at me
 ### Reload Krohnkite configuration
 &emsp;<b>Important:</b> After changing the configuration, simply clicking `Apply` is not enough, ask KWin to reload its configuration
