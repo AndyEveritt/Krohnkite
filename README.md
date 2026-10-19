@@ -119,6 +119,10 @@ uninstall package:
 go-task uninstall
 ```
 
+## Tests
+
+Run the full test suite with `npm test` or `make test`. The layout icon tests run against the real installer in isolated temporary XDG data directories. The native Qt UI rendering check runs when PySide6 is installed and otherwise reports an explicit skip.
+
 ## Settings
 
 ### Add a class name, a resource name or a window caption to ignore or float

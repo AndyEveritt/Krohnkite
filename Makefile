@@ -30,7 +30,7 @@ uninstall:
 
 package: $(KWINPKG_FILE) package_json
 
-test: $(NODE_SCRIPT) package_json
+test:
 	npm test
 
 run: $(KWINPKG_DIR)
