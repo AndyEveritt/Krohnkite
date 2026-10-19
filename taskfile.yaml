@@ -62,6 +62,7 @@ tasks:
       - cp res/main.qml {{.KWINPKG_DIR}}/contents/ui/main.qml
       - cp res/config.ui {{.KWINPKG_DIR}}/contents/ui/config.ui
       - cp res/popup.qml  {{.KWINPKG_DIR}}/contents/ui/popup.qml
+      - cp res/layouticoninstaller.qml {{.KWINPKG_DIR}}/contents/ui/layouticoninstaller.qml
       - cp -r res/layouts {{.KWINPKG_DIR}}/contents/ui/
       - cp tools/install-layout-icons.py {{.KWINPKG_DIR}}/contents/code/install-layout-icons.py
       - cp res/dragpreview.qml  {{.KWINPKG_DIR}}/contents/ui/dragpreview.qml
@@ -75,6 +76,7 @@ tasks:
       - res/main.qml
       - res/config.ui
       - res/popup.qml
+      - res/layouticoninstaller.qml
       - res/layouts/*.svg
       - tools/install-layout-icons.py
       - res/dragpreview.qml
@@ -87,6 +89,7 @@ tasks:
       - "{{.KWINPKG_DIR}}/contents/ui/main.qml"
       - "{{.KWINPKG_DIR}}/contents/ui/config.ui"
       - "{{.KWINPKG_DIR}}/contents/ui/popup.qml"
+      - "{{.KWINPKG_DIR}}/contents/ui/layouticoninstaller.qml"
       - "{{.KWINPKG_DIR}}/contents/ui/layouts/*.svg"
       - "{{.KWINPKG_DIR}}/contents/code/install-layout-icons.py"
       - "{{.KWINPKG_DIR}}/contents/ui/dragpreview.qml"

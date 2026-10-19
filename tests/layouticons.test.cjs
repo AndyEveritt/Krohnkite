@@ -119,6 +119,20 @@ test('missing source fails before creating data directories or refreshing icons'
   });
 });
 
+test('loads the Plasma5Support icon installer through an isolated Loader', () => {
+  const main = fs.readFileSync(path.join(ROOT, 'res/main.qml'), 'utf8');
+  const installer = fs.readFileSync(path.join(ROOT, 'res/layouticoninstaller.qml'), 'utf8');
+  const makefile = fs.readFileSync(path.join(ROOT, 'Makefile'), 'utf8');
+
+  assert.doesNotMatch(main, /import org.kde.plasma.plasma5support/);
+  assert.match(main, /id: layoutIconInstaller/);
+  assert.match(main, /source: "layouticoninstaller.qml"/);
+  assert.ok(main.includes('if (layoutIconInstaller.item !== null)\n            layoutIconInstaller.item.install();'));
+  assert.match(installer, /import org.kde.plasma.plasma5support as Plasma5Support/);
+  assert.ok(installer.includes('Qt.resolvedUrl("../code/install-layout-icons.py")'));
+  assert.ok(makefile.includes('contents/ui/layouticoninstaller.qml: res/layouticoninstaller.qml'));
+});
+
 test('settings use SVG theme references for every layout pictogram', () => {
   const source = fs.readFileSync(path.join(ROOT, 'res/config.ui'), 'utf8');
   assert.doesNotMatch(source, /data:image\//);

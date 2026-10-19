@@ -8,7 +8,6 @@
 import QtQuick 2.15
 import org.kde.plasma.core as PlasmaCore;
 import org.kde.plasma.components as Plasma;
-import org.kde.plasma.plasma5support as Plasma5Support
 import org.kde.kwin 3.0;
 import org.kde.taskmanager as TaskManager
 import "../code/script.js" as K
@@ -17,20 +16,9 @@ Item {
     id: scriptRoot
     property var runtime: null
 
-    Plasma5Support.DataSource {
+    Loader {
         id: layoutIconInstaller
-        engine: "executable"
-        connectedSources: []
-        onNewData: function(sourceName, data) {
-            disconnectSource(sourceName);
-            if (data["exit code"] !== 0)
-                console.warn("KROHNKITE: SVG icon installation failed: " + data.stderr);
-        }
-        function install() {
-            var path = decodeURIComponent(String(Qt.resolvedUrl("../code/install-layout-icons.py")))
-                .replace(/^file:\/\//, "");
-            connectSource("python3 '" + path.replace(/'/g, "'\\''") + "'");
-        }
+        source: "layouticoninstaller.qml"
     }
 
     TaskManager.ActivityInfo {
@@ -62,7 +50,8 @@ Item {
 
     Component.onCompleted: {
         console.log("KROHNKITE: starting the script");
-        layoutIconInstaller.install();
+        if (layoutIconInstaller.item !== null)
+            layoutIconInstaller.item.install();
         const api = {
             "workspace": Workspace,
             // "options": Options,

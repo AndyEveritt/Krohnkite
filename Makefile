@@ -50,6 +50,7 @@ $(KWINPKG_DIR): $(KWIN_QML)
 $(KWINPKG_DIR): $(KWINPKG_DIR)/contents/ui/config.ui
 $(KWINPKG_DIR): $(KWINPKG_DIR)/contents/ui/dbus.qml
 $(KWINPKG_DIR): $(KWINPKG_DIR)/contents/ui/popup.qml
+$(KWINPKG_DIR): $(KWINPKG_DIR)/contents/ui/layouticoninstaller.qml
 $(KWINPKG_DIR): $(patsubst res/%,$(KWINPKG_DIR)/contents/ui/%,$(wildcard res/layouts/*.svg))
 $(KWINPKG_DIR): $(KWINPKG_DIR)/contents/code/install-layout-icons.py
 $(KWINPKG_DIR): $(KWINPKG_DIR)/contents/ui/dragpreview.qml
@@ -74,6 +75,7 @@ $(KWIN_QML): res/main.qml
 $(KWINPKG_DIR)/contents/ui/config.ui: res/config.ui
 $(KWINPKG_DIR)/contents/ui/dbus.qml: res/dbus.qml
 $(KWINPKG_DIR)/contents/ui/popup.qml: res/popup.qml
+$(KWINPKG_DIR)/contents/ui/layouticoninstaller.qml: res/layouticoninstaller.qml
 $(KWINPKG_DIR)/contents/ui/layouts/%.svg: res/layouts/%.svg
 	@mkdir -p $(dir $@)
 	@cp $< $@
