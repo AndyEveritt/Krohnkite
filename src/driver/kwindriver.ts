@@ -21,6 +21,35 @@ type RunningShortcutSeq = {
   actionCandidate: KrohnkiteAction | null;
 };
 
+function logProtectedError(e: any) {
+  const line = e && e.lineNumber !== undefined ? e.lineNumber : "unknown";
+  warning(`ProtectFunc: Error raised line: ${line}. Error: ${String(e)}`);
+}
+
+/**
+ * Prevents a single event callback from re-entering itself.
+ *
+ * KWin emits signals synchronously, including for state this script changes
+ * itself. Each connection owns a guard so feedback loops are still broken,
+ * while unrelated events (e.g. a desktop change triggered by a shortcut) are
+ * delivered instead of being dropped by a driver-wide guard.
+ */
+class ReentrancyGuard {
+  private _entered = false;
+
+  public run(callback: () => void) {
+    if (this._entered) return;
+    this._entered = true;
+    try {
+      callback();
+    } catch (e: any) {
+      logProtectedError(e);
+    } finally {
+      this._entered = false;
+    }
+  }
+}
+
 class KWinDriver implements IDriverContext {
   public static backendName: string = "kwin";
   public get backend(): string {
@@ -103,7 +132,6 @@ class KWinDriver implements IDriverContext {
   private engine: TilingEngine;
   private control: TilingController;
   private windowMap: WrapperMap<KwinWindow, WindowClass>;
-  private entered: boolean;
   private _surfaceStore: KWinSurfaceStore;
   private _isRegister: IRegister;
   private _connections: Array<{
@@ -134,7 +162,6 @@ class KWinDriver implements IDriverContext {
           new DriverWindow(client, this.workspace, this._surfaceStore),
         ),
     );
-    this.entered = false;
     this._connections = [];
     this._started = false;
     this._disposed = false;
@@ -534,7 +561,7 @@ class KWinDriver implements IDriverContext {
     );
   }
   public setTimeout(func: () => void, timeout: number) {
-    KWinSetTimeout(() => this._enter(func), timeout);
+    KWinSetTimeout(() => this._runProtected(func), timeout);
   }
   public showNotification(text: string) {
     if (CONFIG.notificationDuration > 0)
@@ -663,13 +690,165 @@ class KWinDriver implements IDriverContext {
     if (client == null) return false;
 
     window.isSendingToOutput = true;
+    window.relocationTargetOutput = targetOutput;
     try {
       this.workspace.sendClientToScreen(client, targetOutput);
     } catch (e) {
       window.isSendingToOutput = false;
+      window.relocationTargetOutput = null;
       warning(`${getMethodName()}: sendClientToScreen() failed. ${e}`);
       return false;
     }
+    /* Do not rely on outputChanged alone: KWin's Window::sendToOutput()
+     * returns early when its move-resize output is already the target, and
+     * then emits no signal at all. Verify the result after KWin's call has
+     * fully unwound; the 100 ms watchdog remains the last resort. */
+    /* 0 ms is a next-event-loop turn, not "no delay and therefore useless":
+     * it runs after sendClientToScreen() returns, so we do not re-enter KWin
+     * while Window::sendToOutput() is still on the stack. The outputChanged
+     * handler may schedule the same check; the first one completes the
+     * relocation and the second becomes a no-op. */
+    this.setTimeout(
+      () => this._finishOutputRelocation(window, targetOutput),
+      0,
+    );
+    return true;
+  }
+  private _finishOutputRelocation(
+    window: WindowClass,
+    targetOutput: Output,
+  ): void {
+    if (!window.isAlive() || !window.isSendingToOutput) return;
+    const client = (window.window as DriverWindow).window;
+    if (!outputIsAlive(client.output)) return;
+    if (client.output.name !== targetOutput.name) return;
+
+    window.isSendingToOutput = false;
+    window.relocationTargetOutput = null;
+    this._sendingWindowsProcessCall("relocationCompletionCB");
+  }
+  /**
+   * Defer a surface-change arrange to the next event-loop turn.
+   *
+   * KWin emits outputChanged from inside Window::sendToOutput() and may emit
+   * desktopsChanged from finishInteractiveOutputChange() before that call
+   * returns. Committing geometry from those callbacks re-enters KWin while it
+   * is still relocating the window. Deferring lets KWin finish first, while
+   * the relocation-pending flag keeps enforceSize() from reverting the move
+   * in the meantime.
+   */
+  private _scheduleSurfaceArrange(
+    window: WindowClass,
+    reason: keyof typeof ArrangeReason,
+    mayBeOverviewDrop: boolean = false,
+  ): void {
+    const token = ++window.surfaceArrangeToken;
+    const overviewWasActive =
+      mayBeOverviewDrop &&
+      typeof this.workspace.isEffectActive === "function" &&
+      this.workspace.isEffectActive("overview");
+    window.isRelocationPending = true;
+    this.setTimeout(() => {
+      if (window.surfaceArrangeToken !== token) return;
+      if (!window.isAlive()) {
+        window.isRelocationPending = false;
+        return;
+      }
+      window.isRelocationPending = false;
+
+      if (overviewWasActive && this._moveOverviewDropToCursorOutput(window)) {
+        /* The direct geometry write fires output/desktop signals
+         * synchronously. If it did, a newer token owns the next arrange;
+         * otherwise fall through and lay out the window at its new surface. */
+        if (window.surfaceArrangeToken !== token) return;
+      }
+
+      this.control.onWindowChanged(
+        this,
+        window,
+        reason,
+        "deferred surface change",
+        [window.surface],
+      );
+    }, 0);
+  }
+  /**
+   * Work around KWin's Grid View drop path.
+   *
+   * When a window drag is accepted by a virtual-desktop DropArea, KWin only
+   * assigns window.desktops and never calls sendClientToScreen(), so the
+   * window stays on the source output. If Overview is active and the drop
+   * targeted the desktop currently shown on the output under the cursor,
+   * move the window there explicitly.
+   *
+   * Returns true when a move was attempted.
+   */
+  private _moveOverviewDropToCursorOutput(window: WindowClass): boolean {
+    if (
+      typeof this.workspace.isEffectActive !== "function" ||
+      !this.workspace.isEffectActive("overview")
+    )
+      return false;
+
+    const client = (window.window as DriverWindow).window;
+    if (!client || client.deleted) return false;
+    if (client.desktops.length !== 1) return false;
+
+    let cursorOutput: Output | null = null;
+    try {
+      cursorOutput = this.workspace.screenAt(this.workspace.cursorPos);
+    } catch (e) {
+      return false;
+    }
+    if (
+      !outputIsAlive(cursorOutput) ||
+      !outputIsAlive(client.output) ||
+      cursorOutput!.name === client.output.name
+    )
+      return false;
+
+    const targetDesktop = client.desktops[0];
+    const sourceDesktop = this._outputCurrentDesktop(client.output);
+    const cursorDesktop = this._outputCurrentDesktop(cursorOutput!);
+
+    /* Only treat this as a Grid View cross-screen drop when the dropped
+     * desktop is either the one shown on the target output, or is not the one
+     * shown on the source output (so the window disappeared from the source).
+     * Plain desktop changes while Overview is open are left alone. */
+    if (
+      targetDesktop.id !== cursorDesktop.id &&
+      targetDesktop.id === sourceDesktop.id
+    )
+      return false;
+
+    LOG?.send(
+      LogModules.outputChanged,
+      "overviewCrossScreenDrop",
+      `window: caption:${client.caption} internalID:${client.internalId}, ` +
+        `output: ${client.output.name} -> ${cursorOutput!.name}, ` +
+        `desktop: ${targetDesktop.name}`,
+    );
+
+    /* Move the window with a direct frame-geometry write.
+     *
+     * Window::sendToOutput() returns early when its internal move-resize
+     * output already points at the target, even if the real frame geometry
+     * and output are still on the source, so sendClientToScreen() can be a
+     * no-op. It also retargets the desktop to the target output's current
+     * desktop, which loses the virtual desktop the user dropped on.
+     *
+     * Keep the current size: changing it makes KWin schedule an asynchronous
+     * configure instead of applying the move immediately, which lets the
+     * following arrange overwrite the pending move before the client acks. */
+    const targetGeom = toRect(cursorOutput!.geometry);
+    const actual = window.actualGeometry;
+    const targetRect = new Rect(
+      targetGeom.x + Math.floor((targetGeom.width - actual.width) / 2),
+      targetGeom.y + Math.floor((targetGeom.height - actual.height) / 2),
+      actual.width,
+      actual.height,
+    );
+    client.frameGeometry = toQRect(targetRect);
     return true;
   }
   private _transferWindowsToVDesktops() {
@@ -763,10 +942,28 @@ class KWinDriver implements IDriverContext {
     let targetVDesktop = this.getNeighborVDesktop(direction);
     if (targetVDesktop === null) return false;
     let client = (window.window as DriverWindow).window;
-    this.workspace.currentDesktop = targetVDesktop;
-    this._moveWinToVDesktop(window, targetVDesktop);
-    this.workspace.activeWindow = client;
-    return true;
+    /* Capture the surface while the window is still on it. */
+    const sourceSurface = window.surface;
+    /* currentDesktopChanged fires before the window leaves the source
+     * surface, and desktopsChanged fires after the switch, when the source
+     * desktop is no longer current. Batch both so they only record their
+     * arrange requests, then lay out once, after the window has moved, with
+     * the captured source surface. Returning false tells the caller that no
+     * additional arrange is needed. */
+    this.engine.beginArrangeBatch();
+    try {
+      this.workspace.currentDesktop = targetVDesktop;
+      this._moveWinToVDesktop(window, targetVDesktop);
+      this.workspace.activeWindow = client;
+    } finally {
+      this.engine.endArrangeBatch(
+        this,
+        "shortcutCB",
+        `${getMethodName()}:moveToVDesktop`,
+        [sourceSurface],
+      );
+    }
+    return false;
   }
   private _moveWinToVDesktop(
     window: WindowClass,
@@ -1041,6 +1238,28 @@ class KWinDriver implements IDriverContext {
     }
     this.workspace.currentDesktop = desktop;
   }
+  /* Build the surfaces of the desktop a switch just left. KWin 6.0-6.6 emits
+   * only the previous desktop, shared by every output; 6.7+ also passes the
+   * output whose desktop changed (per-output virtual desktops). Arranging
+   * these surfaces re-tiles the windows left behind when a window is moved to
+   * another desktop with a shortcut that switches at the same time. */
+  private _previousDesktopSurfaces(
+    previousDesktop: VirtualDesktop | undefined,
+    output: Output | undefined,
+  ): ISurface[] {
+    if (previousDesktop === undefined || previousDesktop === null) return [];
+    const outputs: Output[] =
+      output !== undefined && output !== null
+        ? [output]
+        : this.workspace.screens;
+    return outputs.map((out) =>
+      this._surfaceStore.getSurface(
+        out,
+        this.workspace.currentActivity,
+        previousDesktop,
+      ),
+    );
+  }
   private _onShortcut(shortcut: Shortcut) {
     this._shortcutPressTime = getTime();
     const token = ++this._shortcutFinishToken;
@@ -1153,8 +1372,8 @@ class KWinDriver implements IDriverContext {
       if (conf.shortcuts.length === 1) {
         const shortcut = this._shortcuts.get(conf.shortcuts[0]);
         if (shortcut === undefined) continue;
-        if (conf.mainAction !== null) shortcut.action = conf.mainAction;
-        if (conf.registerAction !== null)
+        if (conf.mainAction !== undefined) shortcut.action = conf.mainAction;
+        if (conf.registerAction !== undefined)
           shortcut.registerAction = conf.registerAction;
       } else {
         const first = conf.shortcuts[0];
@@ -1199,16 +1418,21 @@ class KWinDriver implements IDriverContext {
   /**
    * Binds callback to the signal w/ extra fail-safe measures, like re-entry
    * prevention and auto-disconnect on termination.
+   *
+   * Each connection gets its own ReentrancyGuard: only the same callback is
+   * blocked from re-entering, so a handler may still observe events caused by
+   * its own action (e.g. a shortcut moving a window to another desktop).
    */
   private _connect(
     signal: Signal<(...args: any[]) => void>,
     handler: (..._: any[]) => void,
   ): () => void {
+    const guard = new ReentrancyGuard();
     const wrapper = (...args: any[]) => {
       /* HACK: `workspace` become undefined when the script is disabled. */
       if (this._disposed || typeof this.workspace === "undefined")
         signal.disconnect(wrapper);
-      else this._enter(() => handler.apply(this, args));
+      else guard.run(() => handler.apply(this, args));
     };
     signal.connect(wrapper);
     this._connections.push({ signal, callback: wrapper });
@@ -1216,25 +1440,16 @@ class KWinDriver implements IDriverContext {
     return wrapper;
   }
   /**
-   * Run the given function in a protected(?) context to prevent nested event
-   * handling.
-   *
-   * KWin emits signals as soon as window states are changed, even when
-   * those states are modified by the script. This causes multiple re-entry
-   * during event handling, resulting in performance degradation and harder
-   * debugging.
+   * Run the given function in a protected context, logging script errors.
+   * Re-entrancy is handled by the per-connection guards; timers run after the
+   * originating callback has returned, so they need only the error boundary.
    */
-  private _enter(callback: () => void) {
-    if (this.entered || this._disposed) return;
-
-    this.entered = true;
+  private _runProtected(callback: () => void) {
+    if (this._disposed) return;
     try {
       callback();
     } catch (e: any) {
-      const line = e && e.lineNumber !== undefined ? e.lineNumber : "unknown";
-      warning(`ProtectFunc: Error raised line: ${line}. Error: ${String(e)}`);
-    } finally {
-      this.entered = false;
+      logProtectedError(e);
     }
   }
   //TODO: add signal Vdesktop.aboutToBeDestroyed
@@ -1268,13 +1483,21 @@ class KWinDriver implements IDriverContext {
 
     this._connect(
       this.workspace.currentDesktopChanged,
-      (virtualDesktop: VirtualDesktop) => {
+      (
+        previousDesktop?: VirtualDesktop,
+        _currentDesktop?: VirtualDesktop,
+        output?: Output,
+      ) => {
         LOG?.send(
           LogModules.currentDesktopChanged,
           "eventFired",
-          `Virtual Desktop. name:${virtualDesktop.name}, id:${virtualDesktop.id}`,
+          `Virtual Desktop. previous name:${previousDesktop?.name}, id:${previousDesktop?.id}`,
         );
-        this.control.onSurfaceUpdate(this, "currentDesktopChangedCB");
+        this.control.onSurfaceUpdate(
+          this,
+          "currentDesktopChangedCB",
+          this._previousDesktopSurfaces(previousDesktop, output),
+        );
       },
     );
 
@@ -1415,14 +1638,15 @@ class KWinDriver implements IDriverContext {
         { winClass: [`${client.resourceClass}`] },
       );
       if (window.isSendingToOutput) {
+        const target = window.relocationTargetOutput;
+        if (target !== null)
+          this.setTimeout(
+            () => this._finishOutputRelocation(window, target),
+            0,
+          );
         return;
       }
-      this.control.onWindowChanged(
-        this,
-        window,
-        "windowDesktopsChangedCB",
-        "Window's desktop changed.",
-      );
+      this._scheduleSurfaceArrange(window, "windowDesktopsChangedCB", true);
     });
 
     this._connect(client.fullScreenChanged, () => {
@@ -1538,16 +1762,19 @@ class KWinDriver implements IDriverContext {
         { winClass: [`${client.resourceClass}`] },
       );
       if (window.isSendingToOutput) {
-        window.isSendingToOutput = false;
-        this._sendingWindowsProcessCall("relocationOutputChangedCB");
+        const target = window.relocationTargetOutput;
+        if (target !== null)
+          this.setTimeout(
+            () => this._finishOutputRelocation(window, target),
+            0,
+          );
+        else {
+          window.isSendingToOutput = false;
+          this._sendingWindowsProcessCall("relocationOutputChangedCB");
+        }
         return;
       }
-      this.control.onWindowChanged(
-        this,
-        window,
-        "outputChangedCB",
-        "screen=" + client.output.name,
-      );
+      this._scheduleSurfaceArrange(window, "outputChangedCB");
     });
     this._connect(client.stackingOrderChanged, () => {
       if (!client || client.deleted) return;

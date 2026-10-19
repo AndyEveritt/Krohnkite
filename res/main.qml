@@ -8,7 +8,6 @@
 import QtQuick 2.15
 import org.kde.plasma.core as PlasmaCore;
 import org.kde.plasma.components as Plasma;
-import org.kde.plasma.plasma5support as Plasma5Support
 import org.kde.kwin 3.0;
 import org.kde.taskmanager as TaskManager
 import "../code/script.js" as K

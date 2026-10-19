@@ -119,6 +119,20 @@ class WindowClass implements IWindowClass {
   public setTransientState(state: WindowState): void {
     this.internalState = state;
   }
+  /**
+   * Enter the floating state while keeping the window exactly where it is.
+   *
+   * `commit()` applies `floatGeometry` (not the layout geometry) once a window
+   * is floating. If the current geometry is not captured first, the window is
+   * snapped to its remembered/lazily-computed native float rect, which shows up
+   * as a small jump when an automatically-floated window (e.g. one that cannot
+   * fit the tile) leaves the layout. User-initiated toggles intentionally keep
+   * the remembered float position and should not use this.
+   */
+  public floatInPlace(): void {
+    if (!this.isFloating) this.floatGeometry = this.actualGeometry.clone();
+    this.state = WindowState.Floating;
+  }
   public get surface(): ISurface {
     return this.window.surface;
   }
@@ -167,6 +181,9 @@ class WindowClass implements IWindowClass {
   public geometry: Rect;
   public focusTime: number;
   public isSendingToOutput: boolean;
+  public isRelocationPending: boolean;
+  public surfaceArrangeToken: number;
+  public relocationTargetOutput: Output | null;
   public isDragging: boolean;
   public previousState: ToggleableState;
 
@@ -185,6 +202,9 @@ class WindowClass implements IWindowClass {
     this.geometry = window.geometry;
     this.focusTime = 0;
     this.isSendingToOutput = false;
+    this.isRelocationPending = false;
+    this.surfaceArrangeToken = 0;
+    this.relocationTargetOutput = null;
     this.isDragging = false;
     this.internalState = WindowState.Unmanaged;
     this.previousState = WindowState.Tiled;
