@@ -565,8 +565,8 @@
 
 
     <entry name="unfitGreater" type="Bool">
-      <label>If enable make all windows floating if they minimum size to large for tile</label>
-        <default>true</default>
+      <label>(Experimental)If enable make all windows floating if they minimum size to large for tile</label>
+        <default>false</default>
     </entry>
     <entry name="unfitLess" type="Bool">
       <label>If enable make all windows floating if the maximum size to small for tile</label>

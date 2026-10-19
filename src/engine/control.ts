@@ -62,8 +62,9 @@ class TilingController {
   public onSurfaceUpdate(
     ctx: IDriverContext,
     reason: keyof typeof ArrangeReason,
+    extraSurfaces?: ISurface[],
   ): void {
-    this.engine.arrange(ctx, reason, getMethodName());
+    this.engine.arrange(ctx, reason, getMethodName(), extraSurfaces);
   }
 
   public onCurrentActivityChanged(
@@ -408,6 +409,7 @@ class TilingController {
     window: WindowClass | null,
     reason: keyof typeof ArrangeReason,
     comment?: string,
+    extraSurfaces?: ISurface[],
   ): void {
     if (window) {
       // TODO: delete one string bellow if the future caresses you with its grace
@@ -427,6 +429,7 @@ class TilingController {
         ctx,
         reason,
         `${getMethodName()}:windowState=${window.state}`,
+        extraSurfaces,
       );
     }
   }

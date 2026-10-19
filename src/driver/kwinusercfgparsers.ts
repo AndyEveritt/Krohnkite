@@ -16,6 +16,13 @@ function parseShortcutConf(lines: string[]): IShortcutConfEntry[] {
     const action = KrohnkiteAction[key as keyof typeof KrohnkiteAction];
     actionNames[action.toLowerCase()] = action;
   }
+  /* undefined means the flag was not given; "null" clears the action. */
+  const parseAction = (
+    rawVal: string,
+  ): KrohnkiteAction | null | undefined => {
+    if (rawVal.toLowerCase() === "null") return null;
+    return actionNames[rawVal.toLowerCase()];
+  };
 
   for (const line of lines) {
     const trimmed = line.trim();
@@ -47,8 +54,8 @@ function parseShortcutConf(lines: string[]): IShortcutConfEntry[] {
     }
     if (!valid) continue;
 
-    let mainAction: KrohnkiteAction | null = null;
-    let registerAction: KrohnkiteAction | null = null;
+    let mainAction: KrohnkiteAction | null | undefined = undefined;
+    let registerAction: KrohnkiteAction | null | undefined = undefined;
     let sequenceTime: number | null = null;
 
     const flags = separate(parts[1], ",");
@@ -65,7 +72,7 @@ function parseShortcutConf(lines: string[]): IShortcutConfEntry[] {
       switch (key) {
         case "mainaction":
         case "ma": {
-          const action = actionNames[rawVal.toLowerCase()];
+          const action = parseAction(rawVal);
           if (action === undefined) {
             warning(
               `parseShortcutConf: unknown action "${rawVal}" in "${trimmed}"`,
@@ -78,7 +85,7 @@ function parseShortcutConf(lines: string[]): IShortcutConfEntry[] {
         }
         case "registeraction":
         case "ra": {
-          const action = actionNames[rawVal.toLowerCase()];
+          const action = parseAction(rawVal);
           if (action === undefined) {
             warning(
               `parseShortcutConf: unknown action "${rawVal}" in "${trimmed}"`,
@@ -113,7 +120,7 @@ function parseShortcutConf(lines: string[]): IShortcutConfEntry[] {
     }
     if (!valid) continue;
 
-    if (mainAction === null && registerAction === null) {
+    if (mainAction === undefined && registerAction === undefined) {
       warning(
         `parseShortcutConf: no action flag (mainaction/registeraction) in "${trimmed}"`,
       );

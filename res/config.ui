@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>837</width>
+    <width>900</width>
     <height>1250</height>
    </rect>
   </property>
@@ -3341,7 +3341,7 @@
        </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="tab_2">
+     <widget class="QWidget" name="_ShortcutTab">
       <attribute name="title">
        <string>Shortcuts</string>
       </attribute>
@@ -4040,7 +4040,7 @@
              <enum>Qt::ContextMenuPolicy::NoContextMenu</enum>
             </property>
             <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;One rule per line. Case insensitive. Format:&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:700;&quot;&gt;&amp;lt;Shortcut&amp;gt;[,&amp;lt;Shortcut&amp;gt;...]:&amp;lt;flag&amp;gt;=&amp;lt;value&amp;gt;[,&amp;lt;flag&amp;gt;=&amp;lt;value&amp;gt;...]&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;A comma-separated list of shortcuts forms a key sequence that must be pressed in order. Shortcut and action names are listed above in &amp;quot;Possible shortcuts and actions&amp;quot;.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Flags (at least one action flag is required):&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:700;&quot;&gt;mainaction|ma&lt;/span&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt; — the action to perform (KrohnkiteAction).&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:700;&quot;&gt;registeraction|ra&lt;/span&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt; — the action to perform while the register (meta) mode is active (KrohnkiteAction).&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:700;&quot;&gt;sequencetime|st&lt;/span&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt; — milliseconds, overrides the &amp;quot;Sequence time&amp;quot; setting for that rule.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Examples:&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:700;&quot;&gt;MoveLeftSC:ra=swapleft&lt;/span&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt; — assign SwapLeft action to MoveLeftSC shortcut when register is on. &lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:700;&quot;&gt;GrowWidthSC,ShrinkWidthSC:ma=resetSurfaceCapacity,st=500&lt;/span&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt; — assign shortcut sequence with sequence time overriding to 500 ml with main action to reset srf capacity.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;One rule per line. Case insensitive. Format:&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:700;&quot;&gt;&amp;lt;Shortcut&amp;gt;[,&amp;lt;Shortcut&amp;gt;...]:&amp;lt;flag&amp;gt;=&amp;lt;value&amp;gt;[,&amp;lt;flag&amp;gt;=&amp;lt;value&amp;gt;...]&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;A comma-separated list of shortcuts forms a key sequence that must be pressed in order. Shortcut and action names are listed above in &amp;quot;Possible shortcuts and actions&amp;quot;.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Flags (at least one action flag is required):&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:700;&quot;&gt;mainaction|ma&lt;/span&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt; — the action to perform (KrohnkiteAction).&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:700;&quot;&gt;registeraction|ra&lt;/span&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt; — the action to perform while the register (meta) mode is active (KrohnkiteAction). Use null to clear it.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:700;&quot;&gt;null&lt;/span&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt; — clears an action: ma=null disables the normal action, ra=null makes register mode fall back to the main action.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:700;&quot;&gt;sequencetime|st&lt;/span&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt; — milliseconds, overrides the &amp;quot;Sequence time&amp;quot; setting for that rule.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt;Examples:&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:700;&quot;&gt;MoveLeftSC:ra=swapleft&lt;/span&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt; — assign SwapLeft action to MoveLeftSC shortcut when register is on. &lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:700;&quot;&gt;MoveDownSC:ra=null&lt;/span&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt; — do not override the main action: MoveDownSC keeps using MoveDown while register is on.&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-size:10pt; font-weight:700;&quot;&gt;GrowWidthSC,ShrinkWidthSC:ma=resetSurfaceCapacity,st=500&lt;/span&gt;&lt;span style=&quot; font-size:10pt;&quot;&gt; — assign shortcut sequence with sequence time overriding to 500 ml with main action to reset srf capacity.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="text">
              <string>?</string>
@@ -4570,7 +4570,7 @@
        </item>
       </layout>
      </widget>
-     <widget class="QWidget" name="tab">
+     <widget class="QWidget" name="_FloatTab">
       <attribute name="title">
        <string>Float</string>
       </attribute>
@@ -6394,19 +6394,6 @@
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_18">
           <item>
-           <widget class="QCheckBox" name="kcfg_unfitGreater">
-            <property name="toolTip">
-             <string>If enable make all windows floating if they minimum size to large for tile</string>
-            </property>
-            <property name="text">
-             <string>make floating if  min. size of window greater than Tile size </string>
-            </property>
-            <property name="checked">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-          <item>
            <widget class="QCheckBox" name="kcfg_unfitLess">
             <property name="toolTip">
              <string>If enable make all windows floating if the maximum size to small for tile</string>
@@ -6416,6 +6403,19 @@
             </property>
             <property name="checked">
              <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="kcfg_unfitGreater">
+            <property name="toolTip">
+             <string>If enable make all windows floating if they minimum size to large for tile</string>
+            </property>
+            <property name="text">
+             <string>(Experimental)make floating if  min. size of window greater than Tile size </string>
+            </property>
+            <property name="checked">
+             <bool>false</bool>
             </property>
            </widget>
           </item>

@@ -20,7 +20,7 @@ import org.kde.plasma.core as PlasmaCore;
 PlasmaCore.Dialog {
     id: popupDialog
     type: PlasmaCore.Dialog.OnScreenDisplay
-    flags: Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint
+    flags: Qt.Popup | Qt.WindowDoesNotAcceptFocus
     location: PlasmaCore.Types.Floating
     outputOnly: true
 

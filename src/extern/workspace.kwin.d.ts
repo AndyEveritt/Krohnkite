@@ -36,7 +36,7 @@ interface Workspace {
   activityRemoved: QSignal; // (activity new. const id: string)
   virtualScreenSizeChanged: QSignal;
   virtualScreenGeometryChanged: QSignal;
-  currentDesktopChanged: QSignal; // (desktop: IVirtualDesktop)
+  currentDesktopChanged: QSignal; // (previous: VirtualDesktop[, current: VirtualDesktop, output: Output])
   cursorPosChanged: QSignal;
   // slots
   slotSwitchDesktopNext(): void;

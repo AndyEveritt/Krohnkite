@@ -125,8 +125,8 @@ interface IConfig {
   soleWindowDefaultProps: ISoleWindowProps;
   soleWindowOutputOverride: { [outputName: string]: ISoleWindowProps };
 
-  unfitGreater: boolean;
   unfitLess: boolean;
+  unfitGreater: boolean;
 
   notificationDuration: number;
 
@@ -207,6 +207,7 @@ interface IWindowClass {
   readonly dock: Dock;
   geometry: Rect;
   focusTime: number;
+  floatInPlace(): void;
   isSendingToOutput: boolean;
   isDragging: boolean;
   previousState: ToggleableState;
