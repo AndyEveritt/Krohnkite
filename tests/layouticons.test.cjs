@@ -30,13 +30,14 @@ function withSandbox(run) {
     ICON_REFRESH_LOG: refreshLog,
     PATH: `${bin}${path.delimiter}${process.env.PATH || ''}`,
   };
-  const invoke = (...args) => spawnSync('python3', [INSTALLER, ...args], {
+  const spawnInstaller = (installer, ...args) => spawnSync('python3', [installer, ...args], {
     cwd: os.tmpdir(),
     encoding: 'utf8',
     env,
   });
+  const invoke = (...args) => spawnInstaller(INSTALLER, ...args);
   try {
-    run({ directory, dataHome, refreshLog, refreshStub, invoke });
+    run({ directory, dataHome, refreshLog, refreshStub, invoke, spawnInstaller });
   } finally {
     fs.rmSync(directory, { recursive: true, force: true });
   }
@@ -48,6 +49,24 @@ function refreshes(log) {
 
 function iconDirectory(dataHome) {
   return path.join(dataHome, 'icons/hicolor/scalable/actions');
+}
+
+function stagePackage(directory) {
+  const packageRoot = path.join(directory, 'package');
+  const codeDirectory = path.join(packageRoot, 'contents/code');
+  const layoutDirectory = path.join(packageRoot, 'contents/ui/layouts');
+  fs.mkdirSync(codeDirectory, { recursive: true });
+  fs.mkdirSync(layoutDirectory, { recursive: true });
+
+  const installer = path.join(codeDirectory, 'install-layout-icons.py');
+  fs.copyFileSync(INSTALLER, installer);
+  for (const name of LAYOUTS) {
+    fs.copyFileSync(
+      path.join(ROOT, 'res/layouts', `${name}.svg`),
+      path.join(layoutDirectory, `${name}.svg`),
+    );
+  }
+  return installer;
 }
 
 test('installs original SVG bytes under all 12 namespaced theme names', () => {
@@ -163,6 +182,30 @@ test('missing source fails before creating data directories or refreshing icons'
     assert.equal(fs.existsSync(dataHome), false);
     assert.equal(refreshes(refreshLog).length, 0);
   });
+});
+
+test('installs from the packaged contents/ui/layouts source', () => {
+  withSandbox(({ directory, dataHome, refreshLog, spawnInstaller }) => {
+    const packagedInstaller = stagePackage(directory);
+    const result = spawnInstaller(packagedInstaller);
+
+    assert.equal(result.status, 0, result.stderr);
+    for (const name of LAYOUTS) {
+      assert.deepEqual(
+        fs.readFileSync(path.join(iconDirectory(dataHome), `krohnkite-layout-${name}.svg`)),
+        fs.readFileSync(path.join(ROOT, 'res/layouts', `${name}.svg`)),
+      );
+    }
+    assert.match(result.stdout, /12 updated/);
+    assert.equal(refreshes(refreshLog).length, 1);
+    assert.equal(fs.existsSync(path.join(dataHome, MARKER)), false);
+  });
+});
+
+test('go-task packaging copies the icon installer and layout SVGs', () => {
+  const taskfile = fs.readFileSync(path.join(ROOT, 'taskfile.yaml'), 'utf8');
+  assert.match(taskfile, /cp tools\/install-layout-icons\.py \{\{\.KWINPKG_DIR\}\}\/contents\/code\/install-layout-icons\.py/);
+  assert.match(taskfile, /cp -r res\/layouts \{\{\.KWINPKG_DIR\}\}\/contents\/ui\//);
 });
 
 test('loads the Plasma5Support icon installer through an isolated Loader', () => {
