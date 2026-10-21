@@ -173,7 +173,9 @@ test('loads the Plasma5Support icon installer through an isolated Loader', () =>
   assert.doesNotMatch(main, /import org.kde.plasma.plasma5support/);
   assert.match(main, /id: layoutIconInstaller/);
   assert.match(main, /source: "layouticoninstaller.qml"/);
-  assert.ok(main.includes('if (layoutIconInstaller.item !== null)\n            layoutIconInstaller.item.install();'));
+  assert.match(main, /onLoaded:\s*item\.install\(\)/);
+  assert.match(main, /status === Loader\.Error/);
+  assert.doesNotMatch(main, /layoutIconInstaller\.item/);
   assert.match(installer, /import org.kde.plasma.plasma5support as Plasma5Support/);
   assert.ok(installer.includes('Qt.resolvedUrl("../code/install-layout-icons.py")'));
   assert.ok(makefile.includes('contents/ui/layouticoninstaller.qml: res/layouticoninstaller.qml'));

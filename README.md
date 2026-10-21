@@ -100,7 +100,7 @@ kpackagetool6 -t KWin/Script -r krohnkite
 
 ### Installing from Git repository
 
-Make sure you have [go-task](https://taskfile.dev/installation/), [npm](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm) and [7-zip](https://www.7-zip.org/download.html) packages installed. All packages after building will be in `builds` folder.
+Make sure you have [go-task](https://taskfile.dev/installation/), [npm](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm), [7-zip](https://www.7-zip.org/download.html) and Python 3 packages installed. All packages after building will be in `builds` folder.
 The simplest method to automatically build and install kwinscript package would be:
 
 ```
@@ -196,11 +196,22 @@ Run the full test suite with `npm test` or `make test`. The layout icon tests ru
 
 The settings page uses shared SVG layout pictograms from `res/layouts/`. Install
 registers `krohnkite-layout-*` icons under `$XDG_DATA_HOME/icons/hicolor`
-(normally `~/.local/share/icons`); direct `.kwinscript` installs register them
-when the script starts. Python 3 is required. `xdg-icon-resource` refreshes the
-icon cache; if it is unavailable, the icons are still installed and the refresh
-is retried on the next start. Reopen settings after installation. `make
-uninstall` removes only these icons.
+(normally `~/.local/share/icons`). Python 3 is required. `xdg-icon-resource`
+refreshes the icon cache; if it is unavailable, the icons are still installed
+and the refresh is retried on the next start.
+
+Direct `.kwinscript` installs register the icons at KWin startup when the
+optional `org.kde.plasma.plasma5support` QML module is available (some Plasma 6
+systems ship it separately). Without that module the script still runs, KWin
+logs a warning, and the icons are not installed automatically; run the
+package's `contents/code/install-layout-icons.py` manually, for example:
+
+```
+python3 ~/.local/share/kwin/scripts/krohnkite/contents/code/install-layout-icons.py
+```
+
+Repository installs (`make install` / `go-task install`) are not affected.
+Reopen settings after installation. `make uninstall` removes only these icons.
 
 ## Tips
 

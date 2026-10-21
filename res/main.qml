@@ -19,6 +19,13 @@ Item {
     Loader {
         id: layoutIconInstaller
         source: "layouticoninstaller.qml"
+
+        onLoaded: item.install()
+        onStatusChanged: {
+            if (status === Loader.Error)
+                console.warn("KROHNKITE: layout icon installer unavailable; "
+                    + "install the Plasma5Support QML module or run install-layout-icons.py manually");
+        }
     }
 
     TaskManager.ActivityInfo {
@@ -50,8 +57,6 @@ Item {
 
     Component.onCompleted: {
         console.log("KROHNKITE: starting the script");
-        if (layoutIconInstaller.item !== null)
-            layoutIconInstaller.item.install();
         const api = {
             "workspace": Workspace,
             // "options": Options,
