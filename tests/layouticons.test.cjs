@@ -13,6 +13,7 @@ const test = require('node:test');
 
 const ROOT = path.resolve(__dirname, '..');
 const INSTALLER = path.join(ROOT, 'tools/install-layout-icons.py');
+const PYTHON = process.env.PYTHON || 'python3';
 const LAYOUTS = [
   'tile', 'monocle', 'threecolumn', 'spiral', 'quarter', 'stacked',
   'columns', 'spread', 'floating', 'stair', 'binarytree', 'cascade',
@@ -50,7 +51,7 @@ function withSandbox(run) {
     ICON_REFRESH_LOG: refreshLog,
     PATH: `${bin}${path.delimiter}${process.env.PATH || ''}`,
   };
-  const spawnInstaller = (installer, ...args) => spawnSync('python3', [installer, ...args], {
+  const spawnInstaller = (installer, ...args) => spawnSync(PYTHON, [installer, ...args], {
     cwd: os.tmpdir(),
     encoding: 'utf8',
     env,
@@ -270,7 +271,6 @@ test('settings use SVG theme references for every layout pictogram', () => {
   assert.equal(new Set(accessibleNames).size, LAYOUTS.length);
 });
 
-const PYTHON = process.env.PYTHON || 'python3';
 const hasPySide6 = spawnSync(PYTHON, ['-c', 'import importlib.util; print("yes" if importlib.util.find_spec("PySide6") else "no")'], { encoding: 'utf8' });
 const nativeSkip = hasPySide6.status === 0 && hasPySide6.stdout.trim() === 'yes'
   ? false
@@ -289,7 +289,7 @@ from PySide6.QtWidgets import QApplication, QToolButton
 root, data_home = sys.argv[1:]
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 app = QApplication.instance() or QApplication([])
-QIcon.setThemeSearchPaths([os.path.join(data_home, "icons"), "/usr/share/icons"])
+QIcon.setThemeSearchPaths([os.path.join(data_home, "icons")] + QIcon.themeSearchPaths())
 QIcon.setThemeName("hicolor")
 loader = QUiLoader()
 ui_file = QFile(os.path.join(root, "res/config.ui"))
