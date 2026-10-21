@@ -1,5 +1,6 @@
 /*
     SPDX-FileCopyrightText: 2024 Vjatcheslav V. Kolchkov <akl334@protonmail.ch>
+    SPDX-FileCopyrightText: 2026 Krohnkite contributors
 
     SPDX-License-Identifier: MIT
 */

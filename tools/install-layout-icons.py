@@ -1,4 +1,6 @@
 #!/usr/bin/env python3
+# SPDX-FileCopyrightText: 2026 Krohnkite contributors
+# SPDX-License-Identifier: MIT
 """Install Kröhnkite's shared SVGs as user-local hicolor theme icons."""
 
 import argparse

@@ -1,3 +1,9 @@
+/*
+    SPDX-FileCopyrightText: 2026 Krohnkite contributors
+
+    SPDX-License-Identifier: MIT
+*/
+
 const assert = require('node:assert/strict');
 const { spawnSync } = require('node:child_process');
 const fs = require('node:fs');
