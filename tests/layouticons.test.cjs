@@ -33,6 +33,7 @@ const LAYOUT_LABELS = {
   cascade: 'Cascade',
 };
 const MARKER = 'icons/hicolor/.krohnkite-layout-icons.pending';
+const REFRESH_ARGS = ['forceupdate', '--mode', 'user', '--theme', 'hicolor'];
 const WORKING_REFRESH_STUB = `#!/usr/bin/env node\nrequire('node:fs').appendFileSync(process.env.ICON_REFRESH_LOG, JSON.stringify(process.argv.slice(2)) + '\\n');\n`;
 const FAILING_REFRESH_STUB = '#!/usr/bin/env node\nprocess.exit(1);\n';
 
@@ -65,7 +66,9 @@ function withSandbox(run) {
 }
 
 function refreshes(log) {
-  return fs.existsSync(log) ? fs.readFileSync(log, 'utf8').trim().split('\n').filter(Boolean) : [];
+  return fs.existsSync(log)
+    ? fs.readFileSync(log, 'utf8').trim().split('\n').filter(Boolean).map((line) => JSON.parse(line))
+    : [];
 }
 
 function iconDirectory(dataHome) {
@@ -98,7 +101,9 @@ test('installs original SVG bytes under all 12 namespaced theme names', () => {
       const installed = path.join(iconDirectory(dataHome), `krohnkite-layout-${name}.svg`);
       assert.deepEqual(fs.readFileSync(installed), fs.readFileSync(path.join(ROOT, 'res/layouts', `${name}.svg`)));
     }
-    assert.equal(refreshes(refreshLog).length, 1);
+    const refreshCalls = refreshes(refreshLog);
+    assert.equal(refreshCalls.length, 1);
+    assert.deepEqual(refreshCalls[0], REFRESH_ARGS);
     assert.equal(fs.existsSync(path.join(dataHome, 'icons/hicolor/index.theme')), false);
     assert.equal(fs.existsSync(path.join(dataHome, MARKER)), false);
   });
@@ -152,6 +157,7 @@ test('retries a failed icon cache refresh on the next run', () => {
     const retried = invoke();
     assert.equal(retried.status, 0, retried.stderr);
     assert.equal(refreshes(refreshLog).length, 1);
+    assert.deepEqual(refreshes(refreshLog)[0], REFRESH_ARGS);
     assert.equal(fs.existsSync(path.join(dataHome, MARKER)), false);
   });
 });
@@ -173,6 +179,7 @@ test('retries a failed cache refresh on uninstall', () => {
     const retried = invoke('--uninstall');
     assert.equal(retried.status, 0, retried.stderr);
     assert.equal(refreshes(refreshLog).length, refreshesAfterInstall + 1);
+    assert.deepEqual(refreshes(refreshLog).at(-1), REFRESH_ARGS);
     assert.equal(fs.existsSync(path.join(dataHome, MARKER)), false);
   });
 });
