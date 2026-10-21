@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 import shutil
 import subprocess
+import sys
 
 ICON_PREFIX = "krohnkite-layout-"
 LAYOUTS = ("tile", "monocle", "threecolumn", "spiral", "quarter", "stacked",
@@ -16,8 +17,45 @@ def icon_directory(data_home):
     return data_home / "icons/hicolor/scalable/actions"
 
 
-def refresh_icons():
-    subprocess.run(["xdg-icon-resource", "forceupdate", "--mode", "user", "--theme", "hicolor"], check=True)
+def refresh_marker(data_home):
+    return data_home / "icons/hicolor/.krohnkite-layout-icons.pending"
+
+
+def refresh_icons(data_home):
+    env = dict(os.environ)
+    env["XDG_DATA_HOME"] = str(data_home)
+    subprocess.run(
+        ["xdg-icon-resource", "forceupdate", "--mode", "user", "--theme", "hicolor"],
+        check=True,
+        env=env,
+    )
+
+
+def mark_refresh_pending(data_home):
+    marker = refresh_marker(data_home)
+    marker.parent.mkdir(parents=True, exist_ok=True)
+    marker.write_text("")
+
+
+def flush_icon_cache(data_home):
+    """Refresh the theme cache after a change, retrying failed refreshes.
+
+    The cache is optional for Qt/KDE; a missing or broken xdg-icon-resource
+    must not fail the installation. The marker is removed only after a
+    successful refresh, so the next run retries a failed/skipped refresh.
+    """
+    marker = refresh_marker(data_home)
+    if not marker.is_file():
+        return
+    try:
+        refresh_icons(data_home)
+    except (OSError, subprocess.CalledProcessError) as error:
+        print(f"warning: could not refresh the icon cache: {error}", file=sys.stderr)
+        return
+    try:
+        marker.unlink()
+    except FileNotFoundError:
+        pass
 
 
 def install_icons(source, data_home):
@@ -26,29 +64,31 @@ def install_icons(source, data_home):
         if not file.is_file():
             raise ValueError(f"Missing layout SVG: {file}")
     destination = icon_directory(data_home)
-    destination.mkdir(parents=True, exist_ok=True)
-    changed = 0
+    updates = []
     for file in files:
         target = destination / f"{ICON_PREFIX}{file.name}"
         if not target.is_file() or target.read_bytes() != file.read_bytes():
+            updates.append((file, target))
+    if updates:
+        destination.mkdir(parents=True, exist_ok=True)
+        mark_refresh_pending(data_home)
+        for file, target in updates:
             shutil.copyfile(file, target)
-            changed += 1
     # Leave existing theme metadata and unrelated icons untouched.
-    if changed:
-        refresh_icons()
-    return changed
+    flush_icon_cache(data_home)
+    return len(updates)
 
 
 def uninstall_icons(data_home):
-    changed = 0
-    for name in LAYOUTS:
-        file = icon_directory(data_home) / f"{ICON_PREFIX}{name}.svg"
-        if file.is_file():
+    directory = icon_directory(data_home)
+    files = [directory / f"{ICON_PREFIX}{name}.svg" for name in LAYOUTS]
+    existing = [file for file in files if file.is_file()]
+    if existing:
+        mark_refresh_pending(data_home)
+        for file in existing:
             file.unlink()
-            changed += 1
-    if changed:
-        refresh_icons()
-    return changed
+    flush_icon_cache(data_home)
+    return len(existing)
 
 
 def main():

@@ -11,6 +11,9 @@ const LAYOUTS = [
   'tile', 'monocle', 'threecolumn', 'spiral', 'quarter', 'stacked',
   'columns', 'spread', 'floating', 'stair', 'binarytree', 'cascade',
 ];
+const MARKER = 'icons/hicolor/.krohnkite-layout-icons.pending';
+const WORKING_REFRESH_STUB = `#!/usr/bin/env node\nrequire('node:fs').appendFileSync(process.env.ICON_REFRESH_LOG, JSON.stringify(process.argv.slice(2)) + '\\n');\n`;
+const FAILING_REFRESH_STUB = '#!/usr/bin/env node\nprocess.exit(1);\n';
 
 function withSandbox(run) {
   const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'krohnkite-icons-'));
@@ -19,7 +22,7 @@ function withSandbox(run) {
   const refreshLog = path.join(directory, 'refresh.log');
   fs.mkdirSync(bin);
   const refreshStub = path.join(bin, 'xdg-icon-resource');
-  fs.writeFileSync(refreshStub, `#!/usr/bin/env node\nrequire('node:fs').appendFileSync(process.env.ICON_REFRESH_LOG, JSON.stringify(process.argv.slice(2)) + '\\n');\n`);
+  fs.writeFileSync(refreshStub, WORKING_REFRESH_STUB);
   fs.chmodSync(refreshStub, 0o755);
   const env = {
     ...process.env,
@@ -33,7 +36,7 @@ function withSandbox(run) {
     env,
   });
   try {
-    run({ directory, dataHome, refreshLog, invoke });
+    run({ directory, dataHome, refreshLog, refreshStub, invoke });
   } finally {
     fs.rmSync(directory, { recursive: true, force: true });
   }
@@ -57,6 +60,7 @@ test('installs original SVG bytes under all 12 namespaced theme names', () => {
     }
     assert.equal(refreshes(refreshLog).length, 1);
     assert.equal(fs.existsSync(path.join(dataHome, 'icons/hicolor/index.theme')), false);
+    assert.equal(fs.existsSync(path.join(dataHome, MARKER)), false);
   });
 });
 
@@ -88,6 +92,48 @@ test('repairs a corrupted installed icon and refreshes once', () => {
     assert.equal(result.status, 0, result.stderr);
     assert.deepEqual(fs.readFileSync(installed), fs.readFileSync(path.join(ROOT, 'res/layouts/tile.svg')));
     assert.equal(refreshes(refreshLog).length, refreshCount + 1);
+  });
+});
+
+test('retries a failed icon cache refresh on the next run', () => {
+  withSandbox(({ dataHome, refreshLog, refreshStub, invoke }) => {
+    fs.writeFileSync(refreshStub, FAILING_REFRESH_STUB);
+    fs.chmodSync(refreshStub, 0o755);
+
+    const failed = invoke();
+    assert.equal(failed.status, 0, failed.stderr);
+    assert.match(failed.stderr, /could not refresh the icon cache/);
+    assert.equal(refreshes(refreshLog).length, 0);
+    assert.equal(fs.existsSync(path.join(dataHome, MARKER)), true);
+
+    fs.writeFileSync(refreshStub, WORKING_REFRESH_STUB);
+    fs.chmodSync(refreshStub, 0o755);
+
+    const retried = invoke();
+    assert.equal(retried.status, 0, retried.stderr);
+    assert.equal(refreshes(refreshLog).length, 1);
+    assert.equal(fs.existsSync(path.join(dataHome, MARKER)), false);
+  });
+});
+
+test('retries a failed cache refresh on uninstall', () => {
+  withSandbox(({ dataHome, refreshLog, refreshStub, invoke }) => {
+    assert.equal(invoke().status, 0);
+    const refreshesAfterInstall = refreshes(refreshLog).length;
+
+    fs.writeFileSync(refreshStub, FAILING_REFRESH_STUB);
+    fs.chmodSync(refreshStub, 0o755);
+    const failed = invoke('--uninstall');
+    assert.equal(failed.status, 0, failed.stderr);
+    assert.match(failed.stderr, /could not refresh the icon cache/);
+    assert.equal(fs.existsSync(path.join(dataHome, MARKER)), true);
+
+    fs.writeFileSync(refreshStub, WORKING_REFRESH_STUB);
+    fs.chmodSync(refreshStub, 0o755);
+    const retried = invoke('--uninstall');
+    assert.equal(retried.status, 0, retried.stderr);
+    assert.equal(refreshes(refreshLog).length, refreshesAfterInstall + 1);
+    assert.equal(fs.existsSync(path.join(dataHome, MARKER)), false);
   });
 });
 

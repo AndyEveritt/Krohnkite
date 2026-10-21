@@ -197,8 +197,10 @@ Run the full test suite with `npm test` or `make test`. The layout icon tests ru
 The settings page uses shared SVG layout pictograms from `res/layouts/`. Install
 registers `krohnkite-layout-*` icons under `$XDG_DATA_HOME/icons/hicolor`
 (normally `~/.local/share/icons`); direct `.kwinscript` installs register them
-when the script starts. Python 3 and `xdg-icon-resource` are required. Reopen
-settings after installation. `make uninstall` removes only these icons.
+when the script starts. Python 3 is required. `xdg-icon-resource` refreshes the
+icon cache; if it is unavailable, the icons are still installed and the refresh
+is retried on the next start. Reopen settings after installation. `make
+uninstall` removes only these icons.
 
 ## Tips
 

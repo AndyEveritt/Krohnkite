@@ -16,6 +16,8 @@ Item {
             disconnectSource(sourceName);
             if (data["exit code"] !== 0)
                 console.warn("KROHNKITE: SVG icon installation failed: " + data.stderr);
+            else if (data.stderr)
+                console.warn("KROHNKITE: SVG icon installation warning: " + data.stderr);
         }
 
         function install() {
