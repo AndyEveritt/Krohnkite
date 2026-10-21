@@ -175,13 +175,16 @@ test('uninstall removes only Krohnkite icons and is idempotent', () => {
     assert.equal(invoke().status, 0);
     const unrelated = path.join(iconDirectory(dataHome), 'other-application.svg');
     const metadata = path.join(dataHome, 'icons/hicolor/index.theme');
+    const obsolete = path.join(iconDirectory(dataHome), 'krohnkite-layout-obsolete.svg');
     fs.writeFileSync(unrelated, 'keep icon');
     fs.writeFileSync(metadata, 'keep theme metadata');
+    fs.writeFileSync(obsolete, 'obsolete icon');
     const removed = invoke('--uninstall');
     assert.equal(removed.status, 0, removed.stderr);
-    assert.equal(removed.stdout.trim(), 'Kröhnkite SVG theme icons: 12 removed');
+    assert.equal(removed.stdout.trim(), 'Kröhnkite SVG theme icons: 13 removed');
     assert.equal(fs.readFileSync(unrelated, 'utf8'), 'keep icon');
     assert.equal(fs.readFileSync(metadata, 'utf8'), 'keep theme metadata');
+    assert.equal(fs.existsSync(obsolete), false);
     const second = invoke('--uninstall');
     assert.equal(second.status, 0, second.stderr);
     assert.equal(second.stdout.trim(), 'Kröhnkite SVG theme icons: 0 removed');

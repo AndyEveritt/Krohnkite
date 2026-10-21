@@ -81,8 +81,8 @@ def install_icons(source, data_home):
 
 def uninstall_icons(data_home):
     directory = icon_directory(data_home)
-    files = [directory / f"{ICON_PREFIX}{name}.svg" for name in LAYOUTS]
-    existing = [file for file in files if file.is_file()]
+    # Include icons left by renamed layouts; keep unrelated theme files.
+    existing = [file for file in directory.glob(f"{ICON_PREFIX}*.svg") if file.is_file()]
     if existing:
         mark_refresh_pending(data_home)
         for file in existing:
