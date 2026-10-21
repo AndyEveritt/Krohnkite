@@ -11,6 +11,20 @@ const LAYOUTS = [
   'tile', 'monocle', 'threecolumn', 'spiral', 'quarter', 'stacked',
   'columns', 'spread', 'floating', 'stair', 'binarytree', 'cascade',
 ];
+const LAYOUT_LABELS = {
+  tile: 'Tile',
+  monocle: 'Monocle',
+  threecolumn: 'Three Column',
+  spiral: 'Spiral',
+  quarter: 'Quarter',
+  stacked: 'Stacked',
+  columns: 'Columns',
+  spread: 'Spread',
+  floating: 'Floating',
+  stair: 'Stair',
+  binarytree: 'Binary Tree',
+  cascade: 'Cascade',
+};
 const MARKER = 'icons/hicolor/.krohnkite-layout-icons.pending';
 const WORKING_REFRESH_STUB = `#!/usr/bin/env node\nrequire('node:fs').appendFileSync(process.env.ICON_REFRESH_LOG, JSON.stringify(process.argv.slice(2)) + '\\n');\n`;
 const FAILING_REFRESH_STUB = '#!/usr/bin/env node\nprocess.exit(1);\n';
@@ -227,13 +241,24 @@ test('loads the Plasma5Support icon installer through an isolated Loader', () =>
 test('settings use SVG theme references for every layout pictogram', () => {
   const source = fs.readFileSync(path.join(ROOT, 'res/config.ui'), 'utf8');
   assert.doesNotMatch(source, /data:image\//);
+  const accessibleNames = [];
   for (const name of LAYOUTS) {
     const widget = source.match(new RegExp(`<widget\\b(?=[^>]*\\bname="${name}LayoutPictogram")[^>]*>([\\s\\S]*?)<\\/widget>`));
     assert.ok(widget, `${name} pictogram widget missing`);
     assert.match(widget[0], /class="QToolButton"/);
     assert.match(widget[1], new RegExp(`<iconset\\b[^>]*\\btheme="krohnkite-layout-${name}"`));
     assert.match(widget[1], /<property name="focusPolicy"><enum>Qt::FocusPolicy::NoFocus<\/enum><\/property>/);
+
+    const accessibleName = widget[1].match(/<property name="accessibleName"><string>([^<]+)<\/string><\/property>/);
+    assert.ok(accessibleName, `${name} accessibleName missing`);
+    assert.equal(accessibleName[1], `${LAYOUT_LABELS[name]} Layout preview`);
+    accessibleNames.push(accessibleName[1]);
+
+    const toolTip = widget[1].match(/<property name="toolTip"><string>([^<]+)<\/string><\/property>/);
+    assert.ok(toolTip, `${name} toolTip missing`);
+    assert.equal(toolTip[1], `${LAYOUT_LABELS[name]} Layout preview`);
   }
+  assert.equal(new Set(accessibleNames).size, LAYOUTS.length);
 });
 
 const PYTHON = process.env.PYTHON || 'python3';
@@ -267,6 +292,8 @@ layouts = "tile monocle threecolumn spiral quarter stacked columns spread floati
 for name in layouts:
     button = form.findChild(QToolButton, name + "LayoutPictogram")
     assert button is not None, name
+    assert button.accessibleName(), name
+    assert button.toolTip(), name
     assert not button.icon().isNull(), name
     image = button.icon().pixmap(48, 32).toImage()
     expected = QIcon(os.path.join(root, "res/layouts", name + ".svg")).pixmap(48, 32).toImage()

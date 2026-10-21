@@ -110,7 +110,8 @@
             </property>
             <property name="autoRaise"><bool>true</bool></property>
             <property name="focusPolicy"><enum>Qt::FocusPolicy::NoFocus</enum></property>
-            <property name="toolTip"><string>Layout preview</string></property>
+            <property name="accessibleName"><string>Tile Layout preview</string></property>
+            <property name="toolTip"><string>Tile Layout preview</string></property>
            </widget>
           </item>
           <property name="leftMargin">
@@ -406,7 +407,8 @@
             </property>
             <property name="autoRaise"><bool>true</bool></property>
             <property name="focusPolicy"><enum>Qt::FocusPolicy::NoFocus</enum></property>
-            <property name="toolTip"><string>Layout preview</string></property>
+            <property name="accessibleName"><string>Monocle Layout preview</string></property>
+            <property name="toolTip"><string>Monocle Layout preview</string></property>
            </widget>
           </item>
           <property name="topMargin">
@@ -585,7 +587,8 @@
             </property>
             <property name="autoRaise"><bool>true</bool></property>
             <property name="focusPolicy"><enum>Qt::FocusPolicy::NoFocus</enum></property>
-            <property name="toolTip"><string>Layout preview</string></property>
+            <property name="accessibleName"><string>Three Column Layout preview</string></property>
+            <property name="toolTip"><string>Three Column Layout preview</string></property>
            </widget>
           </item>
           <property name="leftMargin">
@@ -745,7 +748,8 @@
             </property>
             <property name="autoRaise"><bool>true</bool></property>
             <property name="focusPolicy"><enum>Qt::FocusPolicy::NoFocus</enum></property>
-            <property name="toolTip"><string>Layout preview</string></property>
+            <property name="accessibleName"><string>Spiral Layout preview</string></property>
+            <property name="toolTip"><string>Spiral Layout preview</string></property>
            </widget>
           </item>
           <property name="leftMargin">
@@ -905,7 +909,8 @@
             </property>
             <property name="autoRaise"><bool>true</bool></property>
             <property name="focusPolicy"><enum>Qt::FocusPolicy::NoFocus</enum></property>
-            <property name="toolTip"><string>Layout preview</string></property>
+            <property name="accessibleName"><string>Quarter Layout preview</string></property>
+            <property name="toolTip"><string>Quarter Layout preview</string></property>
            </widget>
           </item>
           <property name="topMargin">
@@ -1066,7 +1071,8 @@
             </property>
             <property name="autoRaise"><bool>true</bool></property>
             <property name="focusPolicy"><enum>Qt::FocusPolicy::NoFocus</enum></property>
-            <property name="toolTip"><string>Layout preview</string></property>
+            <property name="accessibleName"><string>Stacked Layout preview</string></property>
+            <property name="toolTip"><string>Stacked Layout preview</string></property>
            </widget>
           </item>
           <property name="leftMargin">
@@ -1226,7 +1232,8 @@
             </property>
             <property name="autoRaise"><bool>true</bool></property>
             <property name="focusPolicy"><enum>Qt::FocusPolicy::NoFocus</enum></property>
-            <property name="toolTip"><string>Layout preview</string></property>
+            <property name="accessibleName"><string>Columns Layout preview</string></property>
+            <property name="toolTip"><string>Columns Layout preview</string></property>
            </widget>
           </item>
           <property name="topMargin">
@@ -1568,7 +1575,8 @@
             </property>
             <property name="autoRaise"><bool>true</bool></property>
             <property name="focusPolicy"><enum>Qt::FocusPolicy::NoFocus</enum></property>
-            <property name="toolTip"><string>Layout preview</string></property>
+            <property name="accessibleName"><string>Spread Layout preview</string></property>
+            <property name="toolTip"><string>Spread Layout preview</string></property>
            </widget>
           </item>
           <property name="leftMargin">
@@ -1806,7 +1814,8 @@
             </property>
             <property name="autoRaise"><bool>true</bool></property>
             <property name="focusPolicy"><enum>Qt::FocusPolicy::NoFocus</enum></property>
-            <property name="toolTip"><string>Layout preview</string></property>
+            <property name="accessibleName"><string>Floating Layout preview</string></property>
+            <property name="toolTip"><string>Floating Layout preview</string></property>
            </widget>
           </item>
           <property name="leftMargin">
@@ -1928,7 +1937,8 @@
             </property>
             <property name="autoRaise"><bool>true</bool></property>
             <property name="focusPolicy"><enum>Qt::FocusPolicy::NoFocus</enum></property>
-            <property name="toolTip"><string>Layout preview</string></property>
+            <property name="accessibleName"><string>Stair Layout preview</string></property>
+            <property name="toolTip"><string>Stair Layout preview</string></property>
            </widget>
           </item>
           <property name="topMargin">
@@ -2133,7 +2143,8 @@
             </property>
             <property name="autoRaise"><bool>true</bool></property>
             <property name="focusPolicy"><enum>Qt::FocusPolicy::NoFocus</enum></property>
-            <property name="toolTip"><string>Layout preview</string></property>
+            <property name="accessibleName"><string>Binary Tree Layout preview</string></property>
+            <property name="toolTip"><string>Binary Tree Layout preview</string></property>
            </widget>
           </item>
           <property name="leftMargin">
@@ -2293,7 +2304,8 @@
             </property>
             <property name="autoRaise"><bool>true</bool></property>
             <property name="focusPolicy"><enum>Qt::FocusPolicy::NoFocus</enum></property>
-            <property name="toolTip"><string>Layout preview</string></property>
+            <property name="accessibleName"><string>Cascade Layout preview</string></property>
+            <property name="toolTip"><string>Cascade Layout preview</string></property>
            </widget>
           </item>
           <property name="leftMargin">
