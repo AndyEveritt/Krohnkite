@@ -39,6 +39,11 @@ tasks:
       - "kpackagetool6 -t KWin/Script -r  {{.PROJECT_NAME}}"
       - python3 tools/install-layout-icons.py --uninstall
 
+  test:
+    deps: [install-deps]
+    cmds:
+      - npm run check
+
   kwin-pkg-file:
     aliases: [package]
     deps:

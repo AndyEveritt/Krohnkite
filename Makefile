@@ -31,7 +31,7 @@ uninstall:
 package: $(KWINPKG_FILE) package_json
 
 test:
-	npm test
+	npm run check
 
 run: $(KWINPKG_DIR)
 	bin/load-script.sh "$(KWIN_QML)" "$(PROJECT_NAME)-test"

@@ -121,7 +121,11 @@ go-task uninstall
 
 ## Tests
 
-Run the full test suite with `npm test` or `make test`. The layout icon tests run against the real installer in isolated temporary XDG data directories. The native Qt UI rendering check runs when PySide6 is installed and otherwise reports an explicit skip.
+Run the full test suite with `go-task test` (or `npm run check`). The layout
+icon tests run against the real installer in isolated temporary XDG data
+directories. The native Qt UI rendering check runs when PySide6 is installed
+and otherwise reports an explicit skip. `npm test` runs only the layout icon
+tests.
 
 ## Settings
 
@@ -210,8 +214,8 @@ package's `contents/code/install-layout-icons.py` manually, for example:
 python3 ~/.local/share/kwin/scripts/krohnkite/contents/code/install-layout-icons.py
 ```
 
-Repository installs (`make install` / `go-task install`) are not affected.
-Reopen settings after installation. `make uninstall` removes only these icons.
+Repository installs (`go-task install`) are not affected. Reopen settings after
+installation. `go-task uninstall` removes only these icons.
 
 ## Tips
 
