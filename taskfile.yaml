@@ -119,3 +119,8 @@ tasks:
       - 'sed -i "s/\"version\": [^,]*/\"version\": \"{{.PROJECT_VER}}\"/" package.json'
     preconditions:
       - test -f package.json
+
+  translations:
+    desc: Regenerate the translation template and compile the .mo files
+    cmds:
+      - bash tools/update-translations.sh
