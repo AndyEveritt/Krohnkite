@@ -14,6 +14,8 @@ const test = require('node:test');
 const ROOT = path.resolve(__dirname, '..');
 const INSTALLER = path.join(ROOT, 'tools/install-icons.py');
 const PYTHON = process.env.PYTHON || 'python3';
+const APP_ICON = 'krohnkite';
+const APP_ICON_SOURCE = path.join(ROOT, 'res/appicon', `${APP_ICON}.svg`);
 const LAYOUTS = [
   'tile', 'monocle', 'threecolumn', 'spiral', 'quarter', 'stacked',
   'columns', 'spread', 'floating', 'stair', 'binarytree', 'cascade',
@@ -32,7 +34,8 @@ const LAYOUT_LABELS = {
   binarytree: 'Binary Tree',
   cascade: 'Cascade',
 };
-const MARKER = 'icons/hicolor/.krohnkite-layout-icons.pending';
+const MARKER = 'icons/hicolor/.krohnkite-icons.pending';
+const LEGACY_MARKER = 'icons/hicolor/.krohnkite-layout-icons.pending';
 const REFRESH_ARGS = ['forceupdate', '--mode', 'user', '--theme', 'hicolor'];
 const WORKING_REFRESH_STUB = `#!/usr/bin/env node\nrequire('node:fs').appendFileSync(process.env.ICON_REFRESH_LOG, JSON.stringify(process.argv.slice(2)) + '\\n');\n`;
 const FAILING_REFRESH_STUB = '#!/usr/bin/env node\nprocess.exit(1);\n';
@@ -75,12 +78,18 @@ function iconDirectory(dataHome) {
   return path.join(dataHome, 'icons/hicolor/scalable/actions');
 }
 
+function appIconDirectory(dataHome) {
+  return path.join(dataHome, 'icons/hicolor/scalable/apps');
+}
+
 function stagePackage(directory) {
   const packageRoot = path.join(directory, 'package');
   const codeDirectory = path.join(packageRoot, 'contents/code');
   const layoutDirectory = path.join(packageRoot, 'contents/ui/layouts');
+  const appDirectory = path.join(packageRoot, 'contents/ui/appicon');
   fs.mkdirSync(codeDirectory, { recursive: true });
   fs.mkdirSync(layoutDirectory, { recursive: true });
+  fs.mkdirSync(appDirectory, { recursive: true });
 
   const installer = path.join(codeDirectory, 'install-icons.py');
   fs.copyFileSync(INSTALLER, installer);
@@ -90,10 +99,11 @@ function stagePackage(directory) {
       path.join(layoutDirectory, `${name}.svg`),
     );
   }
+  fs.copyFileSync(APP_ICON_SOURCE, path.join(appDirectory, `${APP_ICON}.svg`));
   return installer;
 }
 
-test('installs original SVG bytes under all 12 namespaced theme names', () => {
+test('installs original SVG bytes under every theme name', () => {
   withSandbox(({ dataHome, refreshLog, invoke }) => {
     const result = invoke();
     assert.equal(result.status, 0, result.stderr);
@@ -101,6 +111,11 @@ test('installs original SVG bytes under all 12 namespaced theme names', () => {
       const installed = path.join(iconDirectory(dataHome), `krohnkite-layout-${name}.svg`);
       assert.deepEqual(fs.readFileSync(installed), fs.readFileSync(path.join(ROOT, 'res/layouts', `${name}.svg`)));
     }
+    assert.deepEqual(
+      fs.readFileSync(path.join(appIconDirectory(dataHome), `${APP_ICON}.svg`)),
+      fs.readFileSync(APP_ICON_SOURCE),
+    );
+    assert.match(result.stdout, /13 updated/);
     const refreshCalls = refreshes(refreshLog);
     assert.equal(refreshCalls.length, 1);
     assert.deepEqual(refreshCalls[0], REFRESH_ARGS);
@@ -188,20 +203,43 @@ test('uninstall removes only Krohnkite icons and is idempotent', () => {
   withSandbox(({ dataHome, invoke }) => {
     assert.equal(invoke().status, 0);
     const unrelated = path.join(iconDirectory(dataHome), 'other-application.svg');
+    const unrelatedApp = path.join(appIconDirectory(dataHome), 'other-application.svg');
     const metadata = path.join(dataHome, 'icons/hicolor/index.theme');
     const obsolete = path.join(iconDirectory(dataHome), 'krohnkite-layout-obsolete.svg');
     fs.writeFileSync(unrelated, 'keep icon');
+    fs.writeFileSync(unrelatedApp, 'keep icon');
     fs.writeFileSync(metadata, 'keep theme metadata');
     fs.writeFileSync(obsolete, 'obsolete icon');
     const removed = invoke('--uninstall');
     assert.equal(removed.status, 0, removed.stderr);
-    assert.equal(removed.stdout.trim(), 'Kröhnkite SVG theme icons: 13 removed');
+    assert.equal(removed.stdout.trim(), 'Kröhnkite SVG theme icons: 14 removed');
     assert.equal(fs.readFileSync(unrelated, 'utf8'), 'keep icon');
+    assert.equal(fs.readFileSync(unrelatedApp, 'utf8'), 'keep icon');
     assert.equal(fs.readFileSync(metadata, 'utf8'), 'keep theme metadata');
     assert.equal(fs.existsSync(obsolete), false);
+    assert.equal(fs.existsSync(path.join(appIconDirectory(dataHome), `${APP_ICON}.svg`)), false);
     const second = invoke('--uninstall');
     assert.equal(second.status, 0, second.stderr);
     assert.equal(second.stdout.trim(), 'Kröhnkite SVG theme icons: 0 removed');
+  });
+});
+
+test('metadata publishes the installed app icon name', () => {
+  const metadata = JSON.parse(fs.readFileSync(path.join(ROOT, 'res/metadata.json'), 'utf8'));
+  assert.equal(metadata.KPlugin.Icon, APP_ICON);
+});
+
+test('a pending refresh from an earlier release is replaced by the current marker', () => {
+  withSandbox(({ dataHome, refreshStub, invoke }) => {
+    const legacy = path.join(dataHome, LEGACY_MARKER);
+    fs.mkdirSync(path.dirname(legacy), { recursive: true });
+    fs.writeFileSync(legacy, '');
+    fs.writeFileSync(refreshStub, FAILING_REFRESH_STUB);
+    fs.chmodSync(refreshStub, 0o755);
+    const result = invoke();
+    assert.equal(result.status, 0, result.stderr);
+    assert.equal(fs.existsSync(legacy), false);
+    assert.equal(fs.existsSync(path.join(dataHome, MARKER)), true);
   });
 });
 
@@ -209,13 +247,19 @@ test('missing source fails before creating data directories or refreshing icons'
   withSandbox(({ dataHome, refreshLog, invoke }) => {
     const result = invoke('--source', path.join(os.tmpdir(), `missing-layouts-${process.pid}`));
     assert.notEqual(result.status, 0);
-    assert.match(result.stderr, /Missing layout SVG/);
+    assert.match(result.stderr, /Missing SVG icon/);
+    assert.equal(fs.existsSync(dataHome), false);
+    assert.equal(refreshes(refreshLog).length, 0);
+
+    const missingApp = invoke('--app-source', path.join(os.tmpdir(), `missing-appicon-${process.pid}`));
+    assert.notEqual(missingApp.status, 0);
+    assert.match(missingApp.stderr, /Missing SVG icon/);
     assert.equal(fs.existsSync(dataHome), false);
     assert.equal(refreshes(refreshLog).length, 0);
   });
 });
 
-test('installs from the packaged contents/ui/layouts source', () => {
+test('installs from the packaged contents/ui sources', () => {
   withSandbox(({ directory, dataHome, refreshLog, spawnInstaller }) => {
     const packagedInstaller = stagePackage(directory);
     const result = spawnInstaller(packagedInstaller);
@@ -227,16 +271,21 @@ test('installs from the packaged contents/ui/layouts source', () => {
         fs.readFileSync(path.join(ROOT, 'res/layouts', `${name}.svg`)),
       );
     }
-    assert.match(result.stdout, /12 updated/);
+    assert.deepEqual(
+      fs.readFileSync(path.join(appIconDirectory(dataHome), `${APP_ICON}.svg`)),
+      fs.readFileSync(APP_ICON_SOURCE),
+    );
+    assert.match(result.stdout, /13 updated/);
     assert.equal(refreshes(refreshLog).length, 1);
     assert.equal(fs.existsSync(path.join(dataHome, MARKER)), false);
   });
 });
 
-test('go-task packaging copies the icon installer and layout SVGs', () => {
+test('go-task packaging copies the icon installer, layout SVGs and app icon', () => {
   const taskfile = fs.readFileSync(path.join(ROOT, 'taskfile.yaml'), 'utf8');
   assert.match(taskfile, /cp tools\/install-icons\.py \{\{\.KWINPKG_DIR\}\}\/contents\/code\/install-icons\.py/);
   assert.match(taskfile, /cp -r res\/layouts \{\{\.KWINPKG_DIR\}\}\/contents\/ui\//);
+  assert.match(taskfile, /cp -r res\/appicon \{\{\.KWINPKG_DIR\}\}\/contents\/ui\//);
 });
 
 test('loads the Plasma5Support icon installer through an isolated Loader', () => {
@@ -246,13 +295,14 @@ test('loads the Plasma5Support icon installer through an isolated Loader', () =>
 
   assert.doesNotMatch(main, /import org.kde.plasma.plasma5support/);
   assert.match(main, /id: iconInstaller/);
-  assert.match(main, /source: "iconinstaller.qml"/);
+  assert.match(main, /source: "iconinstaller\.qml"/);
   assert.match(main, /onLoaded:\s*item\.install\(\)/);
   assert.match(main, /status === Loader\.Error/);
   assert.doesNotMatch(main, /iconInstaller\.item/);
   assert.match(installer, /import org.kde.plasma.plasma5support as Plasma5Support/);
   assert.ok(installer.includes('Qt.resolvedUrl("../code/install-icons.py")'));
   assert.ok(makefile.includes('contents/ui/iconinstaller.qml: res/iconinstaller.qml'));
+  assert.ok(makefile.includes('contents/ui/appicon/%.svg: res/appicon/%.svg'));
 });
 
 test('settings use SVG theme references for every layout pictogram', () => {
@@ -287,6 +337,26 @@ test('Qt UI loader renders all installed theme SVGs and paints buttons without p
   withSandbox(({ dataHome, invoke }) => {
     const install = invoke();
     assert.equal(install.status, 0, install.stderr);
+    // Qt needs a theme index to enumerate icon directories; desktop environments
+    // ship one for hicolor, an isolated test sandbox does not.
+    const themeRoot = path.join(dataHome, 'icons/hicolor');
+    assert.equal(fs.existsSync(path.join(themeRoot, 'index.theme')), false);
+    fs.writeFileSync(path.join(themeRoot, 'index.theme'), [
+      '[Icon Theme]',
+      'Name=Hicolor',
+      'Directories=scalable/actions,scalable/apps',
+      '',
+      '[scalable/actions]',
+      'Size=64',
+      'Type=Scalable',
+      'Context=Actions',
+      '',
+      '[scalable/apps]',
+      'Size=64',
+      'Type=Scalable',
+      'Context=Applications',
+      '',
+    ].join('\n'));
     const script = String.raw`
 import os, sys
 from PySide6.QtCore import QFile, QIODevice
@@ -298,6 +368,9 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 app = QApplication.instance() or QApplication([])
 QIcon.setThemeSearchPaths([os.path.join(data_home, "icons")] + QIcon.themeSearchPaths())
 QIcon.setThemeName("hicolor")
+app_icon = QIcon.fromTheme("krohnkite")
+assert not app_icon.isNull(), "app icon is not resolved from the theme"
+assert app_icon.pixmap(64, 64).toImage() == QIcon(os.path.join(root, "res/appicon/krohnkite.svg")).pixmap(64, 64).toImage(), "app icon render mismatch"
 loader = QUiLoader()
 ui_file = QFile(os.path.join(root, "res/config.ui"))
 assert ui_file.open(QIODevice.OpenModeFlag.ReadOnly), "could not open settings UI"

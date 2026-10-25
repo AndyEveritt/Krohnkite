@@ -51,7 +51,7 @@ $(KWINPKG_DIR): $(KWINPKG_DIR)/contents/ui/config.ui
 $(KWINPKG_DIR): $(KWINPKG_DIR)/contents/ui/dbus.qml
 $(KWINPKG_DIR): $(KWINPKG_DIR)/contents/ui/popup.qml
 $(KWINPKG_DIR): $(KWINPKG_DIR)/contents/ui/iconinstaller.qml
-$(KWINPKG_DIR): $(patsubst res/%,$(KWINPKG_DIR)/contents/ui/%,$(wildcard res/layouts/*.svg))
+$(KWINPKG_DIR): $(patsubst res/%,$(KWINPKG_DIR)/contents/ui/%,$(wildcard res/layouts/*.svg) $(wildcard res/appicon/*.svg))
 $(KWINPKG_DIR): $(KWINPKG_DIR)/contents/code/install-icons.py
 $(KWINPKG_DIR): $(KWINPKG_DIR)/contents/ui/dragpreview.qml
 $(KWINPKG_DIR): $(KWINPKG_DIR)/contents/ui/shortcuts.qml
@@ -77,6 +77,9 @@ $(KWINPKG_DIR)/contents/ui/dbus.qml: res/dbus.qml
 $(KWINPKG_DIR)/contents/ui/popup.qml: res/popup.qml
 $(KWINPKG_DIR)/contents/ui/iconinstaller.qml: res/iconinstaller.qml
 $(KWINPKG_DIR)/contents/ui/layouts/%.svg: res/layouts/%.svg
+	@mkdir -p $(dir $@)
+	@cp $< $@
+$(KWINPKG_DIR)/contents/ui/appicon/%.svg: res/appicon/%.svg
 	@mkdir -p $(dir $@)
 	@cp $< $@
 $(KWINPKG_DIR)/contents/code/install-icons.py: tools/install-icons.py
