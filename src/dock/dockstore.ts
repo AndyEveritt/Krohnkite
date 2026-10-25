@@ -139,11 +139,52 @@ class DockStore implements IDockStore {
     const {
       mousePointer,
       middlePointer,
+      neighbors,
       workingArea,
       tilesArea,
       window,
       swapping,
     } = dragAction;
+    /* On a side with a neighboring output the window's middle is tested and
+     * the zone is not mirrored: the window can change outputs before the
+     * cursor does. Without a neighbor the cursor plus the mirrored zone keeps
+     * the usual edge/panel behavior. */
+    const isEmptySlotHit = (
+      position: DockPosition,
+      dragZone: number,
+    ): boolean => {
+      if (dragZone <= 0) return false;
+      switch (position) {
+        case DockPosition.top:
+          return workingArea.isTopZone(
+            neighbors.up ? middlePointer : mousePointer,
+            dragZone,
+            "pixels",
+            !neighbors.up,
+          );
+        case DockPosition.left:
+          return workingArea.isLeftZone(
+            neighbors.left ? middlePointer : mousePointer,
+            dragZone,
+            "pixels",
+            !neighbors.left,
+          );
+        case DockPosition.right:
+          return workingArea.isRightZone(
+            neighbors.right ? middlePointer : mousePointer,
+            dragZone,
+            "pixels",
+            !neighbors.right,
+          );
+        case DockPosition.bottom:
+          return workingArea.isBottomZone(
+            neighbors.down ? middlePointer : mousePointer,
+            dragZone,
+            "pixels",
+            !neighbors.down,
+          );
+      }
+    };
     let ownDockPosition = null;
     for (let i = 0; i < entry.slots.length; i++) {
       const dockSlot = entry.slots[i];
@@ -168,54 +209,22 @@ class DockStore implements IDockStore {
       if (!occupied || ownSlot) {
         switch (dockSlot.position) {
           case DockPosition.top: {
-            if (
-              CONFIG.dockTopDragZone > 0 &&
-              workingArea.isTopZone(
-                mousePointer,
-                CONFIG.dockTopDragZone,
-                "pixels",
-                true,
-              )
-            )
+            if (isEmptySlotHit(DockPosition.top, CONFIG.dockTopDragZone))
               return { position: DockPosition.top, window: null };
             continue;
           }
           case DockPosition.left: {
-            if (
-              CONFIG.dockLeftDragZone > 0 &&
-              workingArea.isLeftZone(
-                mousePointer,
-                CONFIG.dockLeftDragZone,
-                "pixels",
-                true,
-              )
-            )
+            if (isEmptySlotHit(DockPosition.left, CONFIG.dockLeftDragZone))
               return { position: DockPosition.left, window: null };
             continue;
           }
           case DockPosition.right: {
-            if (
-              CONFIG.dockRightDragZone > 0 &&
-              workingArea.isRightZone(
-                mousePointer,
-                CONFIG.dockRightDragZone,
-                "pixels",
-                true,
-              )
-            )
+            if (isEmptySlotHit(DockPosition.right, CONFIG.dockRightDragZone))
               return { position: DockPosition.right, window: null };
             continue;
           }
           case DockPosition.bottom: {
-            if (
-              CONFIG.dockBottomDragZone > 0 &&
-              workingArea.isBottomZone(
-                middlePointer,
-                CONFIG.dockBottomDragZone,
-                "pixels",
-                true,
-              )
-            )
+            if (isEmptySlotHit(DockPosition.bottom, CONFIG.dockBottomDragZone))
               return { position: DockPosition.bottom, window: null };
             continue;
           }
