@@ -196,11 +196,15 @@ tests.
 | _unbound_        | Use Stair Layout   |
 | _unbound_        | Use Cascade Layout |
 
-### Layout icons
+### Icons
 
-The settings page uses shared SVG layout pictograms from `res/layouts/`. Install
-registers `krohnkite-layout-*` icons under `$XDG_DATA_HOME/icons/hicolor`
-(normally `~/.local/share/icons`). Python 3 is required. `xdg-icon-resource`
+Kröhnkite ships its artwork as shared SVGs: layout pictograms in `res/layouts/`
+and the application icon in `res/appicon/`. Install registers
+`krohnkite-layout-*` under `$XDG_DATA_HOME/icons/hicolor/scalable/actions` and
+`krohnkite.svg` under `$XDG_DATA_HOME/icons/hicolor/scalable/apps` (normally
+`~/.local/share/icons`). `res/metadata.json` refers to the application icon by
+its theme name, so KWin, System Settings and the KDE Store entry all use the
+same artwork without any raster copy. Python 3 is required. `xdg-icon-resource`
 refreshes the icon cache; if it is unavailable, the icons are still installed
 and the refresh is retried on the next start.
 
@@ -216,6 +220,10 @@ python3 ~/.local/share/kwin/scripts/krohnkite/contents/code/install-icons.py
 
 Repository installs (`go-task install`) are not affected. Reopen settings after
 installation. `go-task uninstall` removes only these icons.
+
+The application icon is resolved by its theme name only: if it was never
+installed, KWin shows a blank icon for the script instead of falling back to
+another one. Running the installer once is enough to fix that.
 
 ## Tips
 
