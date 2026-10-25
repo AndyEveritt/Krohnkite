@@ -22,14 +22,16 @@ install: package
 	kpackagetool6 -t KWin/Script -s $(PROJECT_NAME) \
 		&& kpackagetool6 -t KWin/Script -u $(KWINPKG_FILE) \
 		|| kpackagetool6 -t KWin/Script -i $(KWINPKG_FILE)
+	python3 tools/install-icons.py
 
 uninstall:
 	kpackagetool6 -t kwinscript -r $(PROJECT_NAME)
+	python3 tools/install-icons.py --uninstall
 
 package: $(KWINPKG_FILE) package_json
 
-test: $(NODE_SCRIPT) package_json
-	npm test
+test:
+	npm run check
 
 run: $(KWINPKG_DIR)
 	bin/load-script.sh "$(KWIN_QML)" "$(PROJECT_NAME)-test"
@@ -48,6 +50,9 @@ $(KWINPKG_DIR): $(KWIN_QML)
 $(KWINPKG_DIR): $(KWINPKG_DIR)/contents/ui/config.ui
 $(KWINPKG_DIR): $(KWINPKG_DIR)/contents/ui/dbus.qml
 $(KWINPKG_DIR): $(KWINPKG_DIR)/contents/ui/popup.qml
+$(KWINPKG_DIR): $(KWINPKG_DIR)/contents/ui/iconinstaller.qml
+$(KWINPKG_DIR): $(patsubst res/%,$(KWINPKG_DIR)/contents/ui/%,$(wildcard res/layouts/*.svg) $(wildcard res/appicon/*.svg))
+$(KWINPKG_DIR): $(KWINPKG_DIR)/contents/code/install-icons.py
 $(KWINPKG_DIR): $(KWINPKG_DIR)/contents/ui/dragpreview.qml
 $(KWINPKG_DIR): $(KWINPKG_DIR)/contents/ui/shortcuts.qml
 $(KWINPKG_DIR): $(KWINPKG_DIR)/contents/code/main.js
@@ -70,6 +75,14 @@ $(KWIN_QML): res/main.qml
 $(KWINPKG_DIR)/contents/ui/config.ui: res/config.ui
 $(KWINPKG_DIR)/contents/ui/dbus.qml: res/dbus.qml
 $(KWINPKG_DIR)/contents/ui/popup.qml: res/popup.qml
+$(KWINPKG_DIR)/contents/ui/iconinstaller.qml: res/iconinstaller.qml
+$(KWINPKG_DIR)/contents/ui/layouts/%.svg: res/layouts/%.svg
+	@mkdir -p $(dir $@)
+	@cp $< $@
+$(KWINPKG_DIR)/contents/ui/appicon/%.svg: res/appicon/%.svg
+	@mkdir -p $(dir $@)
+	@cp $< $@
+$(KWINPKG_DIR)/contents/code/install-icons.py: tools/install-icons.py
 $(KWINPKG_DIR)/contents/ui/dragpreview.qml: res/dragpreview.qml
 $(KWINPKG_DIR)/contents/ui/shortcuts.qml: res/shortcuts.qml
 $(KWINPKG_DIR)/contents/code/script.js: $(NODE_SCRIPT)

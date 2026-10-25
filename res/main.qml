@@ -16,6 +16,18 @@ Item {
     id: scriptRoot
     property var runtime: null
 
+    Loader {
+        id: iconInstaller
+        source: "iconinstaller.qml"
+
+        onLoaded: item.install()
+        onStatusChanged: {
+            if (status === Loader.Error)
+                console.warn("KROHNKITE: icon installer unavailable; "
+                    + "install the Plasma5Support QML module or run install-icons.py manually");
+        }
+    }
+
     TaskManager.ActivityInfo {
         id: activityInfo
     }
