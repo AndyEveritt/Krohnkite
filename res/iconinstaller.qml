@@ -22,7 +22,7 @@ Item {
         }
 
         function install() {
-            var path = decodeURIComponent(String(Qt.resolvedUrl("../code/install-layout-icons.py")))
+            var path = decodeURIComponent(String(Qt.resolvedUrl("../code/install-icons.py")))
                 .replace(/^file:\/\//, "");
             connectSource("python3 '" + path.replace(/'/g, "'\\''") + "'");
         }

@@ -12,7 +12,7 @@ const path = require('node:path');
 const test = require('node:test');
 
 const ROOT = path.resolve(__dirname, '..');
-const INSTALLER = path.join(ROOT, 'tools/install-layout-icons.py');
+const INSTALLER = path.join(ROOT, 'tools/install-icons.py');
 const PYTHON = process.env.PYTHON || 'python3';
 const LAYOUTS = [
   'tile', 'monocle', 'threecolumn', 'spiral', 'quarter', 'stacked',
@@ -82,7 +82,7 @@ function stagePackage(directory) {
   fs.mkdirSync(codeDirectory, { recursive: true });
   fs.mkdirSync(layoutDirectory, { recursive: true });
 
-  const installer = path.join(codeDirectory, 'install-layout-icons.py');
+  const installer = path.join(codeDirectory, 'install-icons.py');
   fs.copyFileSync(INSTALLER, installer);
   for (const name of LAYOUTS) {
     fs.copyFileSync(
@@ -235,24 +235,24 @@ test('installs from the packaged contents/ui/layouts source', () => {
 
 test('go-task packaging copies the icon installer and layout SVGs', () => {
   const taskfile = fs.readFileSync(path.join(ROOT, 'taskfile.yaml'), 'utf8');
-  assert.match(taskfile, /cp tools\/install-layout-icons\.py \{\{\.KWINPKG_DIR\}\}\/contents\/code\/install-layout-icons\.py/);
+  assert.match(taskfile, /cp tools\/install-icons\.py \{\{\.KWINPKG_DIR\}\}\/contents\/code\/install-icons\.py/);
   assert.match(taskfile, /cp -r res\/layouts \{\{\.KWINPKG_DIR\}\}\/contents\/ui\//);
 });
 
 test('loads the Plasma5Support icon installer through an isolated Loader', () => {
   const main = fs.readFileSync(path.join(ROOT, 'res/main.qml'), 'utf8');
-  const installer = fs.readFileSync(path.join(ROOT, 'res/layouticoninstaller.qml'), 'utf8');
+  const installer = fs.readFileSync(path.join(ROOT, 'res/iconinstaller.qml'), 'utf8');
   const makefile = fs.readFileSync(path.join(ROOT, 'Makefile'), 'utf8');
 
   assert.doesNotMatch(main, /import org.kde.plasma.plasma5support/);
-  assert.match(main, /id: layoutIconInstaller/);
-  assert.match(main, /source: "layouticoninstaller.qml"/);
+  assert.match(main, /id: iconInstaller/);
+  assert.match(main, /source: "iconinstaller.qml"/);
   assert.match(main, /onLoaded:\s*item\.install\(\)/);
   assert.match(main, /status === Loader\.Error/);
-  assert.doesNotMatch(main, /layoutIconInstaller\.item/);
+  assert.doesNotMatch(main, /iconInstaller\.item/);
   assert.match(installer, /import org.kde.plasma.plasma5support as Plasma5Support/);
-  assert.ok(installer.includes('Qt.resolvedUrl("../code/install-layout-icons.py")'));
-  assert.ok(makefile.includes('contents/ui/layouticoninstaller.qml: res/layouticoninstaller.qml'));
+  assert.ok(installer.includes('Qt.resolvedUrl("../code/install-icons.py")'));
+  assert.ok(makefile.includes('contents/ui/iconinstaller.qml: res/iconinstaller.qml'));
 });
 
 test('settings use SVG theme references for every layout pictogram', () => {

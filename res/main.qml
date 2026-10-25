@@ -17,14 +17,14 @@ Item {
     property var runtime: null
 
     Loader {
-        id: layoutIconInstaller
-        source: "layouticoninstaller.qml"
+        id: iconInstaller
+        source: "iconinstaller.qml"
 
         onLoaded: item.install()
         onStatusChanged: {
             if (status === Loader.Error)
-                console.warn("KROHNKITE: layout icon installer unavailable; "
-                    + "install the Plasma5Support QML module or run install-layout-icons.py manually");
+                console.warn("KROHNKITE: icon installer unavailable; "
+                    + "install the Plasma5Support QML module or run install-icons.py manually");
         }
     }
 

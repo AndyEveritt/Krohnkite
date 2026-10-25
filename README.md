@@ -208,10 +208,10 @@ Direct `.kwinscript` installs register the icons at KWin startup when the
 optional `org.kde.plasma.plasma5support` QML module is available (some Plasma 6
 systems ship it separately). Without that module the script still runs, KWin
 logs a warning, and the icons are not installed automatically; run the
-package's `contents/code/install-layout-icons.py` manually, for example:
+package's `contents/code/install-icons.py` manually, for example:
 
 ```
-python3 ~/.local/share/kwin/scripts/krohnkite/contents/code/install-layout-icons.py
+python3 ~/.local/share/kwin/scripts/krohnkite/contents/code/install-icons.py
 ```
 
 Repository installs (`go-task install`) are not affected. Reopen settings after
