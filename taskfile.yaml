@@ -9,7 +9,7 @@ vars:
   KWINPKG_FILE_EXT: "kwinscript"
 
   GIT_BRANCH:
-    sh: 'gb=$(git symbolic-ref --short -q HEAD); case "$gb" in ""|master|main) echo "" ;; *) echo "-$(printf "%s" "$gb" | tr "/" "_")" ;; esac'
+    sh: 'gb=$(git symbolic-ref --short -q HEAD); case "$gb" in master|main) echo "-git" ;; release|release/*) echo "" ;; *) echo "-$(printf "%s" "$gb" | tr "/" "_")" ;; esac'
   KWINPKG_FILE: "{{.PROJECT_NAME }}-{{.PROJECT_VER }}{{.GIT_BRANCH}}_{{.PROJECT_REV }}.{{.KWINPKG_FILE_EXT}}"
   PACKAGE: "builds/{{.KWINPKG_FILE}}"
   KWINPKG_DIR: "pkg"
