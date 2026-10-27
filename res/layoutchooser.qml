@@ -26,6 +26,9 @@ PlasmaCore.Dialog {
     visible: false
     property var layouts: []
     property string selectedLayout: ""
+    /* Fill color of the active layout card; kept in one place so it can be
+     * made configurable later. */
+    property color activeLayoutColor: Kirigami.Theme.highlightColor
     readonly property int layoutCardWidth: 150
     readonly property int layoutCardHeight: 96
     readonly property int layoutSpacing: 10
@@ -75,11 +78,12 @@ PlasmaCore.Dialog {
                     height: chooserDialog.layoutCardHeight
                     radius: 8
                     color: modelData.id === chooserDialog.selectedLayout
-                        ? Kirigami.Theme.highlightColor
+                        ? chooserDialog.activeLayoutColor
                         : Kirigami.Theme.alternateBackgroundColor
                     border.width: modelData.id === chooserDialog.selectedLayout ? 2 : 1
-                    border.color: modelData.id === chooserDialog.selectedLayout
-                        ? Kirigami.Theme.highlightColor
+                    border.color: (modelData.id === chooserDialog.selectedLayout
+                        || cardMouseArea.containsMouse)
+                        ? chooserDialog.activeLayoutColor
                         : Kirigami.Theme.disabledTextColor
 
                     Column {
@@ -110,7 +114,9 @@ PlasmaCore.Dialog {
                     }
 
                     MouseArea {
+                        id: cardMouseArea
                         anchors.fill: parent
+                        hoverEnabled: true
                         cursorShape: Qt.PointingHandCursor
                         onClicked: {
                             chooserDialog.layoutSelected(layoutCard.modelData.id);

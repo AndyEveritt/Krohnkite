@@ -165,6 +165,21 @@ test('chooser is an interactive dialog without an auto-hide timer', () => {
   assert.doesNotMatch(chooser, /hideTimer/);
 });
 
+test('hovering a card uses the active layout color for its border', () => {
+  assert.match(
+    chooser,
+    /property color activeLayoutColor: Kirigami\.Theme\.highlightColor/,
+  );
+  assert.match(chooser, /id: cardMouseArea/);
+  assert.match(chooser, /hoverEnabled: true/);
+  assert.match(
+    chooser,
+    /border\.color: \(modelData\.id === chooserDialog\.selectedLayout[\s\S]{0,120}chooserDialog\.activeLayoutColor/,
+  );
+  assert.doesNotMatch(chooser, /layoutIconFrame|tintWithAlpha/);
+  assert.match(chooser, /onClicked: \{[\s\S]*?layoutSelected\(layoutCard\.modelData\.id\)/);
+});
+
 test('main.qml wires chooser clicks to the runtime', () => {
   assert.match(main, /id: layoutChooserDialog[\s\S]*?source: "layoutchooser\.qml"/);
   assert.match(main, /function showLayouts\(entries, selected\) \{[\s\S]*?this\.item\.showLayouts\(entries, selected, area\);/);
