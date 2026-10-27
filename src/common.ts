@@ -284,6 +284,7 @@ interface IDriverContext {
   relocateWindows(): boolean;
   setTimeout(func: () => void, timeout: number): void;
   showNotification(text: string): void;
+  showLayoutShortcut(id: string): void;
   showDragPreview(area: Rect, rect: Rect): void;
   hideDragPreview(): void;
   shortcutSequencesArrange(): void;
@@ -298,6 +299,7 @@ interface ILayout {
   /* read-only */
   readonly capacity?: number | null;
   readonly description: string;
+  readonly classID: string;
 
   /* methods */
   adjust?(

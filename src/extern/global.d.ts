@@ -24,8 +24,15 @@ declare var activityInfo: Plasma.TaskManager.ActivityInfo;
 declare var mousePoller: Plasma.PlasmaCore.DataSource;
 declare var scriptRoot: object;
 
+interface LayoutOSDEntry {
+  id: string;
+  name: string;
+  icon: string;
+}
+
 interface PopupDialog {
   showNotification(text: string, duration: number): void;
+  showLayoutShortcut(entry: LayoutOSDEntry, duration: number): void;
 }
 declare var popupDialog: PopupDialog;
 

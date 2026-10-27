@@ -14,6 +14,21 @@
  */
 var KWIN: KWin;
 
+const LayoutOSDNames: { [id: string]: { name: string; icon: string } } = {
+  TileLayout: { name: "Tile", icon: "tile" },
+  MonocleLayout: { name: "Monocle", icon: "monocle" },
+  ThreeColumnLayout: { name: "Three Column", icon: "threecolumn" },
+  SpiralLayout: { name: "Spiral", icon: "spiral" },
+  QuarterLayout: { name: "Quarter", icon: "quarter" },
+  StackedLayout: { name: "Stacked", icon: "stacked" },
+  ColumnsLayout: { name: "Columns", icon: "columns" },
+  SpreadLayout: { name: "Spread", icon: "spread" },
+  FloatingLayout: { name: "Floating", icon: "floating" },
+  StairLayout: { name: "Stair", icon: "stair" },
+  BinaryTreeLayout: { name: "Binary Tree", icon: "binarytree" },
+  CascadeLayout: { name: "Cascade", icon: "cascade" },
+};
+
 type RunningShortcutSeq = {
   pressTime: number;
   seq: ShortcutSequence[];
@@ -566,6 +581,14 @@ class KWinDriver implements IDriverContext {
   public showNotification(text: string) {
     if (CONFIG.notificationDuration > 0)
       popupDialog.showNotification(text, CONFIG.notificationDuration);
+  }
+  public showLayoutShortcut(id: string) {
+    const entry = LayoutOSDNames[id];
+    if (!entry || CONFIG.notificationDuration <= 0) return;
+    popupDialog.showLayoutShortcut(
+      { id, name: entry.name, icon: entry.icon },
+      CONFIG.notificationDuration,
+    );
   }
   public showDragPreview(area: Rect, rect: Rect) {
     if (!CONFIG.dragPreview) return;
