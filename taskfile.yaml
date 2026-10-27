@@ -67,6 +67,7 @@ tasks:
       - cp res/main.qml {{.KWINPKG_DIR}}/contents/ui/main.qml
       - cp res/config.ui {{.KWINPKG_DIR}}/contents/ui/config.ui
       - cp res/popup.qml  {{.KWINPKG_DIR}}/contents/ui/popup.qml
+      - cp res/layoutchooser.qml {{.KWINPKG_DIR}}/contents/ui/layoutchooser.qml
       - cp res/iconinstaller.qml {{.KWINPKG_DIR}}/contents/ui/iconinstaller.qml
       - cp -r res/layouts {{.KWINPKG_DIR}}/contents/ui/
       - cp -r res/appicon {{.KWINPKG_DIR}}/contents/ui/
@@ -82,6 +83,7 @@ tasks:
       - res/main.qml
       - res/config.ui
       - res/popup.qml
+      - res/layoutchooser.qml
       - res/iconinstaller.qml
       - res/layouts/*.svg
       - res/appicon/*.svg
@@ -96,6 +98,7 @@ tasks:
       - "{{.KWINPKG_DIR}}/contents/ui/main.qml"
       - "{{.KWINPKG_DIR}}/contents/ui/config.ui"
       - "{{.KWINPKG_DIR}}/contents/ui/popup.qml"
+      - "{{.KWINPKG_DIR}}/contents/ui/layoutchooser.qml"
       - "{{.KWINPKG_DIR}}/contents/ui/iconinstaller.qml"
       - "{{.KWINPKG_DIR}}/contents/ui/layouts/*.svg"
       - "{{.KWINPKG_DIR}}/contents/ui/appicon/*.svg"

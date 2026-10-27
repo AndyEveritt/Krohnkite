@@ -272,6 +272,7 @@ const KrohnkiteAction = {
   SetMaster: "SetMaster",
   NextLayout: "NextLayout",
   PreviousLayout: "PreviousLayout",
+  LayoutChooser: "LayoutChooser",
 
   SetTileLayout: "SetTileLayout",
   SetMonocleLayout: "SetMonocleLayout",

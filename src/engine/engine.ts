@@ -1341,9 +1341,13 @@ class TilingEngine {
   /**
    * Set the layout of the current surface to the specified layout.
    */
-  public setLayout(ctx: IDriverContext, layoutClassID: string) {
+  public setLayout(
+    ctx: IDriverContext,
+    layoutClassID: string,
+    showOSD: boolean = true,
+  ) {
     const layout = this.layouts.setLayout(ctx.currentSurface, layoutClassID);
-    if (layout) ctx.showLayoutShortcut(layout.classID);
+    if (layout && showOSD) ctx.showLayoutShortcut(layout.classID);
   }
 
   /**

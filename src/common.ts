@@ -285,6 +285,7 @@ interface IDriverContext {
   setTimeout(func: () => void, timeout: number): void;
   showNotification(text: string): void;
   showLayoutOSD(): void;
+  showLayoutChooser(): void;
   showLayoutShortcut(id: string): void;
   showDragPreview(area: Rect, rect: Rect): void;
   hideDragPreview(): void;

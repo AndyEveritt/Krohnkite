@@ -18,6 +18,13 @@ class KWinRuntime {
     KWIN = api.kwin;
   }
 
+  public selectLayout(id: string): boolean {
+    if (!this.config || !this.driver) return false;
+    if (this.config.layoutOrder.indexOf(id) === -1) return false;
+    this.driver.selectLayoutFromOSD(id);
+    return true;
+  }
+
   public start(): void {
     if (this.driver !== null || this.disposed) return;
     const config = new KWinConfig();

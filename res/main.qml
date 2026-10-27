@@ -55,6 +55,25 @@ Item {
     }
 
     Loader {
+        id: layoutChooserDialog
+        source: "layoutchooser.qml"
+
+        function showLayouts(entries, selected) {
+            if (!this.item) return;
+            var area = Workspace.clientArea(KWin.FullScreenArea, Workspace.activeScreen, Workspace.currentDesktop);
+            this.item.showLayouts(entries, selected, area);
+        }
+    }
+
+    Connections {
+        target: layoutChooserDialog.item
+
+        function onLayoutSelected(id) {
+            if (runtime !== null) runtime.selectLayout(id);
+        }
+    }
+
+    Loader {
         id: dragPreview
         source: "dragpreview.qml"
 

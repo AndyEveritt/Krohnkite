@@ -3582,6 +3582,11 @@
             </item>
             <item>
              <property name="text">
+              <string>LayoutChooser</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
               <string>LowerSurfaceCapacity</string>
              </property>
             </item>
@@ -3810,6 +3815,11 @@
             <item>
              <property name="text">
               <string>IncreaseSC</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>LayoutChooserSC</string>
              </property>
             </item>
             <item>

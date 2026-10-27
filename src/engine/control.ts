@@ -536,6 +536,10 @@ class TilingController {
       case KrohnkiteAction.PreviousLayout:
         this.engine.cycleLayout(ctx, -1);
         break;
+      case KrohnkiteAction.LayoutChooser:
+        ctx.showLayoutChooser();
+        isArrangeNeeded = false;
+        break;
       case KrohnkiteAction.SetTileLayout:
       case KrohnkiteAction.SetMonocleLayout:
       case KrohnkiteAction.SetThreeColumnLayout:

@@ -41,6 +41,11 @@ interface PopupDialog {
 }
 declare var popupDialog: PopupDialog;
 
+interface LayoutChooserDialog {
+  showLayouts(entries: LayoutOSDEntry[], selected: string): void;
+}
+declare var layoutChooserDialog: LayoutChooserDialog;
+
 interface DragPreview {
   showRect(
     areaX: number,

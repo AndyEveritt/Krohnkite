@@ -605,6 +605,31 @@ class KWinDriver implements IDriverContext {
       CONFIG.notificationDuration,
     );
   }
+  public showLayoutChooser(): void {
+    const entries = CONFIG.layoutOrder
+      .filter((id) => LayoutOSDNames[id] !== undefined)
+      .map((id) => ({
+        id,
+        name: LayoutOSDNames[id].name,
+        icon: LayoutOSDNames[id].icon,
+      }));
+    if (entries.length === 0) return;
+    const selected = this.engine.layouts.getCurrentLayout(
+      this.currentSurface,
+    ).classID;
+    layoutChooserDialog.showLayouts(entries, selected);
+  }
+  public selectLayoutFromOSD(id: string): void {
+    if (CONFIG.layoutOrder.indexOf(id) === -1) return;
+    this._runProtected(() => {
+      if (
+        this.engine.layouts.getCurrentLayout(this.currentSurface).classID === id
+      )
+        return;
+      this.engine.setLayout(this, id, false);
+      this.engine.arrange(this, "shortcutLayoutCB");
+    });
+  }
   public showDragPreview(area: Rect, rect: Rect) {
     if (!CONFIG.dragPreview) return;
     dragPreview.showRect(

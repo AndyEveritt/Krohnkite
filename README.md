@@ -187,6 +187,7 @@ tests.
 | Meta + F         | Toggle Floating    |
 | Meta + \         | Next Layout        |
 | Meta + \|        | Previous Layout    |
+| _unbound_        | Layout Chooser     |
 |                  |                    |
 | Meta + Return    | Set as Master      |
 |                  |                    |
