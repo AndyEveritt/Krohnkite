@@ -1,83 +1,134 @@
-#!.venv/bin/python
+#!/usr/bin/env python3
 '''
     SPDX-FileCopyrightText: 2025 Vjatcheslav V. Kolchkov <akl334@protonmail.ch>
 
     SPDX-License-Identifier: MIT
 '''
 import logging
-from logging import warning, error, info, debug
+from logging import error, info, warning
 import os
 from pathlib import Path
+import queue
 import signal
+import sys
 import threading
-from threading import Thread
 import time
-from watchdog.events import (
-    FileSystemEvent,
-    PatternMatchingEventHandler,
-)
-from watchdog.observers import Observer
+from subprocess import CompletedProcess
 
+from watchdog.events import FileSystemEvent, PatternMatchingEventHandler
+from watchdog.observers import Observer
 
 import config
 from lib import run_cmd
 
+# A build is installed only after its file events go quiet for this long, so a
+# partially written archive is never handed to kpackagetool6.
+CLOSE_GRACE_SECONDS = 1.0
+
+# Minimal pause between two installs, so a burst of events does not spawn a
+# burst of kpackagetool6 processes. Events are delayed by it, never dropped.
+INSTALL_INTERVAL_SECONDS = 1.0
+
+# Events closer than this are one drop, not two: a single copy may close the
+# same path more than once. A drop under another name ("X.kwinscript" and the
+# "X (1).kwinscript" KDE creates for a conflicting copy) has its own path and
+# is always installed.
+DUPLICATE_EVENT_SECONDS = 1.0
+
+exit_event = threading.Event()
+install_queue: queue.Queue[tuple[Path, bool, float]] = queue.Queue()
 
 
-def kde_send_notification(s: str):
-    run_cmd([config.notify_program, s], is_stilly=True)
+def kde_send_notification(message: str) -> None:
+    if run_cmd([config.notify_program, message], is_stilly=True) is None:
+        warning(f"cannot send notification: {message}")
 
 
-def kwin_script_install(p: Path):
-    isInstalled: bool
-    has_installed_result_binary = run_cmd(
+def _installed_package_path() -> Path:
+    data_home = os.environ.get("XDG_DATA_HOME") or "~/.local/share"
+    return Path(data_home).expanduser() / "kwin" / "scripts" / config.kwin_script_name
+
+
+def _stderr_text(result: CompletedProcess[bytes] | None) -> str:
+    if result is None:
+        return ""
+
+    return result.stderr.decode("utf-8", "replace").strip()
+
+
+def _is_installed() -> bool | None:
+    """Return True/False, or None when kpackagetool6 cannot be run at all.
+
+    The installed package is queried by its path, not by its name: the name is
+    resolved relative to the current directory, so it breaks depending on where
+    the daemon was started from. The return code is inspected instead of the
+    message, which kpackagetool6 translates into the user's language.
+    """
+    result = run_cmd(
         [
             config.install_program,
             "-t",
             "KWin/Script",
             "-s",
-            config.kwin_script_name,
-        ]
+            _installed_package_path().as_posix(),
+        ],
+        is_stilly=True,
     )
-    if has_installed_result_binary is None:
-        return
+    if result is None:
+        return None
 
-    err = (
-        None
-        if has_installed_result_binary.stderr == b""
-        else has_installed_result_binary.stderr.decode("utf-8").lower()
-    )
-    if err is not None:
-        if "can't find plugin" in err:
-            isInstalled = False
-        else:
-            error(err)
-            return
-    else:
-        isInstalled = True
+    return result.returncode == 0
 
-    info(f"{config.kwin_script_name} isInstalled: {isInstalled}")
 
-    install_result_binary = run_cmd(
+def _kpackagetool6(package: Path, mode: str) -> CompletedProcess[bytes] | None:
+    return run_cmd(
         [
             config.install_program,
             "-t",
             "KWin/Script",
-            f"{'-u' if isInstalled else '-i'}",
-            p.as_posix(),
+            mode,
+            package.as_posix(),
         ],
+        is_stilly=True,
     )
-    if install_result_binary is None:
-        return
-    err = (
-        None
-        if install_result_binary.stderr == b""
-        else install_result_binary.stderr.decode("utf-8").lower()
-    )
-    if err is not None:
-        kde_send_notification(f"💀 {err}")
-    else:
-        kde_send_notification(f"✅ {p.name}")
+
+
+def kwin_script_install(package: Path) -> bool:
+    is_installed = _is_installed()
+    if is_installed is None:
+        kde_send_notification(f"💀 {config.install_program} is not available")
+        return False
+
+    info(f"{config.kwin_script_name} isInstalled: {is_installed}")
+
+    result = _kpackagetool6(package, "-u" if is_installed else "-i")
+    if result is None:
+        kde_send_notification(f"💀 {config.install_program} is not available")
+        return False
+
+    if result.returncode != 0 and is_installed and _is_installed() is False:
+        # The installed copy is gone (for example deleted by hand), so there is
+        # nothing to update: install the package from scratch.
+        warning(f"{config.kwin_script_name} is gone, installing it from scratch")
+        result = _kpackagetool6(package, "-i")
+        if result is None:
+            kde_send_notification(f"💀 {config.install_program} is not available")
+            return False
+
+    message = _stderr_text(result)
+    if result.returncode != 0:
+        error(message or f"{config.install_program} exited with {result.returncode}")
+        kde_send_notification(f"💀 {message or package.name}")
+        return False
+
+    if message:
+        # kpackagetool6 warns about the locale and about missing optional files
+        # on stderr even when the installation succeeded.
+        warning(message)
+
+    info(f"installed: {package}")
+    kde_send_notification(f"✅ {package.name}")
+    return True
 
 
 class FileEventHandler(PatternMatchingEventHandler):
@@ -95,75 +146,139 @@ class FileEventHandler(PatternMatchingEventHandler):
             ignore_directories=ignore_directories,
             case_sensitive=case_sensitive,
         )
-        self.event_path: Path | None = None
-        self.event_time = round(time.time() * 1000)
+
+    @staticmethod
+    def _event_path(event: FileSystemEvent) -> Path | None:
+        # For a move watchdog reports the file in dest_path; for a move out of
+        # the watched folder dest_path is empty and src_path is irrelevant.
+        if event.event_type == "moved":
+            raw = getattr(event, "dest_path", "")
+        else:
+            raw = event.src_path
+        if not raw:
+            return None
+        return Path(os.fsdecode(raw))
 
     def on_any_event(self, event: FileSystemEvent) -> None:
-        path = event.src_path
-        if isinstance(path, (bytes, bytearray)):
-            try:
-                path = path.decode()
-            except (UnicodeDecodeError, AttributeError):
-                warning("Cannot decode byte like path")
-                return
+        path = self._event_path(event)
+        if path is None:
+            return
 
-        path = Path(path)
-
-        if event.event_type == "created":
-            self.event_path = path
-        if event.event_type == "closed_no_write" or event.event_type == "closed":
-            if round(time.time() * 1000) - self.event_time < 1000:
-                return
-            if self.event_path == path:
-                if not os.path.isfile(path):
-                    warning(f"file:{path} doesn't exit")
-                    self.event_path = None
-                    return
-                self.event_time = round(time.time() * 1000)
-                info(f"{self.event_time}. install. {path}. ")
-                kwin_script_install(path)
-            else:
-                return
+        # "closed" means the writer is done: it is the only event that starts
+        # an installation. "created", "modified" and "moved" only extend the
+        # grace period, because a build dragged into the folder can be reported
+        # as a creation that is never followed by a close event.
+        #
+        # "opened" and "closed_no_write" are deliberately ignored: the file
+        # manager, the file indexer and kpackagetool6 itself read the archive,
+        # and a read must never be taken for a finished write. Installing on
+        # those closes made every installation trigger the next one.
+        if event.event_type in ("created", "modified", "moved"):
+            install_queue.put((path, False, time.monotonic()))
+        elif event.event_type == "closed":
+            install_queue.put((path, True, time.monotonic()))
 
 
-def thread_1():
+def install_worker() -> None:
+    pending: dict[Path, float] = {}
+    last_install = 0.0
+    install_started_at: dict[Path, float] = {}
+
+    while not exit_event.is_set():
+        try:
+            path, is_final, observed_at = install_queue.get(timeout=0.2)
+        except queue.Empty:
+            pass
+        else:
+            deadline = (
+                observed_at if is_final else observed_at + CLOSE_GRACE_SECONDS
+            )
+            # A single drop may close the same path more than once. Compare the
+            # event time with the installation it belongs to, not with the
+            # current time: an installation takes seconds, and a duplicate
+            # event queued during it must still be recognised as a duplicate.
+            duplicates_until = (
+                install_started_at.get(path, float("-inf")) + DUPLICATE_EVENT_SECONDS
+            )
+            if observed_at < duplicates_until:
+                info(f"ignoring a repeated event for {path}")
+                continue
+            pending[path] = max(pending.get(path, 0.0), deadline)
+
+        now = time.monotonic()
+        due = [path for path, deadline in pending.items() if deadline <= now]
+        if not due:
+            continue
+        package = min(due, key=lambda path: pending[path])
+
+        remaining = INSTALL_INTERVAL_SECONDS - (now - last_install)
+        if remaining > 0:
+            exit_event.wait(remaining)
+            continue
+
+        del pending[package]
+        if not package.is_file():
+            warning(f"file {package} doesn't exist anymore")
+            continue
+
+        install_started_at[package] = now
+        info(f"install: {package}")
+        kwin_script_install(package)
+        last_install = time.monotonic()
+
+
+def run_daemon() -> None:
+    folder = Path(config.folder_path).expanduser().resolve()
+    if not folder.is_dir():
+        raise NotADirectoryError(f"watch folder doesn't exist: {folder}")
+
     event_handler = FileEventHandler(
         patterns=[
             "krohnkite*.kwinscript",
         ],
-        case_sensitive=False,
         ignore_directories=True,
     )
     observer = Observer()
-    observer.schedule(event_handler, config.folder_path, recursive=True)
+    observer.schedule(event_handler, folder.as_posix(), recursive=True)
     observer.start()
+
+    worker = threading.Thread(target=install_worker, name="install-worker", daemon=True)
+    worker.start()
     try:
-        while not exit_event.is_set():
-            time.sleep(1)
+        exit_event.wait()
     finally:
-        info("Stoping daemon...")
+        info("Stopping daemon...")
         observer.stop()
         observer.join()
+        exit_event.set()
+        worker.join(timeout=5)
 
 
-def exit_hdl(signum, frame):
+def exit_hdl(signum: int, frame: object) -> None:
     exit_event.set()
 
-if __name__ == "__main__":
+
+def main() -> int:
     logging.basicConfig(level=logging.INFO)
-    if '/usr/bin' not in os.environ['PATH']:
-        os.environ['PATH'] = '/usr/bin:' + os.environ['PATH']
-    exit_event = threading.Event()
+
+    path_entries = [
+        entry for entry in os.environ.get("PATH", "").split(os.pathsep) if entry
+    ]
+    if "/usr/bin" not in path_entries:
+        os.environ["PATH"] = os.pathsep.join(["/usr/bin", *path_entries])
+
     signal.signal(signal.SIGTERM, exit_hdl)
     signal.signal(signal.SIGINT, exit_hdl)
 
-# creating a thread
-    T = Thread(target=thread_1)
+    try:
+        run_daemon()
+    except Exception as exc:  # noqa: BLE001 - the daemon must report, not die
+        error(f"autoinstall failed: {exc}")
+        kde_send_notification(f"💀 {config.kwin_script_name} autoinstall: {exc}")
+        return 1
 
-# change T to daemon
-    T.daemon = True
+    return 0
 
-# starting of Thread T
-    T.start()
-    T.join()
-    debug("Exit Main Thread")
+
+if __name__ == "__main__":
+    sys.exit(main())
