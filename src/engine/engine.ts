@@ -1335,7 +1335,7 @@ class TilingEngine {
    */
   public cycleLayout(ctx: IDriverContext, step: 1 | -1) {
     const layout = this.layouts.cycleLayout(ctx.currentSurface, step);
-    if (layout) ctx.showLayoutShortcut(layout.classID);
+    if (layout) ctx.showLayoutOSD();
   }
 
   /**

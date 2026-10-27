@@ -37,7 +37,7 @@ function transpile(relativePath) {
   ).outputText;
 }
 
-test('layout changes show the layout shortcut popup instead of a text notification', () => {
+test('layout cycling shows the layout OSD while direct selection keeps the shortcut popup', () => {
   const context = vm.createContext({});
   const calls = vm.runInContext(`${transpile('src/engine/engine.ts')}\n(() => {
     const engine = Object.create(TilingEngine.prototype);
@@ -49,6 +49,7 @@ test('layout changes show the layout shortcut popup instead of a text notificati
     const ctx = {
       currentSurface: {},
       showNotification: text => calls.push(['notification', text]),
+      showLayoutOSD: () => calls.push(['layoutOSD']),
       showLayoutShortcut: id => calls.push(['layoutShortcut', id]),
     };
     engine.cycleLayout(ctx, 1);
@@ -56,8 +57,39 @@ test('layout changes show the layout shortcut popup instead of a text notificati
     return calls;
   })()`, context);
   assert.deepEqual(JSON.parse(JSON.stringify(calls)), [
-    ['layoutShortcut', 'MonocleLayout'],
+    ['layoutOSD'],
     ['layoutShortcut', 'SpiralLayout'],
+  ]);
+});
+
+test('layout OSD lists enabled layouts in configured order with the current one selected', () => {
+  const calls = [];
+  const context = vm.createContext({
+    CONFIG: {
+      notificationDuration: 1000,
+      layoutOrder: ['TileLayout', 'SpiralLayout'],
+    },
+    popupDialog: { showLayouts: (...args) => calls.push(args) },
+  });
+  vm.runInContext(`${transpile('src/driver/kwindriver.ts')}\n(() => {
+    const driver = Object.create(KWinDriver.prototype);
+    Object.defineProperty(driver, 'currentSurface', { value: {} });
+    driver.engine = {
+      layouts: { getCurrentLayout: () => ({ classID: 'SpiralLayout' }) },
+    };
+    driver.showLayoutOSD();
+    CONFIG.notificationDuration = 0;
+    driver.showLayoutOSD();
+  })()`, context);
+  assert.deepEqual(JSON.parse(JSON.stringify(calls)), [
+    [
+      [
+        { id: 'TileLayout', name: 'Tile', icon: 'tile' },
+        { id: 'SpiralLayout', name: 'Spiral', icon: 'spiral' },
+      ],
+      'SpiralLayout',
+      1000,
+    ],
   ]);
 });
 
@@ -127,9 +159,42 @@ test('popup sets the shortcut icon and name, and text notifications clear the ic
   assert.match(notification[0], /messageLabel\.text = text;/);
 });
 
+test('popup renders one card per layout and highlights the selected layout', () => {
+  assert.match(popup, /property var layouts: \[\]/);
+  assert.match(popup, /property string selectedLayout: ""/);
+  assert.match(popup, /model: popupDialog\.layouts/);
+  assert.match(
+    popup,
+    /modelData\.id === popupDialog\.selectedLayout[\s\S]{0,80}Kirigami\.Theme\.highlightColor/,
+  );
+  assert.match(popup, /text: modelData\.name/);
+  assert.match(popup, /Qt\.resolvedUrl\("layouts\/" \+ modelData\.icon \+ "\.svg"\)/);
+});
+
+test('layout OSD replaces the shortcut row, sizes the grid, and auto-hides', () => {
+  const showLayouts = popup.match(
+    /function showLayouts\(entries, selected, area, duration\) \{[\s\S]*?\n {4}\}/,
+  );
+  assert.ok(showLayouts);
+  assert.match(showLayouts[0], /layouts = entries;/);
+  assert.match(showLayouts[0], /selectedLayout = selected;/);
+  assert.match(showLayouts[0], /layoutColumns = layoutColumnsFor\(entries\.length, area\);/);
+  assert.match(showLayouts[0], /hideTimer\.interval = duration;/);
+  assert.match(showLayouts[0], /hideTimer\.start\(\);/);
+  assert.match(popup, /visible: popupDialog\.layouts\.length === 0/);
+  assert.match(popup, /visible: popupDialog\.layouts\.length > 0/);
+});
+
 test('main.qml forwards layout shortcuts to the popup loader', () => {
   assert.match(
     main,
     /function showLayoutShortcut\(entry, duration\) \{[\s\S]*?if \(!this\.item\) return;[\s\S]*?this\.item\.showLayoutShortcut\(entry, area, duration\);/,
+  );
+});
+
+test('main.qml forwards layout OSD entries to the popup loader', () => {
+  assert.match(
+    main,
+    /function showLayouts\(entries, selected, duration\) \{[\s\S]*?if \(!this\.item\) return;[\s\S]*?this\.item\.showLayouts\(entries, selected, area, duration\);/,
   );
 });

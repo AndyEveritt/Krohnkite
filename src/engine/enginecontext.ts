@@ -72,6 +72,10 @@ class EngineContext {
     this.drvctx.showNotification(text);
   }
 
+  public showLayoutOSD() {
+    this.drvctx.showLayoutOSD();
+  }
+
   public showLayoutShortcut(id: string) {
     this.drvctx.showLayoutShortcut(id);
   }

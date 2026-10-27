@@ -32,6 +32,11 @@ interface LayoutOSDEntry {
 
 interface PopupDialog {
   showNotification(text: string, duration: number): void;
+  showLayouts(
+    entries: LayoutOSDEntry[],
+    selected: string,
+    duration: number,
+  ): void;
   showLayoutShortcut(entry: LayoutOSDEntry, duration: number): void;
 }
 declare var popupDialog: PopupDialog;

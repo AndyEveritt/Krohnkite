@@ -582,6 +582,21 @@ class KWinDriver implements IDriverContext {
     if (CONFIG.notificationDuration > 0)
       popupDialog.showNotification(text, CONFIG.notificationDuration);
   }
+  public showLayoutOSD() {
+    if (CONFIG.notificationDuration <= 0) return;
+    const entries = CONFIG.layoutOrder
+      .filter((id) => LayoutOSDNames[id] !== undefined)
+      .map((id) => ({
+        id,
+        name: LayoutOSDNames[id].name,
+        icon: LayoutOSDNames[id].icon,
+      }));
+    if (entries.length === 0) return;
+    const selected = this.engine.layouts.getCurrentLayout(
+      this.currentSurface,
+    ).classID;
+    popupDialog.showLayouts(entries, selected, CONFIG.notificationDuration);
+  }
   public showLayoutShortcut(id: string) {
     const entry = LayoutOSDNames[id];
     if (!entry || CONFIG.notificationDuration <= 0) return;

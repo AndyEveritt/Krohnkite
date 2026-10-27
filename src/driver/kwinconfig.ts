@@ -287,9 +287,6 @@ class KWinConfig implements IConfig {
     const layoutConfig = KWinConfig.getLayoutFactories(sortedLayouts);
     this.layoutFactories = layoutConfig.factories;
     this.layoutFactoryCapacities = layoutConfig.capacities;
-    sortedLayouts.forEach(({ layoutClass, isCapacity }) => {
-      this.layoutOrder.push(layoutClass.id);
-    });
 
     //***************************
     //****************** Surfaces

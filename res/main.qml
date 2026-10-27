@@ -46,6 +46,12 @@ Item {
             var area = Workspace.clientArea(KWin.FullScreenArea, Workspace.activeScreen, Workspace.currentDesktop);
             this.item.showLayoutShortcut(entry, area, duration);
         }
+
+        function showLayouts(entries, selected, duration) {
+            if (!this.item) return;
+            var area = Workspace.clientArea(KWin.FullScreenArea, Workspace.activeScreen, Workspace.currentDesktop);
+            this.item.showLayouts(entries, selected, area, duration);
+        }
     }
 
     Loader {
