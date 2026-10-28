@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Reload a complete Kröhnkite bundle without restarting KWin or logging out."""
+"""Reload a complete Krohnkite bundle without restarting KWin or logging out."""
 
 import argparse
 import os
@@ -88,14 +88,14 @@ def load_and_start(main_qml):
         raise RuntimeError(f"KWin refused to load {main_qml}: {script_id}")
     invoke("start")
     if invoke("isScriptLoaded", PLUGIN) != "true":
-        raise RuntimeError("Kröhnkite did not load. Inspect KWin's user journal for QML errors.")
+        raise RuntimeError("Krohnkite did not load. Inspect KWin's user journal for QML errors.")
 
 
 def reload_script(main_qml, last_good_file=None):
     was_loaded = invoke("isScriptLoaded", PLUGIN) == "true"
     previous_main_qml = read_last_good(last_good_file) if was_loaded else None
     if was_loaded and invoke("unloadScript", PLUGIN) != "true":
-        raise RuntimeError("KWin refused to unload Kröhnkite; no replacement loaded.")
+        raise RuntimeError("KWin refused to unload Krohnkite; no replacement loaded.")
     try:
         load_and_start(main_qml)
     except RELOAD_ERRORS as primary_error:
@@ -144,7 +144,7 @@ def main():
         raise
     prune_bundles(cache, main_qml, read_last_good(last_good_file))
     # Keep the loaded bundle: QML and images can be loaded lazily while the script runs.
-    print(f"Kröhnkite reloaded without logout: {main_qml}")
+    print(f"Krohnkite reloaded without logout: {main_qml}")
 
 
 if __name__ == "__main__":
