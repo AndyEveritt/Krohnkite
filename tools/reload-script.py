@@ -27,7 +27,7 @@ def invoke(method, *args, path="/Scripting", interface=INTERFACE):
 def validate_package(package):
     for relative in ["contents/ui/main.qml", "contents/code/script.js", "metadata.json"]:
         if not (package / relative).is_file():
-            raise ValueError(f"Missing {package / relative}; run make all first.")
+            raise ValueError(f"Missing {package / relative}; run 'go-task package' first.")
 
 
 def stage_package(package, cache):
