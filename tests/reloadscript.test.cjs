@@ -113,6 +113,20 @@ test('missing package rejected before staging', () => {
   assert.deepEqual(f.calls(), []);
 });
 
+test('dry run prints the plan without touching KWin or the cache', () => {
+  const f = fixture();
+  const result = f.run(['--dry-run']);
+  assert.equal(result.status, 0);
+  assert.deepEqual(f.calls(), []);
+  assert.equal(fs.existsSync(f.env.XDG_CACHE_HOME), false);
+  const lines = result.stdout.trim().split('\n');
+  assert.equal(lines.length, 4);
+  assert.match(lines[0], /^qdbus6 org\.kde\.KWin \/Scripting org\.kde\.kwin\.Scripting\.isScriptLoaded krohnkite$/);
+  assert.match(lines[1], /^qdbus6 org\.kde\.KWin \/Scripting org\.kde\.kwin\.Scripting\.unloadScript krohnkite$/);
+  assert.match(lines[2], /loadDeclarativeScript .*<fresh-bundle>\/contents\/ui\/main\.qml/);
+  assert.match(lines[3], /\/Scripting\/Script<script-id>' org\.kde\.kwin\.Script\.run$/);
+});
+
 test('uses exact qdbus6 argv and safe subprocess capture', () => {
   const f = fixture([output('false'), output('42'), output('')]);
   assert.equal(f.run().status, 0);
