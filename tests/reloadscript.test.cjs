@@ -209,6 +209,20 @@ test('rejected bundle is removed after a failed replacement', () => {
   assert.equal(fs.readFileSync(previous, 'utf8'), 'prior');
 });
 
+test('failed replacement keeps the recovered bundle in the cache', () => {
+  const f = fixture([output('true'), output('true'), output('-1'), output('31'), output('')]);
+  const cache = cacheDir(f);
+  const previous = path.join(cache, 'reload-previous/contents/ui/main.qml');
+  fs.mkdirSync(path.dirname(previous), { recursive: true });
+  fs.writeFileSync(previous, 'prior');
+  fs.writeFileSync(path.join(cache, 'last-good-main-qml'), previous);
+  const result = f.run();
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /Recovered using prior bundle/);
+  assert.deepEqual(bundles(f), ['reload-previous']);
+  assert.equal(fs.readFileSync(previous, 'utf8'), 'prior');
+});
+
 test('failed first reload leaves no staged bundle', () => {
   const f = fixture([output('false'), output('-1')]);
   assert.notEqual(f.run().status, 0);
