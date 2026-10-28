@@ -30,6 +30,13 @@ K and looks cool.
 - Typescript (see package.json)
 - [go-task](https://github.com/go-task/task)
 - p7zip (7z)
+- python3 (reload helper and its tests)
+
+`go-task reload` also needs a running KWin session with `qdbus6` reachable on the
+session bus; nothing else in the project uses it.
+
+Run the automated tests with `go-task test` (or `npm run check`). The reload
+helper tests use an isolated fake `qdbus6`; they do not contact KWin.
 
 ## Look at me
 ### Reload Krohnkite configuration
@@ -37,6 +44,30 @@ K and looks cool.
    ```sh
    qdbus6 org.kde.KWin /KWin org.kde.KWin.reconfigure
    ```
+
+### Apply code changes without logout
+
+```sh
+go-task reload
+```
+
+This builds, installs, and reloads Kröhnkite through KWin's scripting interface.
+Every reload copies the complete bundle to a fresh cache directory, bypassing
+cached QML and JavaScript, and starts only the script it just loaded. No logout or
+compositor restart is required. The copied bundle stays available for lazy
+resource loading, and superseded bundles are deleted. After each successful
+reload, the helper records that bundle path under the cache directory. If a later
+replacement is refused by KWin, it best-effort reloads the last known working
+bundle; recovery is unavailable when no prior bundle is recorded or its files are
+gone, and does not guarantee exact restoration. QML errors inside a bundle appear
+in KWin's journal only, so a bundle that loads but fails to run is not rolled back.
+For a command preview: `python3 tools/reload-script.py pkg --dry-run`.
+
+`go-task reload` is the only path that takes effect without a restart. A package
+installed or upgraded any other way - `go-task install`, `kpackagetool6`, or a
+downloaded `.kwinscript` - is picked up only after KWin starts again, so log out
+and back in (or restart the compositor).
+
 ### Enable Krohnkite
 ```
 kwriteconfig6 --file kwinrc --group Plugins --key krohnkiteEnabled true && qdbus6 org.kde.KWin /KWin reconfigure
@@ -106,6 +137,9 @@ The simplest method to automatically build and install kwinscript package would 
 ```
  go-task install
 ```
+
+The new code is used after the next login; use `go-task reload` to switch without
+logging out.
 
 You can also build `.kwinscript` package file using:
 

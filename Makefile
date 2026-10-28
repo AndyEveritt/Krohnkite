@@ -24,6 +24,10 @@ install: package
 		|| kpackagetool6 -t KWin/Script -i $(KWINPKG_FILE)
 	python3 tools/install-icons.py
 
+# Reinstall and load a complete fresh-path bundle; no KWin restart/logout needed.
+reload: install
+	python3 tools/reload-script.py "$(KWINPKG_DIR)"
+
 uninstall:
 	kpackagetool6 -t kwinscript -r $(PROJECT_NAME)
 	python3 tools/install-icons.py --uninstall
@@ -33,6 +37,9 @@ package: $(KWINPKG_FILE) package_json
 test:
 	npm run check
 
+# run/stop load pkg under the krohnkite-test plugin name through a local
+# bin/load-script.sh, which is not tracked; reload installs and reloads the real
+# krohnkite plugin instead.
 run: $(KWINPKG_DIR)
 	bin/load-script.sh "$(KWIN_QML)" "$(PROJECT_NAME)-test"
 	@find "$(KWINPKG_DIR)" '(' -name "*.qmlc" -o -name "*.jsc" ')' -delete
@@ -101,4 +108,4 @@ $(NODE_SCRIPT): $(SRC)
 package_json: package.json
 	sed -i 's/"version": [^,]*/"version": "$(PROJECT_VER)"/' package.json
 
-.PHONY: all clean install package test run stop package_json
+.PHONY: all clean install reload package test run stop package_json
