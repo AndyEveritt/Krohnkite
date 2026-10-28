@@ -12,13 +12,14 @@ import tempfile
 
 SERVICE = "org.kde.KWin"
 INTERFACE = "org.kde.kwin.Scripting"
+SCRIPT_INTERFACE = "org.kde.kwin.Script"
 PLUGIN = "krohnkite"
 RELOAD_ERRORS = (ValueError, RuntimeError, OSError, subprocess.CalledProcessError)
 
 
-def invoke(method, *args):
+def invoke(method, *args, path="/Scripting", interface=INTERFACE):
     return subprocess.run(
-        ["qdbus6", SERVICE, "/Scripting", f"{INTERFACE}.{method}", *args],
+        ["qdbus6", SERVICE, path, f"{interface}.{method}", *args],
         check=True, capture_output=True, text=True,
     ).stdout.strip()
 
@@ -86,9 +87,10 @@ def load_and_start(main_qml):
     script_id = invoke("loadDeclarativeScript", str(main_qml), PLUGIN)
     if not script_id.isdecimal():
         raise RuntimeError(f"KWin refused to load {main_qml}: {script_id}")
-    invoke("start")
-    if invoke("isScriptLoaded", PLUGIN) != "true":
-        raise RuntimeError("Krohnkite did not load. Inspect KWin's user journal for QML errors.")
+    # Run only the script just loaded. Scripting.start() would also start every
+    # other loaded-but-unstarted KWin script. KWin reports QML errors of this
+    # script in its own journal only, so a broken bundle is not detected here.
+    invoke("run", path=f"/Scripting/Script{script_id}", interface=SCRIPT_INTERFACE)
 
 
 def reload_script(main_qml, last_good_file=None):
@@ -127,12 +129,14 @@ def main():
     validate_package(package)
     cache = Path(os.environ.get("XDG_CACHE_HOME", str(Path.home() / ".cache"))) / "krohnkite"
     if args.dry_run:
-        for method, values in [
-            ("isScriptLoaded", [PLUGIN]), ("unloadScript", [PLUGIN]),
-            ("loadDeclarativeScript", [str(cache / "<fresh-bundle>/contents/ui/main.qml"), PLUGIN]),
-            ("start", []), ("isScriptLoaded", [PLUGIN]),
+        for path, interface, method, values in [
+            ("/Scripting", INTERFACE, "isScriptLoaded", [PLUGIN]),
+            ("/Scripting", INTERFACE, "unloadScript", [PLUGIN]),
+            ("/Scripting", INTERFACE, "loadDeclarativeScript",
+             [str(cache / "<fresh-bundle>/contents/ui/main.qml"), PLUGIN]),
+            ("/Scripting/Script<script-id>", SCRIPT_INTERFACE, "run", []),
         ]:
-            print(shlex.join(["qdbus6", SERVICE, "/Scripting", f"{INTERFACE}.{method}", *values]))
+            print(shlex.join(["qdbus6", SERVICE, path, f"{interface}.{method}", *values]))
         return
     main_qml = stage_package(package, cache)
     last_good_file = cache / "last-good-main-qml"

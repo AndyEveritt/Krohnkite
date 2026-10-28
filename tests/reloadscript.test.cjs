@@ -70,7 +70,8 @@ process.stdout.write(response.stdout || '');
 const output = (stdout) => ({ stdout });
 const error = (stderr, code = 1) => ({ error: stderr, code });
 const command = (method, ...args) => ['org.kde.KWin', '/Scripting', `org.kde.kwin.Scripting.${method}`, ...args];
-const success = ['false', '42', '', 'true'];
+const scriptCommand = (id, method) => ['org.kde.KWin', `/Scripting/Script${id}`, `org.kde.kwin.Script.${method}`];
+const success = ['false', '42', ''];
 const cacheDir = (f) => path.join(f.env.XDG_CACHE_HOME, 'krohnkite');
 const bundles = (f) => fs.existsSync(cacheDir(f))
   ? fs.readdirSync(cacheDir(f)).filter((name) => name.startsWith('reload-'))
@@ -113,23 +114,24 @@ test('missing package rejected before staging', () => {
 });
 
 test('uses exact qdbus6 argv and safe subprocess capture', () => {
-  const f = fixture([output('false'), output('42'), output(''), output('true')]);
+  const f = fixture([output('false'), output('42'), output('')]);
   assert.equal(f.run().status, 0);
   const calls = f.calls();
   assert.deepEqual(calls[0], command('isScriptLoaded', 'krohnkite'));
   assert.deepEqual(calls[1].slice(0, 3), command('loadDeclarativeScript').slice(0, 3));
   assert.match(calls[1][3], /\/reload-[^/]+\/contents\/ui\/main\.qml$/);
   assert.equal(calls[1][4], 'krohnkite');
-  assert.deepEqual(calls.slice(2), [command('start'), command('isScriptLoaded', 'krohnkite')]);
+  assert.deepEqual(calls.slice(2), [scriptCommand('42', 'run')]);
 });
 
-test('loaded script unloads, loads and starts in order with paths containing spaces', () => {
-  const f = fixture([output('true'), output('true'), output('12'), output(''), output('true')]);
+test('loaded script unloads, loads and runs in order with paths containing spaces', () => {
+  const f = fixture([output('true'), output('true'), output('12'), output('')]);
   assert.equal(f.run().status, 0);
   const calls = f.calls();
-  assert.deepEqual(calls.map((args) => args[2].split('.').at(-1)), ['isScriptLoaded', 'unloadScript', 'loadDeclarativeScript', 'start', 'isScriptLoaded']);
+  assert.deepEqual(calls.map((args) => args[2].split('.').at(-1)), ['isScriptLoaded', 'unloadScript', 'loadDeclarativeScript', 'run']);
   assert.match(calls[2][3], /krohnkite reload tests/);
   assert.equal(calls[2][4], 'krohnkite');
+  assert.deepEqual(calls[3], scriptCommand('12', 'run'));
 });
 
 test('unloaded script skips unload', () => {
@@ -144,17 +146,17 @@ test('failed unload never loads replacement', () => {
   assert.equal(f.calls().length, 2);
 });
 
-test('rejected load does not start', () => {
+test('rejected load never runs', () => {
   const f = fixture([output('false'), output('-1')]);
   assert.notEqual(f.run().status, 0);
   assert.equal(f.calls().length, 2);
 });
 
-test('failed start is reported', () => {
-  const f = fixture([output('false'), output('1'), error('start unavailable')]);
+test('failed run is reported', () => {
+  const f = fixture([output('false'), output('1'), error('run unavailable')]);
   const result = f.run();
   assert.notEqual(result.status, 0);
-  assert.match(result.stderr, /start unavailable/);
+  assert.match(result.stderr, /run unavailable/);
 });
 
 test('successful reload atomically records bundle for future recovery', () => {
@@ -167,7 +169,7 @@ test('successful reload atomically records bundle for future recovery', () => {
 });
 
 test('rejected replacement recovers using last-good bundle', () => {
-  const f = fixture([output('true'), output('true'), output('-1'), output('31'), output(''), output('true')]);
+  const f = fixture([output('true'), output('true'), output('-1'), output('31'), output('')]);
   const cache = path.join(f.env.XDG_CACHE_HOME, 'krohnkite');
   const previous = path.join(cache, 'previous/contents/ui/main.qml');
   fs.mkdirSync(path.dirname(previous), { recursive: true });
@@ -181,7 +183,7 @@ test('rejected replacement recovers using last-good bundle', () => {
 });
 
 test('rejected bundle is removed after a failed replacement', () => {
-  const f = fixture([output('true'), output('true'), output('-1'), output('31'), output(''), output('true')]);
+  const f = fixture([output('true'), output('true'), output('-1'), output('31'), output('')]);
   const cache = cacheDir(f);
   const previous = path.join(cache, 'previous/contents/ui/main.qml');
   fs.mkdirSync(path.dirname(previous), { recursive: true });
@@ -200,7 +202,7 @@ test('failed first reload leaves no staged bundle', () => {
 });
 
 test('DBus exception reports primary and recovery failure', () => {
-  const f = fixture([output('true'), output('true'), error('DBus unavailable'), output('22'), error('recovery start failed')]);
+  const f = fixture([output('true'), output('true'), error('DBus unavailable'), output('22'), error('recovery run failed')]);
   const cache = path.join(f.env.XDG_CACHE_HOME, 'krohnkite');
   const previous = path.join(cache, 'previous/contents/ui/main.qml');
   fs.mkdirSync(path.dirname(previous), { recursive: true });
@@ -211,11 +213,11 @@ test('DBus exception reports primary and recovery failure', () => {
   assert.notEqual(result.status, 0);
   assert.match(result.stderr, /DBus unavailable/);
   assert.match(result.stderr, /Recovery from/);
-  assert.match(result.stderr, /recovery start failed/);
+  assert.match(result.stderr, /recovery run failed/);
 });
 
-test('start failure recovers last-good bundle', () => {
-  const f = fixture([output('true'), output('true'), output('12'), output(''), output('false'), output('13'), output(''), output('true')]);
+test('run failure recovers last-good bundle', () => {
+  const f = fixture([output('true'), output('true'), output('12'), error('run failed'), output('13'), output('')]);
   const cache = path.join(f.env.XDG_CACHE_HOME, 'krohnkite');
   const previous = path.join(cache, 'previous/contents/ui/main.qml');
   fs.mkdirSync(path.dirname(previous), { recursive: true });
@@ -223,7 +225,7 @@ test('start failure recovers last-good bundle', () => {
   fs.mkdirSync(cache, { recursive: true });
   fs.writeFileSync(path.join(cache, 'last-good-main-qml'), previous);
   assert.match(f.run().stderr, /Recovered using prior bundle/);
-  assert.equal(f.calls()[5][3], previous);
+  assert.equal(f.calls()[4][3], previous);
 });
 
 test('first reload and missing recovery bundle report limitation', () => {
