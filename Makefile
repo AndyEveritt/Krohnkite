@@ -37,6 +37,9 @@ package: $(KWINPKG_FILE) package_json
 test:
 	npm run check
 
+# run/stop load pkg under the krohnkite-test plugin name through a local
+# bin/load-script.sh, which is not tracked; reload installs and reloads the real
+# krohnkite plugin instead.
 run: $(KWINPKG_DIR)
 	bin/load-script.sh "$(KWIN_QML)" "$(PROJECT_NAME)-test"
 	@find "$(KWINPKG_DIR)" '(' -name "*.qmlc" -o -name "*.jsc" ')' -delete
