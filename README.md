@@ -30,6 +30,10 @@ K and looks cool.
 - Typescript (see package.json)
 - [go-task](https://github.com/go-task/task)
 - p7zip (7z)
+- python3 (reload helper and its tests)
+
+`make reload` also needs a running KWin session with `qdbus6` reachable on the
+session bus; nothing else in the project uses it.
 
 Run the automated Node.js tests with `npm test` or `make test`. The reload
 helper tests use an isolated fake `qdbus6`; they do not contact KWin.
