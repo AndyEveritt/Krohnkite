@@ -63,6 +63,11 @@ gone, and does not guarantee exact restoration. QML errors inside a bundle appea
 in KWin's journal only, so a bundle that loads but fails to run is not rolled back.
 For a command preview: `python3 tools/reload-script.py pkg --dry-run`.
 
+`go-task reload` is the only path that takes effect without a restart. A package
+installed or upgraded any other way - `go-task install`, `kpackagetool6`, or a
+downloaded `.kwinscript` - is picked up only after KWin starts again, so log out
+and back in (or restart the compositor).
+
 ### Enable Krohnkite
 ```
 kwriteconfig6 --file kwinrc --group Plugins --key krohnkiteEnabled true && qdbus6 org.kde.KWin /KWin reconfigure
@@ -132,6 +137,9 @@ The simplest method to automatically build and install kwinscript package would 
 ```
  go-task install
 ```
+
+The new code is used after the next login; use `go-task reload` to switch without
+logging out.
 
 You can also build `.kwinscript` package file using:
 
