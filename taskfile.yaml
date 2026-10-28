@@ -41,6 +41,11 @@ tasks:
     cmds:
       - python3 tools/reload-script.py {{.KWINPKG_DIR}}
 
+  reload-file:
+    desc: Reload a prebuilt .kwinscript file without rebuilding
+    cmds:
+      - python3 tools/reload-script.py {{.CLI_ARGS}}
+
   uninstall:
     cmds:
       - "kpackagetool6 -t KWin/Script -r  {{.PROJECT_NAME}}"

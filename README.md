@@ -32,8 +32,9 @@ K and looks cool.
 - p7zip (7z)
 - python3 (reload helper and its tests)
 
-`go-task reload` also needs a running KWin session with `qdbus6` reachable on the
-session bus; nothing else in the project uses it.
+`go-task reload`, `go-task reload-file`, and the development autoinstall daemon
+(`tools/autoinstall`) also need a running KWin session with `qdbus6` reachable on
+the session bus; nothing else in the project uses it.
 
 Run the automated tests with `go-task test` (or `npm run check`). The reload
 helper tests use an isolated fake `qdbus6`; they do not contact KWin.
@@ -53,8 +54,10 @@ go-task reload
 
 This builds, installs, and reloads Kröhnkite through KWin's scripting interface.
 Every reload copies the complete bundle to a fresh cache directory, bypassing
-cached QML and JavaScript, and starts only the script it just loaded. No logout or
-compositor restart is required. The copied bundle stays available for lazy
+cached QML and JavaScript, and starts the reloaded script through KWin's scripting
+interface. KWin starts every script that is still pending at that point; a reload
+leaves the reloaded script as the pending one. No logout or compositor restart is
+required. The copied bundle stays available for lazy
 resource loading, and superseded bundles are deleted. After each successful
 reload, the helper records that bundle path under the cache directory. If a later
 replacement is refused by KWin, it best-effort reloads the last known working
@@ -63,10 +66,20 @@ gone, and does not guarantee exact restoration. QML errors inside a bundle appea
 in KWin's journal only, so a bundle that loads but fails to run is not rolled back.
 For a command preview: `python3 tools/reload-script.py pkg --dry-run`.
 
-`go-task reload` is the only path that takes effect without a restart. A package
-installed or upgraded any other way - `go-task install`, `kpackagetool6`, or a
-downloaded `.kwinscript` - is picked up only after KWin starts again, so log out
-and back in (or restart the compositor).
+A package that is already built or downloaded needs no rebuild:
+
+```sh
+go-task reload-file -- path/to/krohnkite-*.kwinscript
+```
+
+The helper accepts a build directory or a `.kwinscript` archive.
+
+`go-task reload` and `go-task reload-file` are the paths that take effect without
+a restart. A package installed or upgraded any other way - `go-task install` or
+`kpackagetool6` - is picked up only after KWin starts again, so log out and back
+in (or restart the compositor). The autoinstall daemon runs the same helper after
+every successful install, but only when Krohnkite is already loaded; a package
+installed by it while the script is not loaded is used on the next login.
 
 ### Enable Krohnkite
 ```

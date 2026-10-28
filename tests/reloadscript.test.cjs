@@ -59,18 +59,34 @@ process.stdout.write(response.stdout || '');
     QDBUS_LOG: logFile,
     HOME: directory,
   };
+  const runOn = (target, args = []) =>
+    spawnSync('python3', [helper, target, ...args], { cwd: directory, env, encoding: 'utf8' });
   return {
     directory, pkg, files, env, logFile,
     calls: () => fs.existsSync(logFile) ? JSON.parse(fs.readFileSync(logFile, 'utf8')) : [],
-    run: (args = []) => spawnSync('python3', [helper, pkg, ...args], { cwd: directory, env, encoding: 'utf8' }),
+    run: (args = []) => runOn(pkg, args),
+    runOn,
     responsesFile,
   };
+}
+
+function zipDirectory(source, archive) {
+  const script = [
+    'import pathlib, sys, zipfile',
+    'source = pathlib.Path(sys.argv[1])',
+    'with zipfile.ZipFile(sys.argv[2], "w") as bundle:',
+    '    for path in sorted(source.rglob("*")):',
+    '        if path.is_file():',
+    '            bundle.write(path, path.relative_to(source).as_posix())',
+  ].join('\n');
+  const result = spawnSync('python3', ['-c', script, source, archive], { encoding: 'utf8' });
+  assert.equal(result.status, 0, result.stderr);
+  return archive;
 }
 
 const output = (stdout) => ({ stdout });
 const error = (stderr, code = 1) => ({ error: stderr, code });
 const command = (method, ...args) => ['org.kde.KWin', '/Scripting', `org.kde.kwin.Scripting.${method}`, ...args];
-const scriptCommand = (id, method) => ['org.kde.KWin', `/Scripting/Script${id}`, `org.kde.kwin.Script.${method}`];
 const success = ['false', '42', ''];
 const cacheDir = (f) => path.join(f.env.XDG_CACHE_HOME, 'krohnkite');
 const bundles = (f) => fs.existsSync(cacheDir(f))
@@ -124,7 +140,7 @@ test('dry run prints the plan without touching KWin or the cache', () => {
   assert.match(lines[0], /^qdbus6 org\.kde\.KWin \/Scripting org\.kde\.kwin\.Scripting\.isScriptLoaded krohnkite$/);
   assert.match(lines[1], /^qdbus6 org\.kde\.KWin \/Scripting org\.kde\.kwin\.Scripting\.unloadScript krohnkite$/);
   assert.match(lines[2], /loadDeclarativeScript .*<fresh-bundle>\/contents\/ui\/main\.qml/);
-  assert.match(lines[3], /\/Scripting\/Script<script-id>' org\.kde\.kwin\.Script\.run$/);
+  assert.match(lines[3], /^qdbus6 org\.kde\.KWin \/Scripting org\.kde\.kwin\.Scripting\.start$/);
 });
 
 test('uses exact qdbus6 argv and safe subprocess capture', () => {
@@ -135,17 +151,17 @@ test('uses exact qdbus6 argv and safe subprocess capture', () => {
   assert.deepEqual(calls[1].slice(0, 3), command('loadDeclarativeScript').slice(0, 3));
   assert.match(calls[1][3], /\/reload-[^/]+\/contents\/ui\/main\.qml$/);
   assert.equal(calls[1][4], 'krohnkite');
-  assert.deepEqual(calls.slice(2), [scriptCommand('42', 'run')]);
+  assert.deepEqual(calls.slice(2), [command('start')]);
 });
 
 test('loaded script unloads, loads and runs in order with paths containing spaces', () => {
   const f = fixture([output('true'), output('true'), output('12'), output('')]);
   assert.equal(f.run().status, 0);
   const calls = f.calls();
-  assert.deepEqual(calls.map((args) => args[2].split('.').at(-1)), ['isScriptLoaded', 'unloadScript', 'loadDeclarativeScript', 'run']);
+  assert.deepEqual(calls.map((args) => args[2].split('.').at(-1)), ['isScriptLoaded', 'unloadScript', 'loadDeclarativeScript', 'start']);
   assert.match(calls[2][3], /krohnkite reload tests/);
   assert.equal(calls[2][4], 'krohnkite');
-  assert.deepEqual(calls[3], scriptCommand('12', 'run'));
+  assert.deepEqual(calls[3], command('start'));
 });
 
 test('unloaded script skips unload', () => {
@@ -166,11 +182,11 @@ test('rejected load never runs', () => {
   assert.equal(f.calls().length, 2);
 });
 
-test('failed run is reported', () => {
-  const f = fixture([output('false'), output('1'), error('run unavailable')]);
+test('failed start is reported', () => {
+  const f = fixture([output('false'), output('1'), error('start unavailable')]);
   const result = f.run();
   assert.notEqual(result.status, 0);
-  assert.match(result.stderr, /run unavailable/);
+  assert.match(result.stderr, /start unavailable/);
 });
 
 test('successful reload atomically records bundle for future recovery', () => {
@@ -230,7 +246,7 @@ test('failed first reload leaves no staged bundle', () => {
 });
 
 test('DBus exception reports primary and recovery failure', () => {
-  const f = fixture([output('true'), output('true'), error('DBus unavailable'), output('22'), error('recovery run failed')]);
+  const f = fixture([output('true'), output('true'), error('DBus unavailable'), output('22'), error('recovery start failed')]);
   const cache = path.join(f.env.XDG_CACHE_HOME, 'krohnkite');
   const previous = path.join(cache, 'previous/contents/ui/main.qml');
   fs.mkdirSync(path.dirname(previous), { recursive: true });
@@ -241,11 +257,11 @@ test('DBus exception reports primary and recovery failure', () => {
   assert.notEqual(result.status, 0);
   assert.match(result.stderr, /DBus unavailable/);
   assert.match(result.stderr, /Recovery from/);
-  assert.match(result.stderr, /recovery run failed/);
+  assert.match(result.stderr, /recovery start failed/);
 });
 
-test('run failure recovers last-good bundle', () => {
-  const f = fixture([output('true'), output('true'), output('12'), error('run failed'), output('13'), output('')]);
+test('start failure recovers last-good bundle', () => {
+  const f = fixture([output('true'), output('true'), output('12'), error('start failed'), output('13'), output('')]);
   const cache = path.join(f.env.XDG_CACHE_HOME, 'krohnkite');
   const previous = path.join(cache, 'previous/contents/ui/main.qml');
   fs.mkdirSync(path.dirname(previous), { recursive: true });
@@ -275,4 +291,93 @@ test('initially disabled script is not recovered after failure', () => {
   assert.notEqual(result.status, 0);
   assert.equal(f.calls().length, 2);
   assert.match(result.stderr, /refused to load/);
+});
+
+test('archive is staged and reloaded like a package directory', () => {
+  const f = fixture([...success, ...success]);
+  const archive = zipDirectory(f.pkg, path.join(f.directory, 'build.kwinscript'));
+  const result = f.runOn(archive);
+  assert.equal(result.status, 0, result.stderr);
+  const main = stagedMain(f);
+  for (const [relative, content] of Object.entries(f.files)) {
+    assert.equal(fs.readFileSync(path.join(bundleDir(main), relative), 'utf8'), content);
+  }
+  assert.deepEqual(f.calls(), [
+    command('isScriptLoaded', 'krohnkite'),
+    command('loadDeclarativeScript', main, 'krohnkite'),
+    command('start'),
+  ]);
+  assert.equal(bundles(f).length, 1);
+});
+
+test('archive missing a required file is rejected before staging', () => {
+  const f = fixture();
+  const source = path.join(f.directory, 'broken');
+  fs.mkdirSync(path.join(source, 'contents/ui'), { recursive: true });
+  fs.writeFileSync(path.join(source, 'metadata.json'), '{}');
+  fs.writeFileSync(path.join(source, 'contents/ui/main.qml'), '// main');
+  const archive = zipDirectory(source, path.join(f.directory, 'broken.kwinscript'));
+  const result = f.runOn(archive);
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /Missing contents\/code\/script\.js/);
+  assert.equal(fs.existsSync(f.env.XDG_CACHE_HOME), false);
+  assert.deepEqual(f.calls(), []);
+});
+
+test('dry run of an archive does not extract it', () => {
+  const f = fixture();
+  const archive = zipDirectory(f.pkg, path.join(f.directory, 'build.kwinscript'));
+  const result = f.runOn(archive, ['--dry-run']);
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(f.calls(), []);
+  assert.equal(fs.existsSync(f.env.XDG_CACHE_HOME), false);
+  assert.equal(result.stdout.trim().split('\n').length, 4);
+});
+
+test('archive with a path outside the bundle is rejected', () => {
+  const f = fixture();
+  const archive = zipDirectory(f.pkg, path.join(f.directory, 'build.kwinscript'));
+  const append = [
+    'import sys, zipfile',
+    'with zipfile.ZipFile(sys.argv[1], "a") as bundle:',
+    '    bundle.writestr("../evil", "x")',
+  ].join('\n');
+  const appended = spawnSync('python3', ['-c', append, archive], { encoding: 'utf8' });
+  assert.equal(appended.status, 0, appended.stderr);
+  const result = f.runOn(archive);
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /Refusing unsafe path/);
+  assert.deepEqual(bundles(f), []);
+  assert.deepEqual(f.calls(), []);
+});
+
+test('a file that is not a zip is reported as an invalid archive', () => {
+  const f = fixture();
+  const archive = path.join(f.directory, 'build.kwinscript');
+  fs.writeFileSync(archive, 'not a zip');
+  const result = f.runOn(archive);
+  assert.notEqual(result.status, 0);
+  assert.match(result.stderr, /not a valid \.kwinscript archive/);
+  assert.equal(fs.existsSync(f.env.XDG_CACHE_HOME), false);
+});
+
+test('only-if-loaded skips a script that is not loaded', () => {
+  const f = fixture([output('false')]);
+  const archive = zipDirectory(f.pkg, path.join(f.directory, 'build.kwinscript'));
+  const result = f.runOn(archive, ['--only-if-loaded']);
+  assert.equal(result.status, 3);
+  assert.match(result.stdout, /Skipped: Krohnkite is not loaded/);
+  assert.deepEqual(f.calls(), [command('isScriptLoaded', 'krohnkite')]);
+  assert.deepEqual(bundles(f), []);
+});
+
+test('only-if-loaded reloads a loaded script', () => {
+  const f = fixture([output('true'), output('true'), output('12'), output('')]);
+  const archive = zipDirectory(f.pkg, path.join(f.directory, 'build.kwinscript'));
+  const result = f.runOn(archive, ['--only-if-loaded']);
+  assert.equal(result.status, 0, result.stderr);
+  assert.deepEqual(
+    f.calls().map((args) => args[2].split('.').at(-1)),
+    ['isScriptLoaded', 'unloadScript', 'loadDeclarativeScript', 'start'],
+  );
 });
