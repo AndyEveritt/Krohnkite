@@ -29,12 +29,14 @@ tasks:
       - rm -vf {{.NODE_SCRIPT}} package-lock.json
 
   install:
+    desc: Build and install the package, then refresh its icons
     deps: [kwin-pkg-file]
     cmds:
       - "kpackagetool6 -t KWin/Script -s {{.PROJECT_NAME}} && kpackagetool6 -t KWin/Script -u {{.PACKAGE}} || kpackagetool6 -t KWin/Script -i {{.PACKAGE}}"
       - python3 tools/install-icons.py
 
   reload:
+    desc: Build, install and reload without logging out
     deps: [install]
     cmds:
       - python3 tools/reload-script.py {{.KWINPKG_DIR}}
@@ -45,11 +47,13 @@ tasks:
       - python3 tools/install-icons.py --uninstall
 
   test:
+    desc: Run the type check and the test suite
     deps: [install-deps]
     cmds:
       - npm run check
 
   kwin-pkg-file:
+    desc: Build the .kwinscript package into builds/
     aliases: [package]
     deps:
       - kwin-pkg

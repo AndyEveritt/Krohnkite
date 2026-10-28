@@ -2,6 +2,7 @@
 """Reload a complete Krohnkite bundle without restarting KWin or logging out."""
 
 import argparse
+import fcntl
 import os
 from pathlib import Path
 import shlex
@@ -83,7 +84,7 @@ def remember_last_good(last_good_file, main_qml):
         temporary.unlink(missing_ok=True)
 
 
-def load_and_start(main_qml):
+def load_and_run(main_qml):
     script_id = invoke("loadDeclarativeScript", str(main_qml), PLUGIN)
     if not script_id.isdecimal():
         raise RuntimeError(f"KWin refused to load {main_qml}: {script_id}")
@@ -99,7 +100,7 @@ def reload_script(main_qml, last_good_file=None):
     if was_loaded and invoke("unloadScript", PLUGIN) != "true":
         raise RuntimeError("KWin refused to unload Krohnkite; no replacement loaded.")
     try:
-        load_and_start(main_qml)
+        load_and_run(main_qml)
     except RELOAD_ERRORS as primary_error:
         if not was_loaded:
             raise
@@ -107,7 +108,7 @@ def reload_script(main_qml, last_good_file=None):
             recovery = "No known prior working bundle is available for recovery."
         else:
             try:
-                load_and_start(previous_main_qml)
+                load_and_run(previous_main_qml)
                 recovery = f"Recovered using prior bundle {previous_main_qml}."
             except RELOAD_ERRORS as recovery_error:
                 detail = getattr(recovery_error, "stderr", None) or str(recovery_error)
@@ -118,6 +119,20 @@ def reload_script(main_qml, last_good_file=None):
         remember_last_good(last_good_file, main_qml)
     except OSError as error:
         print(f"Warning: could not record last working bundle: {error}", file=sys.stderr)
+
+
+def reload_package(package, cache):
+    last_good_file = cache / "last-good-main-qml"
+    main_qml = stage_package(package, cache)
+    try:
+        reload_script(main_qml, last_good_file)
+    except RELOAD_ERRORS:
+        # The rejected bundle never replaced the running script, so drop it.
+        prune_bundles(cache, read_last_good(last_good_file))
+        raise
+    prune_bundles(cache, main_qml, read_last_good(last_good_file))
+    # Keep the loaded bundle: QML and images can be loaded lazily while the script runs.
+    print(f"Krohnkite reloaded without logout: {main_qml}")
 
 
 def main():
@@ -138,17 +153,12 @@ def main():
         ]:
             print(shlex.join(["qdbus6", SERVICE, path, f"{interface}.{method}", *values]))
         return
-    main_qml = stage_package(package, cache)
-    last_good_file = cache / "last-good-main-qml"
-    try:
-        reload_script(main_qml, last_good_file)
-    except RELOAD_ERRORS:
-        # The rejected bundle never replaced the running script, so drop it.
-        prune_bundles(cache, read_last_good(last_good_file))
-        raise
-    prune_bundles(cache, main_qml, read_last_good(last_good_file))
-    # Keep the loaded bundle: QML and images can be loaded lazily while the script runs.
-    print(f"Krohnkite reloaded without logout: {main_qml}")
+    cache.mkdir(parents=True, exist_ok=True)
+    # Pruning removes every bundle but the caller's own, so overlapping runs have
+    # to be serialized before one of them can delete a bundle the other is loading.
+    with open(cache / "reload.lock", "w") as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        reload_package(package, cache)
 
 
 if __name__ == "__main__":
