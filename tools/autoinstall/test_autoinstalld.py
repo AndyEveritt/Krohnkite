@@ -4,6 +4,7 @@ Run from this directory:
 
     .venv/bin/python -m unittest test_autoinstalld -v
 """
+import json
 import os
 import shutil
 import sys
@@ -26,6 +27,8 @@ except ImportError:
     for key, value in {
         "folder_path": "builds",
         "kwin_script_name": "krohnkite",
+        "reload_after_install": True,
+        "reload_script": "",
         "install_program": "kpackagetool6",
         "notify_program": "notify-send",
     }.items():
@@ -42,6 +45,7 @@ try:
     )
 
     import autoinstalld
+    import install
 except ImportError as exc:  # watchdog lives in the tool's virtualenv
     raise unittest.SkipTest(f"autoinstall dependencies are missing: {exc}") from exc
 
@@ -77,6 +81,17 @@ exit 0
 
 FAKE_NOTIFY_SEND = """#!/bin/sh
 echo "$*" >> "{state}/notify.log"
+"""
+
+# The daemon runs reload-script.py with sys.executable, so the fake is Python.
+FAKE_RELOAD_SCRIPT = """import json
+import os
+import sys
+
+with open(os.environ["RELOAD_LOG"], "a", encoding="utf-8") as log:
+    log.write(json.dumps(sys.argv[1:]) + "\\n")
+sys.stderr.write(os.environ.get("RELOAD_STDERR", ""))
+sys.exit(int(os.environ.get("RELOAD_EXIT", "0")))
 """
 
 
@@ -120,6 +135,11 @@ class KwinScriptInstallTests(FakeToolTestCase):
         super().setUp()
         self.package = self.tmp / "krohnkite-test.kwinscript"
         self.package.write_bytes(b"build")
+        reload_patcher = mock.patch.object(
+            autoinstalld, "reload_kwin_script", return_value=autoinstalld.RELOADED
+        )
+        self.reload_mock = reload_patcher.start()
+        self.addCleanup(reload_patcher.stop)
 
     def test_installs_when_the_plugin_is_missing(self):
         self.assertTrue(autoinstalld.kwin_script_install(self.package))
@@ -149,6 +169,184 @@ class KwinScriptInstallTests(FakeToolTestCase):
         self.assertFalse(autoinstalld.kwin_script_install(self.package))
         self.assertTrue(any("💀" in line for line in self.notifications()))
         self.assertFalse(any("✅" in line for line in self.notifications()))
+        self.reload_mock.assert_not_called()
+
+    def test_installs_then_reloads_the_archive(self):
+        self.assertTrue(autoinstalld.kwin_script_install(self.package))
+        self.reload_mock.assert_called_once_with(self.package)
+        self.assertTrue(
+            any("✅" in line and "reloaded" in line for line in self.notifications())
+        )
+
+    def test_failed_reload_keeps_the_install_successful(self):
+        self.reload_mock.return_value = autoinstalld.RELOAD_FAILED
+        self.assertTrue(autoinstalld.kwin_script_install(self.package))
+        # reload_kwin_script reports the failure itself; install must not add a
+        # success notification.
+        self.assertFalse(any("✅" in line for line in self.notifications()))
+
+    def test_skipped_reload_is_reported_as_next_login(self):
+        self.reload_mock.return_value = autoinstalld.RELOAD_SKIPPED
+        self.assertTrue(autoinstalld.kwin_script_install(self.package))
+        self.assertTrue(
+            any("✅" in line and "next login" in line for line in self.notifications())
+        )
+
+    def test_reload_can_be_disabled(self):
+        with mock.patch.object(
+            autoinstalld.config, "reload_after_install", False, create=True
+        ):
+            self.assertTrue(autoinstalld.kwin_script_install(self.package))
+        self.reload_mock.assert_not_called()
+        self.assertTrue(
+            any("✅" in line and "reloaded" not in line for line in self.notifications())
+        )
+
+
+class ReloadKwinScriptTests(FakeToolTestCase):
+    def setUp(self):
+        super().setUp()
+        self.package = self.tmp / "krohnkite-test.kwinscript"
+        self.package.write_bytes(b"build")
+        self.helper = self.tmp / "reload-script.py"
+        self.helper.write_text(FAKE_RELOAD_SCRIPT)
+        self.reload_log = self.tmp / "reload.log"
+
+        config_patcher = mock.patch.object(
+            autoinstalld.config, "reload_script", self.helper.as_posix(), create=True
+        )
+        config_patcher.start()
+        self.addCleanup(config_patcher.stop)
+        env_patcher = mock.patch.dict(
+            os.environ,
+            {
+                "RELOAD_LOG": self.reload_log.as_posix(),
+                "RELOAD_EXIT": "0",
+                "RELOAD_STDERR": "",
+            },
+        )
+        env_patcher.start()
+        self.addCleanup(env_patcher.stop)
+
+    def reload_calls(self) -> list[list[str]]:
+        if not self.reload_log.is_file():
+            return []
+        return [
+            json.loads(line) for line in self.reload_log.read_text().splitlines()
+        ]
+
+    def test_runs_the_helper_for_the_archive(self):
+        self.assertEqual(
+            autoinstalld.reload_kwin_script(self.package), autoinstalld.RELOADED
+        )
+        self.assertEqual(
+            self.reload_calls(),
+            [["--only-if-loaded", self.package.as_posix()]],
+        )
+        self.assertFalse(any("💀" in line for line in self.notifications()))
+
+    def test_skipped_reload_is_not_a_failure(self):
+        os.environ["RELOAD_EXIT"] = str(autoinstalld.RELOAD_SKIPPED_EXIT_CODE)
+        self.assertEqual(
+            autoinstalld.reload_kwin_script(self.package), autoinstalld.RELOAD_SKIPPED
+        )
+        self.assertFalse(any("💀" in line for line in self.notifications()))
+
+    def test_failed_reload_reports_helper_stderr(self):
+        os.environ["RELOAD_EXIT"] = "1"
+        os.environ["RELOAD_STDERR"] = "dbus exploded"
+        self.assertEqual(
+            autoinstalld.reload_kwin_script(self.package), autoinstalld.RELOAD_FAILED
+        )
+        self.assertTrue(
+            any("dbus exploded" in line for line in self.notifications())
+        )
+
+    def test_missing_helper_is_reported(self):
+        with mock.patch.object(
+            autoinstalld.config,
+            "reload_script",
+            (self.tmp / "missing.py").as_posix(),
+        ):
+            self.assertEqual(
+                autoinstalld.reload_kwin_script(self.package), autoinstalld.RELOAD_FAILED
+            )
+        self.assertTrue(
+            any("reload-script.py not found" in line for line in self.notifications())
+        )
+
+
+class ReloadScriptPathTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.tmp, ignore_errors=True)
+
+    def _touch(self, path: Path) -> Path:
+        path.write_text("")
+        return path
+
+    def test_prefers_the_file_next_to_the_daemon(self):
+        helper = self._touch(self.tmp / "reload-script.py")
+        with mock.patch.object(
+            autoinstalld.config, "reload_script", "", create=True
+        ):
+            self.assertEqual(autoinstalld._reload_script_path(self.tmp), helper)
+
+    def test_falls_back_to_the_parent_directory(self):
+        helper = self._touch(self.tmp / "reload-script.py")
+        child = self.tmp / "autoinstall"
+        child.mkdir()
+        with mock.patch.object(
+            autoinstalld.config, "reload_script", "", create=True
+        ):
+            self.assertEqual(autoinstalld._reload_script_path(child), helper)
+
+    def test_configured_path_wins_over_the_search(self):
+        helper = self._touch(self.tmp / "custom.py")
+        with mock.patch.object(
+            autoinstalld.config, "reload_script", helper.as_posix(), create=True
+        ):
+            self.assertEqual(autoinstalld._reload_script_path(self.tmp), helper)
+
+    def test_missing_configured_path_does_not_fall_back(self):
+        self._touch(self.tmp / "reload-script.py")
+        with mock.patch.object(
+            autoinstalld.config,
+            "reload_script",
+            (self.tmp / "missing.py").as_posix(),
+            create=True,
+        ):
+            self.assertIsNone(autoinstalld._reload_script_path(self.tmp))
+
+
+class InstallReloadScriptTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = Path(tempfile.mkdtemp())
+        self.addCleanup(shutil.rmtree, self.tmp, ignore_errors=True)
+
+    def _touch(self, path: Path) -> Path:
+        path.write_text("")
+        return path
+
+    def test_finds_the_helper_next_to_the_daemon(self):
+        helper = self._touch(self.tmp / "reload-script.py")
+        self.assertEqual(install.find_reload_script(self.tmp, None), helper)
+
+    def test_finds_the_helper_in_the_parent_directory(self):
+        helper = self._touch(self.tmp / "reload-script.py")
+        child = self.tmp / "autoinstall"
+        child.mkdir()
+        self.assertEqual(install.find_reload_script(child, None), helper)
+
+    def test_explicit_path_is_used(self):
+        helper = self._touch(self.tmp / "custom.py")
+        self.assertEqual(install.find_reload_script(self.tmp, helper), helper)
+
+    def test_missing_explicit_path_does_not_fall_back_to_the_search(self):
+        self._touch(self.tmp / "reload-script.py")
+        self.assertIsNone(
+            install.find_reload_script(self.tmp, self.tmp / "missing.py")
+        )
 
 
 class FileEventHandlerTests(unittest.TestCase):

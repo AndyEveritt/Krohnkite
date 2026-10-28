@@ -35,6 +35,14 @@ INSTALL_INTERVAL_SECONDS = 1.0
 # is always installed.
 DUPLICATE_EVENT_SECONDS = 1.0
 
+# reload-script.py reports that nothing was done (the script is not loaded, so
+# the installed files will be used on the next login) with this exit code.
+RELOAD_SKIPPED_EXIT_CODE = 3
+RELOAD_SCRIPT_NAME = "reload-script.py"
+RELOADED = "reloaded"
+RELOAD_SKIPPED = "skipped"
+RELOAD_FAILED = "failed"
+
 exit_event = threading.Event()
 install_queue: queue.Queue[tuple[Path, bool, float]] = queue.Queue()
 
@@ -93,6 +101,71 @@ def _kpackagetool6(package: Path, mode: str) -> CompletedProcess[bytes] | None:
     )
 
 
+def _reload_script_path(base: Path | None = None) -> Path | None:
+    """Find reload-script.py, or the path configured in config.py."""
+    configured = getattr(config, "reload_script", "").strip()
+    if configured:
+        path = Path(configured).expanduser()
+        return path if path.is_file() else None
+
+    if base is None:
+        base = Path(__file__).resolve().parent
+    for candidate in (base / RELOAD_SCRIPT_NAME, base.parent / RELOAD_SCRIPT_NAME):
+        if candidate.is_file():
+            return candidate
+    return None
+
+
+def _reload_kwin_script(package: Path) -> str:
+    helper = _reload_script_path()
+    if helper is None:
+        message = (
+            f"{RELOAD_SCRIPT_NAME} not found next to autoinstalld.py or in its parent"
+        )
+        error(message)
+        kde_send_notification(f"💀 {message}")
+        return RELOAD_FAILED
+
+    result = run_cmd(
+        [
+            sys.executable,
+            helper.as_posix(),
+            "--only-if-loaded",
+            package.as_posix(),
+        ],
+        is_stilly=True,
+    )
+    if result is None:
+        kde_send_notification(f"💀 reload failed: {package.name}")
+        return RELOAD_FAILED
+
+    if result.returncode == RELOAD_SKIPPED_EXIT_CODE:
+        info(
+            f"{config.kwin_script_name} is not loaded; "
+            "the update applies at the next login"
+        )
+        return RELOAD_SKIPPED
+
+    if result.returncode != 0:
+        detail = _stderr_text(result) or f"{helper.name} exited with {result.returncode}"
+        error(detail)
+        kde_send_notification(f"💀 reload failed: {detail}")
+        return RELOAD_FAILED
+
+    info(f"reloaded: {package}")
+    return RELOADED
+
+
+def reload_kwin_script(package: Path) -> str:
+    """Apply an installed package to the running KWin, keeping the worker alive."""
+    try:
+        return _reload_kwin_script(package)
+    except Exception as exc:  # noqa: BLE001 - a reload bug must not stop installs
+        error(f"reload failed: {exc}")
+        kde_send_notification(f"💀 reload failed: {package.name}")
+        return RELOAD_FAILED
+
+
 def kwin_script_install(package: Path) -> bool:
     is_installed = _is_installed()
     if is_installed is None:
@@ -127,7 +200,17 @@ def kwin_script_install(package: Path) -> bool:
         warning(message)
 
     info(f"installed: {package}")
-    kde_send_notification(f"✅ {package.name}")
+    if getattr(config, "reload_after_install", True):
+        outcome = reload_kwin_script(package)
+        # A failed reload is already reported and must not turn a successful
+        # installation into a failure: the new files are on disk and KWin will
+        # use them on the next login.
+        if outcome == RELOAD_FAILED:
+            return True
+        suffix = " (reloaded)" if outcome == RELOADED else " (next login)"
+        kde_send_notification(f"✅ {package.name}{suffix}")
+    else:
+        kde_send_notification(f"✅ {package.name}")
     return True
 
 

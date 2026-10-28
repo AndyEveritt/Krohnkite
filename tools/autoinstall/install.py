@@ -25,11 +25,27 @@ def make_directory(p: Path) -> bool:
     return True
 
 
-def generate_cfg(p: Path) -> bool:
+def find_reload_script(current_dir: Path, explicit: Path | None) -> Path | None:
+    if explicit is not None:
+        path = explicit.expanduser().resolve()
+        return path if path.is_file() else None
+
+    for candidate in (
+        current_dir / "reload-script.py",
+        current_dir.parent / "reload-script.py",
+    ):
+        if candidate.is_file():
+            return candidate
+    return None
+
+
+def generate_cfg(p: Path, reload_script: str = "") -> bool:
     cfg = f"""
 folder_path: str = "{p}"
 
 kwin_script_name: str = "krohnkite"
+reload_after_install: bool = True
+reload_script: str = "{reload_script}"
 install_program = "kpackagetool6"
 notify_program = "notify-send"
 """
@@ -87,6 +103,12 @@ if __name__ == "__main__":
         "dirpath",
         help="Absolute or relative path to directory where will appear krohnkite packages",
     )
+    parser.add_argument(
+        "--reload-script",
+        type=Path,
+        default=None,
+        help="Path to reload-script.py (default: look in this directory, then its parent)",
+    )
     args = parser.parse_args()
 
     current_dir = Path(os.getcwd())
@@ -105,6 +127,15 @@ if __name__ == "__main__":
         exit(-1)
     success(f"2.Check if '{watch_dir}' exist")
 
+    reload_script = find_reload_script(current_dir, args.reload_script)
+    if reload_script is None:
+        fail(
+            "2.1.Check if 'reload-script.py' exist: put it next to "
+            "'autoinstalld.py' or in the parent directory, or pass --reload-script"
+        )
+        exit(1)
+    success(f"2.1.Check if 'reload-script.py' exist: {reload_script}")
+
     config_backup_file = current_dir.joinpath("config.py.backup")
     if config_backup_file.is_file():
         config_backup_file.unlink()
@@ -112,7 +143,12 @@ if __name__ == "__main__":
     if config_file.is_file():
         os.rename(config_file, config_backup_file)
 
-    if generate_cfg(watch_dir):
+    # An explicit path is recorded; otherwise the daemon searches again at
+    # runtime, so moving the checkout does not break the service.
+    configured_reload = (
+        reload_script.as_posix() if args.reload_script is not None else ""
+    )
+    if generate_cfg(watch_dir, configured_reload):
         success("3.Generate 'config.py'")
 
     virtualenv_path = current_dir.joinpath(".venv")
