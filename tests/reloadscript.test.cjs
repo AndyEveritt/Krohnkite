@@ -71,19 +71,35 @@ const output = (stdout) => ({ stdout });
 const error = (stderr, code = 1) => ({ error: stderr, code });
 const command = (method, ...args) => ['org.kde.KWin', '/Scripting', `org.kde.kwin.Scripting.${method}`, ...args];
 const success = ['false', '42', '', 'true'];
+const cacheDir = (f) => path.join(f.env.XDG_CACHE_HOME, 'krohnkite');
+const bundles = (f) => fs.existsSync(cacheDir(f))
+  ? fs.readdirSync(cacheDir(f)).filter((name) => name.startsWith('reload-'))
+  : [];
+const stagedMain = (f) => f.calls().filter((args) => args[2].endsWith('.loadDeclarativeScript')).at(-1)[3];
+const bundleDir = (main) => path.resolve(path.dirname(main), '../..');
 
 test('stages every dependency at unique paths', () => {
   const f = fixture([...success, ...success]);
-  assert.equal(f.run().status, 0);
-  assert.equal(f.run().status, 0);
-  const mains = f.calls().filter((args) => args[2].endsWith('.loadDeclarativeScript')).map((args) => args[3]);
-  assert.equal(mains.length, 2);
-  assert.notEqual(mains[0], mains[1]);
-  for (const main of mains) {
-    const bundle = path.resolve(path.dirname(main), '../..');
-    for (const [relative, content] of Object.entries(f.files)) assert.equal(fs.readFileSync(path.join(bundle, relative), 'utf8'), content);
+  const mains = [];
+  for (let run = 0; run < 2; run += 1) {
+    assert.equal(f.run().status, 0);
+    const main = stagedMain(f);
+    mains.push(main);
+    for (const [relative, content] of Object.entries(f.files)) assert.equal(fs.readFileSync(path.join(bundleDir(main), relative), 'utf8'), content);
     assert.equal(fs.readFileSync(path.resolve(path.dirname(main), '../code/script.js'), 'utf8'), '// fresh JavaScript');
   }
+  assert.notEqual(mains[0], mains[1]);
+  assert.equal(bundles(f).length, 1);
+});
+
+test('superseded bundles are pruned', () => {
+  const f = fixture([...success, ...success, ...success]);
+  assert.equal(f.run().status, 0);
+  const first = path.basename(bundleDir(stagedMain(f)));
+  assert.equal(f.run().status, 0);
+  assert.equal(f.run().status, 0);
+  assert.deepEqual(bundles(f), [path.basename(bundleDir(stagedMain(f)))]);
+  assert.notEqual(first, bundles(f)[0]);
 });
 
 test('missing package rejected before staging', () => {
@@ -162,6 +178,25 @@ test('rejected replacement recovers using last-good bundle', () => {
   assert.notEqual(result.status, 0);
   assert.match(result.stderr, /Recovered using prior bundle/);
   assert.equal(f.calls()[3][3], previous);
+});
+
+test('rejected bundle is removed after a failed replacement', () => {
+  const f = fixture([output('true'), output('true'), output('-1'), output('31'), output(''), output('true')]);
+  const cache = cacheDir(f);
+  const previous = path.join(cache, 'previous/contents/ui/main.qml');
+  fs.mkdirSync(path.dirname(previous), { recursive: true });
+  fs.writeFileSync(previous, 'prior');
+  fs.mkdirSync(cache, { recursive: true });
+  fs.writeFileSync(path.join(cache, 'last-good-main-qml'), previous);
+  assert.notEqual(f.run().status, 0);
+  assert.deepEqual(bundles(f), []);
+  assert.equal(fs.readFileSync(previous, 'utf8'), 'prior');
+});
+
+test('failed first reload leaves no staged bundle', () => {
+  const f = fixture([output('false'), output('-1')]);
+  assert.notEqual(f.run().status, 0);
+  assert.deepEqual(bundles(f), []);
 });
 
 test('DBus exception reports primary and recovery failure', () => {

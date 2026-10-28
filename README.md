@@ -51,12 +51,12 @@ make reload
 This builds, installs, and reloads Kröhnkite through KWin's scripting interface.
 Every reload copies the complete bundle to a fresh cache directory, bypassing
 cached QML and JavaScript. No logout or compositor restart is required. The copied
-bundle stays available for lazy resource loading. After each successful reload,
-the helper records that bundle path under the cache directory. If a later
-replacement fails, it best-effort reloads the last known working bundle; recovery
-is unavailable when no prior bundle is recorded or its files are gone, and does
-not guarantee exact restoration. For a command preview:
-`python3 tools/reload-script.py pkg --dry-run`.
+bundle stays available for lazy resource loading, and superseded bundles are
+deleted. After each successful reload, the helper records that bundle path under
+the cache directory. If a later replacement fails, it best-effort reloads the last
+known working bundle; recovery is unavailable when no prior bundle is recorded or
+its files are gone, and does not guarantee exact restoration. For a command
+preview: `python3 tools/reload-script.py pkg --dry-run`.
 
 ### Enable Krohnkite
 ```
