@@ -32,10 +32,10 @@ K and looks cool.
 - p7zip (7z)
 - python3 (reload helper and its tests)
 
-`make reload` also needs a running KWin session with `qdbus6` reachable on the
+`go-task reload` also needs a running KWin session with `qdbus6` reachable on the
 session bus; nothing else in the project uses it.
 
-Run the automated Node.js tests with `npm test` or `make test`. The reload
+Run the automated tests with `go-task test` (or `npm run check`). The reload
 helper tests use an isolated fake `qdbus6`; they do not contact KWin.
 
 ## Look at me
@@ -48,8 +48,7 @@ helper tests use an isolated fake `qdbus6`; they do not contact KWin.
 ### Apply code changes without logout
 
 ```sh
-make reload
-# Or: task reload
+go-task reload
 ```
 
 This builds, installs, and reloads Kröhnkite through KWin's scripting interface.
