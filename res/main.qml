@@ -16,6 +16,18 @@ Item {
     id: scriptRoot
     property var runtime: null
 
+    Loader {
+        id: iconInstaller
+        source: "iconinstaller.qml"
+
+        onLoaded: item.install()
+        onStatusChanged: {
+            if (status === Loader.Error)
+                console.warn("KROHNKITE: icon installer unavailable; "
+                    + "install the Plasma5Support QML module or run install-icons.py manually");
+        }
+    }
+
     TaskManager.ActivityInfo {
         id: activityInfo
     }
@@ -27,6 +39,37 @@ Item {
         function showNotification(text, duration) {
             var area = Workspace.clientArea(KWin.FullScreenArea, Workspace.activeScreen, Workspace.currentDesktop);
             this.item.show(text, area, duration);
+        }
+
+        function showLayoutShortcut(entry, duration) {
+            if (!this.item) return;
+            var area = Workspace.clientArea(KWin.FullScreenArea, Workspace.activeScreen, Workspace.currentDesktop);
+            this.item.showLayoutShortcut(entry, area, duration);
+        }
+
+        function showLayouts(entries, selected, duration) {
+            if (!this.item) return;
+            var area = Workspace.clientArea(KWin.FullScreenArea, Workspace.activeScreen, Workspace.currentDesktop);
+            this.item.showLayouts(entries, selected, area, duration);
+        }
+    }
+
+    Loader {
+        id: layoutChooserDialog
+        source: "layoutchooser.qml"
+
+        function showLayouts(entries, selected) {
+            if (!this.item) return;
+            var area = Workspace.clientArea(KWin.FullScreenArea, Workspace.activeScreen, Workspace.currentDesktop);
+            this.item.showLayouts(entries, selected, area);
+        }
+    }
+
+    Connections {
+        target: layoutChooserDialog.item
+
+        function onLayoutSelected(id) {
+            if (runtime !== null) runtime.selectLayout(id);
         }
     }
 

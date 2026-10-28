@@ -3,7 +3,7 @@
   "KPlugin": {
     "Name": "Krohnkite",
     "Description": "A dynamic tiling script for KWin ($REV)",
-    "Icon": "dialog-tile-clones",
+    "Icon": "krohnkite",
 
     "Authors": [
       {

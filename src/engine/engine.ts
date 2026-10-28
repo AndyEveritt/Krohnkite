@@ -1335,15 +1335,19 @@ class TilingEngine {
    */
   public cycleLayout(ctx: IDriverContext, step: 1 | -1) {
     const layout = this.layouts.cycleLayout(ctx.currentSurface, step);
-    if (layout) ctx.showNotification(layout.description);
+    if (layout) ctx.showLayoutOSD();
   }
 
   /**
    * Set the layout of the current surface to the specified layout.
    */
-  public setLayout(ctx: IDriverContext, layoutClassID: string) {
+  public setLayout(
+    ctx: IDriverContext,
+    layoutClassID: string,
+    showOSD: boolean = true,
+  ) {
     const layout = this.layouts.setLayout(ctx.currentSurface, layoutClassID);
-    if (layout) ctx.showNotification(layout.description);
+    if (layout && showOSD) ctx.showLayoutShortcut(layout.classID);
   }
 
   /**

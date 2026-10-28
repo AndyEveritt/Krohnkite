@@ -93,6 +93,10 @@ const Shortcuts = {
     defaultAction: KrohnkiteAction.PreviousLayout,
     defaultRegisterAction: null,
   },
+  LayoutChooserSC: {
+    defaultAction: KrohnkiteAction.LayoutChooser,
+    defaultRegisterAction: null,
+  },
   RotateSC: {
     defaultAction: KrohnkiteAction.Rotate,
     defaultRegisterAction: KrohnkiteAction.RotatePart,

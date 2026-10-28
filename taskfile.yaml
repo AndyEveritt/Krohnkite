@@ -9,7 +9,7 @@ vars:
   KWINPKG_FILE_EXT: "kwinscript"
 
   GIT_BRANCH:
-    sh: 'gb=$(git symbolic-ref --short -q HEAD); case "$gb" in ""|master|main) echo "" ;; *) echo "-$(printf "%s" "$gb" | tr "/" "_")" ;; esac'
+    sh: 'gb=$(git symbolic-ref --short -q HEAD); case "$gb" in master|main) echo "-git" ;; release|release/*) echo "" ;; *) echo "-$(printf "%s" "$gb" | tr "/" "_")" ;; esac'
   KWINPKG_FILE: "{{.PROJECT_NAME }}-{{.PROJECT_VER }}{{.GIT_BRANCH}}_{{.PROJECT_REV }}.{{.KWINPKG_FILE_EXT}}"
   PACKAGE: "builds/{{.KWINPKG_FILE}}"
   KWINPKG_DIR: "pkg"
@@ -32,6 +32,7 @@ tasks:
     deps: [kwin-pkg-file]
     cmds:
       - "kpackagetool6 -t KWin/Script -s {{.PROJECT_NAME}} && kpackagetool6 -t KWin/Script -u {{.PACKAGE}} || kpackagetool6 -t KWin/Script -i {{.PACKAGE}}"
+      - python3 tools/install-icons.py
 
   reload:
     deps: [install]
@@ -41,6 +42,12 @@ tasks:
   uninstall:
     cmds:
       - "kpackagetool6 -t KWin/Script -r  {{.PROJECT_NAME}}"
+      - python3 tools/install-icons.py --uninstall
+
+  test:
+    deps: [install-deps]
+    cmds:
+      - npm run check
 
   kwin-pkg-file:
     aliases: [package]
@@ -65,6 +72,11 @@ tasks:
       - cp res/main.qml {{.KWINPKG_DIR}}/contents/ui/main.qml
       - cp res/config.ui {{.KWINPKG_DIR}}/contents/ui/config.ui
       - cp res/popup.qml  {{.KWINPKG_DIR}}/contents/ui/popup.qml
+      - cp res/layoutchooser.qml {{.KWINPKG_DIR}}/contents/ui/layoutchooser.qml
+      - cp res/iconinstaller.qml {{.KWINPKG_DIR}}/contents/ui/iconinstaller.qml
+      - cp -r res/layouts {{.KWINPKG_DIR}}/contents/ui/
+      - cp -r res/appicon {{.KWINPKG_DIR}}/contents/ui/
+      - cp tools/install-icons.py {{.KWINPKG_DIR}}/contents/code/install-icons.py
       - cp res/dragpreview.qml  {{.KWINPKG_DIR}}/contents/ui/dragpreview.qml
       - cp res/shortcuts.qml  {{.KWINPKG_DIR}}/contents/ui/shortcuts.qml
       - cp res/dbus.qml  {{.KWINPKG_DIR}}/contents/ui/dbus.qml
@@ -76,6 +88,11 @@ tasks:
       - res/main.qml
       - res/config.ui
       - res/popup.qml
+      - res/layoutchooser.qml
+      - res/iconinstaller.qml
+      - res/layouts/*.svg
+      - res/appicon/*.svg
+      - tools/install-icons.py
       - res/dragpreview.qml
       - res/shortcuts.qml
       - res/dbus.qml
@@ -86,6 +103,11 @@ tasks:
       - "{{.KWINPKG_DIR}}/contents/ui/main.qml"
       - "{{.KWINPKG_DIR}}/contents/ui/config.ui"
       - "{{.KWINPKG_DIR}}/contents/ui/popup.qml"
+      - "{{.KWINPKG_DIR}}/contents/ui/layoutchooser.qml"
+      - "{{.KWINPKG_DIR}}/contents/ui/iconinstaller.qml"
+      - "{{.KWINPKG_DIR}}/contents/ui/layouts/*.svg"
+      - "{{.KWINPKG_DIR}}/contents/ui/appicon/*.svg"
+      - "{{.KWINPKG_DIR}}/contents/code/install-icons.py"
       - "{{.KWINPKG_DIR}}/contents/ui/dragpreview.qml"
       - "{{.KWINPKG_DIR}}/contents/ui/shortcuts.qml"
       - "{{.KWINPKG_DIR}}/contents/ui/dbus.qml"
@@ -124,3 +146,8 @@ tasks:
       - 'sed -i "s/\"version\": [^,]*/\"version\": \"{{.PROJECT_VER}}\"/" package.json'
     preconditions:
       - test -f package.json
+
+  translations:
+    desc: Regenerate the translation template and compile the .mo files
+    cmds:
+      - bash tools/update-translations.sh

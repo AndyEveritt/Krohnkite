@@ -121,7 +121,7 @@ kpackagetool6 -t KWin/Script -r krohnkite
 
 ### Installing from Git repository
 
-Make sure you have [go-task](https://taskfile.dev/installation/), [npm](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm) and [7-zip](https://www.7-zip.org/download.html) packages installed. All packages after building will be in `builds` folder.
+Make sure you have [go-task](https://taskfile.dev/installation/), [npm](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm), [7-zip](https://www.7-zip.org/download.html) and Python 3 packages installed. All packages after building will be in `builds` folder.
 The simplest method to automatically build and install kwinscript package would be:
 
 ```
@@ -139,6 +139,14 @@ uninstall package:
 ```
 go-task uninstall
 ```
+
+## Tests
+
+Run the full test suite with `go-task test` (or `npm run check`). The layout
+icon tests run against the real installer in isolated temporary XDG data
+directories. The native Qt UI rendering check runs when PySide6 is installed
+and otherwise reports an explicit skip. `npm test` runs only the layout icon
+tests.
 
 ## Settings
 
@@ -200,6 +208,7 @@ go-task uninstall
 | Meta + F         | Toggle Floating    |
 | Meta + \         | Next Layout        |
 | Meta + \|        | Previous Layout    |
+| _unbound_        | Layout Chooser     |
 |                  |                    |
 | Meta + Return    | Set as Master      |
 |                  |                    |
@@ -208,6 +217,35 @@ go-task uninstall
 | _unbound_        | Use Spread Layout  |
 | _unbound_        | Use Stair Layout   |
 | _unbound_        | Use Cascade Layout |
+
+### Icons
+
+Kröhnkite ships its artwork as shared SVGs: layout pictograms in `res/layouts/`
+and the application icon in `res/appicon/`. Install registers
+`krohnkite-layout-*` under `$XDG_DATA_HOME/icons/hicolor/scalable/actions` and
+`krohnkite.svg` under `$XDG_DATA_HOME/icons/hicolor/scalable/apps` (normally
+`~/.local/share/icons`). `res/metadata.json` refers to the application icon by
+its theme name, so KWin, System Settings and the KDE Store entry all use the
+same artwork without any raster copy. Python 3 is required. `xdg-icon-resource`
+refreshes the icon cache; if it is unavailable, the icons are still installed
+and the refresh is retried on the next start.
+
+Direct `.kwinscript` installs register the icons at KWin startup when the
+optional `org.kde.plasma.plasma5support` QML module is available (some Plasma 6
+systems ship it separately). Without that module the script still runs, KWin
+logs a warning, and the icons are not installed automatically; run the
+package's `contents/code/install-icons.py` manually, for example:
+
+```
+python3 ~/.local/share/kwin/scripts/krohnkite/contents/code/install-icons.py
+```
+
+Repository installs (`go-task install`) are not affected. Reopen settings after
+installation. `go-task uninstall` removes only these icons.
+
+The application icon is resolved by its theme name only: if it was never
+installed, KWin shows a blank icon for the script instead of falling back to
+another one. Running the installer once is enough to fix that.
 
 ## Tips
 

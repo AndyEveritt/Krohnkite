@@ -41,6 +41,12 @@ interface DragAction {
   dockTarget: DockPosition | null;
   mousePointer: QPoint;
   middlePointer: QPoint;
+  /* Physically adjacent outputs per side. Decides whether a dock zone is
+   * tested against the cursor or the window's middle (see dockstore). */
+  neighbors: { left: boolean; right: boolean; up: boolean; down: boolean };
+  /* Surface id the neighbors were resolved for; the set is recalculated only
+   * when the window crosses to another surface. */
+  neighborsSrfId: string | null;
   swapping: {
     window: WindowClass | null;
     position: DockPosition | null;
@@ -146,7 +152,20 @@ class TilingController {
     const draggingRect = toRect(windowRect);
     const mousePointer: QPoint =
       ctx.cursorPosition || draggingRect.activationPoint;
-    const middlePointer: QPoint = ctx.cursorPosition || draggingRect.center;
+    /* The middle of the dragged window horizontally, the cursor vertically.
+     * A window can cross to an adjacent output before the cursor does, so on
+     * a side with a neighboring monitor the dock zone must be tested against
+     * the window rather than the pointer. */
+    const middlePointer: QPoint = {
+      x: draggingRect.center.x,
+      y: mousePointer.y,
+    };
+    const getNeighbors = (srf: ISurface) => ({
+      left: ctx.getNeighborOutput("left", srf.output) !== null,
+      right: ctx.getNeighborOutput("right", srf.output) !== null,
+      up: ctx.getNeighborOutput("up", srf.output) !== null,
+      down: ctx.getNeighborOutput("down", srf.output) !== null,
+    });
     const markActionTime = () => {
       if (this.dragAction === null) return;
       this.dragAction.actionTime = getTime();
@@ -165,6 +184,8 @@ class TilingController {
         dockTarget: null,
         mousePointer,
         middlePointer,
+        neighbors: getNeighbors(srf),
+        neighborsSrfId: srf.id,
         swapping: { window: null, position: null },
         initialState,
         initialDockPosition:
@@ -200,6 +221,10 @@ class TilingController {
     }
     this.dragAction.result = { isProcessed: false, isArrangeNeeded: false };
     this.dragAction.dockTarget = null;
+    if (this.dragAction.neighborsSrfId !== srf.id) {
+      this.dragAction.neighbors = getNeighbors(srf);
+      this.dragAction.neighborsSrfId = srf.id;
+    }
 
     this.engine.docks.drag(this.dragAction);
     if (this.dragAction.result.isProcessed) {
@@ -510,6 +535,10 @@ class TilingController {
         break;
       case KrohnkiteAction.PreviousLayout:
         this.engine.cycleLayout(ctx, -1);
+        break;
+      case KrohnkiteAction.LayoutChooser:
+        ctx.showLayoutChooser();
+        isArrangeNeeded = false;
         break;
       case KrohnkiteAction.SetTileLayout:
       case KrohnkiteAction.SetMonocleLayout:
