@@ -5,30 +5,32 @@
     SPDX-License-Identifier: MIT
 */
 
-class WindowClass {
+class WindowClass implements IWindowClass {
   public static isTileableState(state: WindowState): boolean {
     return (
-      state === WindowState.Dragging ||
       state === WindowState.Tiled ||
       state === WindowState.Maximized ||
       state === WindowState.TiledAfloat
     );
   }
-
   public static isTiledState(state: WindowState): boolean {
     return state === WindowState.Tiled || state === WindowState.Maximized;
   }
-
   public static isFloatingState(state: WindowState): boolean {
     return state === WindowState.Floating || state === WindowState.TiledAfloat;
   }
-
   public static isDockedState(state: WindowState): boolean {
     return state === WindowState.Docked;
   }
-
-  public readonly id: string;
-  public readonly window: IDriverWindow;
+  public static isToggleableState(
+    state: WindowState,
+  ): state is ToggleableState {
+    return (
+      state === WindowState.Tiled ||
+      state === WindowState.Floating ||
+      state === WindowState.Docked
+    );
+  }
 
   public get actualGeometry(): Readonly<Rect> {
     return this.window.geometry;
@@ -39,7 +41,9 @@ class WindowClass {
   public get shouldIgnore(): boolean {
     return this.window.shouldIgnore;
   }
-
+  public isAlive(): boolean {
+    return this.window.isAlive();
+  }
   /** If this window ***can be*** tiled by layout. */
   public get isTileable(): boolean {
     return WindowClass.isTileableState(this.state);
@@ -52,24 +56,20 @@ class WindowClass {
   public get isFloating(): boolean {
     return WindowClass.isFloatingState(this.state);
   }
-
   public get isDocked(): boolean {
     return WindowClass.isDockedState(this.state);
   }
-
   public get geometryDelta(): RectDelta | null {
     if (this.geometry === this.actualGeometry) return null;
 
     return RectDelta.fromRects(this.geometry, this.actualGeometry);
   }
-
-  public get minSize() {
+  public get minSize(): ISize {
     return this._minSize;
   }
-  public get maxSize() {
+  public get maxSize(): ISize {
     return this._maxSize;
   }
-
   /**
    * The current state of the window.
    *
@@ -85,42 +85,60 @@ class WindowClass {
 
     return this.internalState;
   }
-
   public set state(value: WindowState) {
     const state = this.state;
 
     /* cannot transit to the current state */
-    if (state === value || state === WindowState.Dragging) return;
+    if (state === value) return;
 
     if (
-      (state === WindowState.Unmanaged || WindowClass.isTileableState(state)) &&
+      (state === WindowState.Unmanaged || this.isTileable || this.isDocked) &&
       WindowClass.isFloatingState(value)
     )
       this.shouldCommitFloat = true;
     else if (
-      WindowClass.isFloatingState(state) &&
-      WindowClass.isTileableState(value)
+      this.isFloating &&
+      (WindowClass.isTileableState(value) || WindowClass.isDockedState(value))
     )
       /* save the current geometry before leaving floating state */
-      this._floatGeometry = this.actualGeometry;
+      this.floatGeometry = this.actualGeometry;
 
+    if (
+      state === WindowState.Tiled ||
+      state === WindowState.Floating ||
+      state === WindowState.Docked
+    ) {
+      this.previousState = state;
+    }
     this.internalState = value;
   }
-  public setDraggingState() {
-    this.internalState = WindowState.Dragging;
+  /**
+   * Set the state directly, bypassing previousState and float-commit
+   * bookkeeping. For transient previews (e.g. during dragging).
+   */
+  public setTransientState(state: WindowState): void {
+    this.internalState = state;
   }
-  public setState(value: WindowState) {
-    this.internalState = value;
+  /**
+   * Enter the floating state while keeping the window exactly where it is.
+   *
+   * `commit()` applies `floatGeometry` (not the layout geometry) once a window
+   * is floating. If the current geometry is not captured first, the window is
+   * snapped to its remembered/lazily-computed native float rect, which shows up
+   * as a small jump when an automatically-floated window (e.g. one that cannot
+   * fit the tile) leaves the layout. User-initiated toggles intentionally keep
+   * the remembered float position and should not use this.
+   */
+  public floatInPlace(): void {
+    if (!this.isFloating) this.floatGeometry = this.actualGeometry.clone();
+    this.state = WindowState.Floating;
   }
-
   public get surface(): ISurface {
     return this.window.surface;
   }
-
   public set surface(srf: ISurface) {
     this.window.surface = srf;
   }
-
   public get weight(): number {
     const srfID = this.window.surface.id;
     const weight: number | undefined = this.weightMap[srfID];
@@ -130,85 +148,107 @@ class WindowClass {
     }
     return weight;
   }
-
   public set weight(value: number) {
     const srfID = this.window.surface.id;
     this.weightMap[srfID] = value;
   }
-
   public get windowClassName(): string {
     return this.window.windowClassName;
   }
-
+  public get windowCaption(): string {
+    return this.window.windowCaption;
+  }
   public get floatGeometry(): Rect {
-    if (this._floatGeometry === null) {
-      this._floatGeometry = this.window.getInitFloatGeometry();
-    }
-    return this._floatGeometry;
+    return this.window.floatGeometry;
   }
   public set floatGeometry(value: Rect) {
-    this._floatGeometry = value;
+    this.window.floatGeometry = value;
+  }
+  /**
+   * The dock state of the window, instantiated lazily from the configured
+   * template on first access.
+   */
+  public get dock(): Dock {
+    if (this._dock === null) this._dock = this._dockTemplate.clone();
+    return this._dock;
+  }
+  public setDockTemplate(template: Dock): void {
+    this._dockTemplate = template;
   }
 
-  public dock: Dock | null;
+  public readonly id: string;
+  public readonly window: IDriverWindow;
   public geometry: Rect;
-  public timestamp: number;
+  public focusTime: number;
+  public isSendingToOutput: boolean;
+  public isRelocationPending: boolean;
+  public surfaceArrangeToken: number;
+  public relocationTargetOutput: Output | null;
+  public isDragging: boolean;
+  public previousState: ToggleableState;
 
   private internalState: WindowState;
   private shouldCommitFloat: boolean;
   private weightMap: { [key: string]: number };
   private _minSize: ISize;
   private _maxSize: ISize;
-  private _floatGeometry: Rect | null;
+  private _dock: Dock | null;
+  private _dockTemplate: Dock;
 
   constructor(window: IDriverWindow) {
     this.id = window.id;
     this.window = window;
 
     this.geometry = window.geometry;
-    this.timestamp = 0;
-
+    this.focusTime = 0;
+    this.isSendingToOutput = false;
+    this.isRelocationPending = false;
+    this.surfaceArrangeToken = 0;
+    this.relocationTargetOutput = null;
+    this.isDragging = false;
     this.internalState = WindowState.Unmanaged;
+    this.previousState = WindowState.Tiled;
     this.shouldCommitFloat = this.shouldFloat;
-    this._floatGeometry =
-      this.shouldCommitFloat || CONFIG.floatInit === null
-        ? this.geometry
-        : null;
+    // this._floatGeometry =
+    //   this.shouldCommitFloat || CONFIG.floatConfig === null
+    //     ? this.geometry
+    //     : null;
     this.weightMap = {};
-    this.dock = null;
+    this._dock = null;
+    this._dockTemplate = new Dock(DefaultDockCfg.instance);
 
     this._minSize = window.minSize;
     this._maxSize = window.maxSize;
   }
+
   public toString(): string {
-    return `Window: id=${this.id}, state: ${windowStateStr(this.state)}. ${
-      this.window
-    }`;
+    return `Window: id=${this.id}, state: ${this.state}. ${this.window}`;
   }
 
-  public commit(noBorders?: boolean) {
+  public commit(ctx: IDriverContext, noBorders?: boolean) {
+    if (this.isDragging) return;
+    if (!this.window.isCommittedEver) this.window.isCommittedEver = true;
     const state = this.state;
     LOG?.send(
       LogModules.arrangeScreen,
       "commit",
-      `id: ${this.id}, state: ${windowStateStr(state)}, floatGeometry: ${
+      `id: ${this.id}, state: ${state}, floatGeometry: ${
         this.floatGeometry
       }, commitGeometry: ${this.geometry}, noBorders: ${noBorders}`,
     );
     switch (state) {
-      case WindowState.Dragging:
-        break;
       case WindowState.NativeMaximized:
-        this.window.commit(undefined, undefined, undefined);
+        this.window.commit(ctx, undefined, undefined, undefined);
         break;
 
       case WindowState.NativeFullscreen:
-        this.window.commit(undefined, undefined, WindowLayer.Normal);
+        this.window.commit(ctx, undefined, undefined, WindowLayer.Normal);
         break;
 
       case WindowState.Floating:
         if (!this.shouldCommitFloat) break;
         this.window.commit(
+          ctx,
           this.floatGeometry,
           false,
           CONFIG.floatedWindowsLayer,
@@ -217,11 +257,12 @@ class WindowClass {
         break;
 
       case WindowState.Maximized:
-        this.window.commit(this.geometry, true, WindowLayer.Normal);
+        this.window.commit(ctx, this.geometry, true, WindowLayer.Normal);
         break;
 
       case WindowState.Tiled:
         this.window.commit(
+          ctx,
           this.geometry,
           CONFIG.noTileBorder || Boolean(noBorders),
           CONFIG.tiledWindowsLayer,
@@ -231,6 +272,7 @@ class WindowClass {
       case WindowState.TiledAfloat:
         if (!this.shouldCommitFloat) break;
         this.window.commit(
+          ctx,
           this.floatGeometry,
           false,
           CONFIG.floatedWindowsLayer,
@@ -239,6 +281,7 @@ class WindowClass {
         break;
       case WindowState.Floating:
         this.window.commit(
+          ctx,
           this.geometry,
           CONFIG.noTileBorder || Boolean(noBorders),
           CONFIG.floatedWindowsLayer,
@@ -246,6 +289,7 @@ class WindowClass {
         break;
       case WindowState.Docked:
         this.window.commit(
+          ctx,
           this.geometry,
           CONFIG.noTileBorder,
           CONFIG.tiledWindowsLayer,
@@ -260,8 +304,8 @@ class WindowClass {
    * This method is a quick hack created for engine#resizeFloat, thus should
    * not be used in other places.
    */
-  public forceSetGeometry(geometry: Rect) {
-    this.window.commit(geometry);
+  public forceSetGeometry(ctx: IDriverContext, geometry: Rect) {
+    this.window.commit(ctx, geometry);
   }
 
   public moveMouseToFocus() {

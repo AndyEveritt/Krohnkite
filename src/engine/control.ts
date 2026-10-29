@@ -12,32 +12,90 @@
  * In short, this class is just a bunch of event handling methods.
  */
 
+const LayoutShortcutIds: Partial<Record<KrohnkiteAction, string>> = {
+  ["SetTileLayout"]: "TileLayout",
+  ["SetMonocleLayout"]: "MonocleLayout",
+  ["SetThreeColumnLayout"]: "ThreeColumnLayout",
+  ["SetSpreadLayout"]: "SpreadLayout",
+  ["SetStairLayout"]: "StairLayout",
+  ["SetFloatingLayout"]: "FloatingLayout",
+  ["SetQuarterLayout"]: "QuarterLayout",
+  ["SetStackedLayout"]: "StackedLayout",
+  ["SetColumnsLayout"]: "ColumnsLayout",
+  ["SetSpiralLayout"]: "SpiralLayout",
+  ["SetBinaryTreeLayout"]: "BinaryTreeLayout",
+  ["SetCascadeLayout"]: "CascadeLayout",
+};
+
+interface DragAction {
+  result: {
+    isProcessed: boolean;
+    isArrangeNeeded: boolean;
+  };
+  actionTime: number;
+  srf: ISurface;
+  initialSrfId: string;
+  workingArea: Rect;
+  tilesArea: Rect | null;
+  window: WindowClass;
+  dockTarget: DockPosition | null;
+  mousePointer: QPoint;
+  middlePointer: QPoint;
+  /* Physically adjacent outputs per side. Decides whether a dock zone is
+   * tested against the cursor or the window's middle (see dockstore). */
+  neighbors: { left: boolean; right: boolean; up: boolean; down: boolean };
+  /* Surface id the neighbors were resolved for; the set is recalculated only
+   * when the window crosses to another surface. */
+  neighborsSrfId: string | null;
+  swapping: {
+    window: WindowClass | null;
+    position: DockPosition | null;
+  };
+  initialState: ToggleableState;
+  initialDockPosition: DockPosition | null;
+  isLayoutHasDragStep: boolean;
+}
+
 class TilingController {
   public engine: TilingEngine;
-  private isDragging: boolean;
-  private dragCompleteTime: number | null;
-  private _metaShortcuts: { [key: string]: Shortcut };
+  private dragAction: DragAction | null;
 
   public constructor(engine: TilingEngine) {
     this.engine = engine;
-    this.isDragging = false;
-    this.dragCompleteTime = null;
-    this._metaShortcuts = this._initMetaShortcuts();
+    this.dragAction = null;
   }
 
-  public onSurfaceUpdate(ctx: IDriverContext): void {
-    this.engine.arrange(ctx, getMethodName());
+  public onSurfaceUpdate(
+    ctx: IDriverContext,
+    reason: keyof typeof ArrangeReason,
+    extraSurfaces?: ISurface[],
+  ): void {
+    this.engine.arrange(ctx, reason, getMethodName(), extraSurfaces);
   }
 
-  public onCurrentActivityChanged(ctx: IDriverContext): void {
-    this.engine.arrange(ctx, getMethodName());
+  public onCurrentActivityChanged(
+    ctx: IDriverContext,
+    reason: keyof typeof ArrangeReason,
+  ): void {
+    this.engine.arrange(ctx, reason, getMethodName());
   }
 
-  public onCurrentSurfaceChanged(ctx: IDriverContext): void {
-    this.engine.arrange(ctx, getMethodName());
+  public onStackingOrderChanged(
+    ctx: IDriverContext,
+    window: WindowClass,
+    reason: keyof typeof ArrangeReason,
+  ): void {
+    const layout = this.engine.layouts.getCurrentLayout(window.surface);
+    if (layout instanceof SpreadLayout) {
+      this.engine.arrange(ctx, reason, getMethodName());
+    }
   }
 
-  public onWindowAdded(ctx: IDriverContext, window: WindowClass): void {
+  public onWindowAdded(
+    ctx: IDriverContext,
+    window: WindowClass,
+    reason: keyof typeof ArrangeReason,
+  ): void {
     this.engine.manage(window);
 
     /* move window to next surface if the current surface is "full" */
@@ -49,22 +107,29 @@ class TilingController {
       window.state !== WindowState.NativeMaximized &&
       window.state !== WindowState.NativeFullscreen
     )
-      this.engine.arrange(ctx, getMethodName());
+      this.engine.arrange(ctx, reason, getMethodName());
   }
 
   public onWindowSkipPagerChanged(
     ctx: IDriverContext,
     window: WindowClass,
     skipPager: boolean,
+    reason: keyof typeof ArrangeReason,
   ) {
     if (skipPager) window.state = WindowState.Floating;
     else window.state = WindowState.Undecided;
-    this.engine.arrange(ctx, getMethodName());
+    this.engine.arrange(ctx, reason, getMethodName());
   }
 
-  public onWindowRemoved(ctx: IDriverContext, window: WindowClass): void {
+  public onWindowRemoved(
+    ctx: IDriverContext,
+    window: WindowClass,
+    reason: keyof typeof ArrangeReason,
+  ): void {
+    if (this.dragAction !== null && this.dragAction.window === window)
+      this.finishDrag(ctx);
     this.engine.unmanage(window);
-    this.engine.arrange(ctx, getMethodName());
+    this.engine.arrange(ctx, reason, getMethodName());
   }
 
   public onWindowMoveStart(window: WindowClass): void {
@@ -79,45 +144,148 @@ class TilingController {
     ctx: IDriverContext,
     window: WindowClass,
     windowRect: Rect,
+    reason: keyof typeof ArrangeReason,
   ): void {
-    if (this.isDragging) return;
+    if (!(window.isTiled || window.isDocked)) return;
+    const srf = window.surface;
+    const workingArea = srf.workingArea.clone();
+    const draggingRect = toRect(windowRect);
+    const mousePointer: QPoint =
+      ctx.cursorPosition || draggingRect.activationPoint;
+    /* The middle of the dragged window horizontally, the cursor vertically.
+     * A window can cross to an adjacent output before the cursor does, so on
+     * a side with a neighboring monitor the dock zone must be tested against
+     * the window rather than the pointer. */
+    const middlePointer: QPoint = {
+      x: draggingRect.center.x,
+      y: mousePointer.y,
+    };
+    const getNeighbors = (srf: ISurface) => ({
+      left: ctx.getNeighborOutput("left", srf.output) !== null,
+      right: ctx.getNeighborOutput("right", srf.output) !== null,
+      up: ctx.getNeighborOutput("up", srf.output) !== null,
+      down: ctx.getNeighborOutput("down", srf.output) !== null,
+    });
+    const markActionTime = () => {
+      if (this.dragAction === null) return;
+      this.dragAction.actionTime = getTime();
+    };
+    const getDragAction = () => {
+      window.isDragging = true;
+      const initialState = window.state as ToggleableState;
+      return {
+        result: { isProcessed: false, isArrangeNeeded: false },
+        actionTime: getTime(),
+        srf,
+        initialSrfId: srf.id,
+        workingArea,
+        tilesArea: null,
+        window,
+        dockTarget: null,
+        mousePointer,
+        middlePointer,
+        neighbors: getNeighbors(srf),
+        neighborsSrfId: srf.id,
+        swapping: { window: null, position: null },
+        initialState,
+        initialDockPosition:
+          initialState === WindowState.Docked ? window.dock.position : null,
+        isLayoutHasDragStep: false,
+      };
+    };
+    if (this.dragAction === null) {
+      window.window.commit(
+        ctx,
+        new Rect(
+          window.actualGeometry.x,
+          window.actualGeometry.y,
+          Math.max(window.minSize.width, workingArea.width * 0.25),
+          Math.max(window.minSize.height, workingArea.height * 0.25),
+        ),
+      );
+      this.dragAction = getDragAction();
+    }
     // 100 milliseconds - min interval between run this function
-    if (
-      this.dragCompleteTime !== null &&
-      Date.now() - this.dragCompleteTime < 100
-    )
-      return;
-    const srf = ctx.currentSurface;
-    const layout = this.engine.layouts.getCurrentLayout(srf);
-    if (!layout.drag) return;
-    // if (!(layout.drag && layout.isDragging && layout.isDragging(window)))
-    //   return;
-    if (window.state === WindowState.Tiled) {
-      window.setDraggingState();
-    }
-    if (window.state === WindowState.Dragging) {
-      if (
-        layout.drag(
-          new EngineContext(ctx, this.engine),
-          toRect(windowRect),
-          window,
-          srf.workingArea as Rect,
-        )
-      ) {
-        this.engine.arrange(ctx, getMethodName());
+    // else if (getTime() - this.dragAction.actionTime < 100) return;
+    else {
+      if (window === this.dragAction.window) {
+        this.dragAction.actionTime = getTime();
+        this.dragAction.mousePointer = mousePointer;
+        this.dragAction.middlePointer = middlePointer;
+        this.dragAction.srf = srf;
+        this.dragAction.workingArea = workingArea;
+      } else {
+        this.finishDrag(ctx);
+        this.dragAction = getDragAction();
       }
-
-      this.dragCompleteTime = Date.now();
     }
-    this.isDragging = false;
+    this.dragAction.result = { isProcessed: false, isArrangeNeeded: false };
+    this.dragAction.dockTarget = null;
+    if (this.dragAction.neighborsSrfId !== srf.id) {
+      this.dragAction.neighbors = getNeighbors(srf);
+      this.dragAction.neighborsSrfId = srf.id;
+    }
+
+    this.engine.docks.drag(this.dragAction);
+    if (this.dragAction.result.isProcessed) {
+      if (this.dragAction.result.isArrangeNeeded)
+        this.engine.arrange(ctx, reason, getMethodName());
+      this.updateDragPreview(ctx);
+      return markActionTime();
+    }
+
+    const layout = this.engine.layouts.getCurrentLayout(srf);
+    if (!layout.drag) {
+      this.updateDragPreview(ctx);
+      return markActionTime();
+    }
+    this.dragAction.isLayoutHasDragStep = true;
+    layout.drag(new EngineContext(ctx, this.engine), this.dragAction);
+    if (this.dragAction.result.isArrangeNeeded)
+      this.engine.arrange(ctx, reason, getMethodName());
+    this.updateDragPreview(ctx);
+    return markActionTime();
   }
 
-  public onWindowMoveOver(ctx: IDriverContext, window: WindowClass): void {
-    /* swap window by dragging */
-    if (window.state === WindowState.Dragging) {
-      window.setState(WindowState.Tiled);
-      this.engine.arrange(ctx, getMethodName());
+  /**
+   * Draw (or clear) the dock-slot preview rectangle for the active drag. The
+   * dragged window's geometry has already been computed by the engine but is
+   * not committed while `isDragging` is set, so it is the exact drop target.
+   */
+  private updateDragPreview(ctx: IDriverContext): void {
+    const dragAction = this.dragAction;
+    if (
+      dragAction === null ||
+      dragAction.dockTarget === null ||
+      dragAction.window.state !== WindowState.Docked
+    ) {
+      ctx.hideDragPreview();
       return;
+    }
+    ctx.showDragPreview(
+      toRect(dragAction.srf.output.geometry),
+      dragAction.window.geometry,
+    );
+  }
+
+  public onWindowMoveOver(
+    ctx: IDriverContext,
+    window: WindowClass,
+    reason: keyof typeof ArrangeReason,
+  ): void {
+    /* swap window by dragging */
+    window.isDragging = false;
+    if (this.dragAction !== null && this.dragAction.window === window) {
+      const isLayoutHasDragStep = this.dragAction.isLayoutHasDragStep;
+      this.finishDrag(ctx);
+      if (isLayoutHasDragStep) {
+        this.engine.arrange(
+          ctx,
+          reason,
+          `${getMethodName()}:windowState=${window.state}`,
+        );
+        return;
+      }
     }
 
     if (window.state === WindowState.Tiled) {
@@ -131,7 +299,11 @@ class TilingController {
 
       if (targets.length === 1) {
         this.engine.windows.swap(window, targets[0]);
-        this.engine.arrange(ctx, getMethodName());
+        this.engine.arrange(
+          ctx,
+          reason,
+          `${getMethodName()}:windowState=${window.state}`,
+        );
         return;
       }
     }
@@ -144,48 +316,102 @@ class TilingController {
       if (distance > 30) {
         window.floatGeometry = window.actualGeometry;
         window.state = WindowState.Floating;
-        this.engine.arrange(ctx, getMethodName());
+        this.engine.arrange(
+          ctx,
+          reason,
+          `${getMethodName()}:windowState=${window.state}:keepTilingOnDrag=${CONFIG.keepTilingOnDrag}`,
+        );
         return;
       }
     }
 
     /* ... or return to the previous position */
-    window.commit();
+    window.commit(ctx);
+  }
+
+  /**
+   * Finalize the active drag: restore the pre-drag state of the dragged and
+   * swapped windows, then clear the drag context. Safe to call when no drag
+   * is active or when the dragged window is already gone.
+   */
+  private finishDrag(ctx: IDriverContext): void {
+    const dragAction = this.dragAction;
+    if (dragAction === null) return;
+    ctx.hideDragPreview();
+    const { window, initialState, swapping } = dragAction;
+    this.dragAction = null;
+    if (window.isAlive()) {
+      window.isDragging = false;
+      // previousState is unchanged during drag (setTransientState), so it
+      // still holds the pre-drag value; only overwrite it if the state changed.
+      if (window.state !== initialState) window.previousState = initialState;
+    }
+    if (
+      swapping.window !== null &&
+      swapping.window.isAlive() &&
+      swapping.window.state !== WindowState.Docked
+    )
+      swapping.window.previousState = WindowState.Docked;
   }
 
   public onWindowResizeStart(window: WindowClass): void {
     /* do nothing */
   }
 
-  public onWindowResize(ctx: IDriverContext, window: WindowClass): void {
+  public onWindowResize(
+    ctx: IDriverContext,
+    window: WindowClass,
+    reason: keyof typeof ArrangeReason,
+  ): void {
     if (
       CONFIG.adjustLayout &&
       CONFIG.adjustLayoutLive &&
       window.state === WindowState.Tiled
     ) {
       this.engine.adjustLayout(window);
-      this.engine.arrange(ctx, getMethodName());
+      this.engine.arrange(
+        ctx,
+        reason,
+        `${getMethodName()}:windowState=${window.state}`,
+      );
     } else if (window.state === WindowState.Docked) {
       this.engine.adjustDock(window);
-      this.engine.arrange(ctx, getMethodName());
+      this.engine.arrange(
+        ctx,
+        reason,
+        `${getMethodName()}:windowState=${window.state}`,
+      );
     }
   }
 
-  public onWindowResizeOver(ctx: IDriverContext, window: WindowClass): void {
+  public onWindowResizeOver(
+    ctx: IDriverContext,
+    window: WindowClass,
+    reason: keyof typeof ArrangeReason,
+  ): void {
     if (CONFIG.adjustLayout && window.isTiled) {
       this.engine.adjustLayout(window);
-      this.engine.arrange(ctx, getMethodName());
+      this.engine.arrange(
+        ctx,
+        reason,
+        `${getMethodName()}:windowState=${window.state}`,
+      );
     } else if (window.state === WindowState.Docked) {
       this.engine.adjustDock(window);
-      this.engine.arrange(ctx, getMethodName());
+      this.engine.arrange(
+        ctx,
+        reason,
+        `${getMethodName()}:windowState=${window.state}`,
+      );
     } else if (!CONFIG.adjustLayout) this.engine.enforceSize(ctx, window);
   }
 
   public onWindowMaximizeChanged(
     ctx: IDriverContext,
     window: WindowClass,
+    reason: keyof typeof ArrangeReason,
   ): void {
-    this.engine.arrange(ctx, getMethodName());
+    this.engine.arrange(ctx, reason, getMethodName());
   }
 
   public onWindowGeometryChanged(
@@ -196,7 +422,7 @@ class TilingController {
       LogModules.bufferGeometryChanged,
       "enforceSize",
       `Window: id:${window.id} actualGeometry: ${window.actualGeometry}, commitGeometry:${window.geometry}`,
-      { winClass: [`${(window.window as KWinWindow).window.resourceClass}`] },
+      { winClass: [`${(window.window as DriverWindow).window.resourceClass}`] },
     );
     this.engine.enforceSize(ctx, window);
   }
@@ -206,10 +432,13 @@ class TilingController {
   public onWindowChanged(
     ctx: IDriverContext,
     window: WindowClass | null,
+    reason: keyof typeof ArrangeReason,
     comment?: string,
+    extraSurfaces?: ISurface[],
   ): void {
     if (window) {
-      if (comment === "unminimized") ctx.currentWindow = window;
+      // TODO: delete one string bellow if the future caresses you with its grace
+      // if (comment === "unminimized") ctx.currentWindow = window;
       const workingArea = window.surface.workingArea;
       if (window.floatGeometry.width > workingArea.width) {
         window.floatGeometry.width = workingArea.width;
@@ -221,12 +450,17 @@ class TilingController {
         workingArea.x + (workingArea.width - window.floatGeometry.width) / 2;
       window.floatGeometry.y =
         workingArea.y + (workingArea.height - window.floatGeometry.height) / 2;
-      this.engine.arrange(ctx, getMethodName());
+      this.engine.arrange(
+        ctx,
+        reason,
+        `${getMethodName()}:windowState=${window.state}`,
+        extraSurfaces,
+      );
     }
   }
 
   public onWindowFocused(ctx: IDriverContext, window: WindowClass) {
-    window.timestamp = getTime();
+    window.focusTime = getTime();
   }
 
   public onDesktopsChanged(ctx: IDriverContext, window: WindowClass) {
@@ -234,225 +468,108 @@ class TilingController {
       window.state = WindowState.Undecided;
   }
 
-  public onShortcut(ctx: IDriverContext, input: Shortcut, data?: any) {
-    if (input === Shortcut.KrohnkiteMeta) {
-      ctx.metaPushed();
-      return;
-    }
-    let metaShortcut;
-    if (
-      ctx.isMetaMode &&
-      (metaShortcut = this._getMetaShortcut(input)) !== null
-    ) {
-      input = metaShortcut;
-    }
+  public onShortcut(
+    ctx: IDriverContext,
+    action: KrohnkiteAction | null,
+    reason: keyof typeof ArrangeReason,
+  ) {
+    if (action === null) return;
 
     let isArrangeNeeded = true;
-    if (CONFIG.directionalKeyMode === "dwm") {
-      switch (input) {
-        case Shortcut.FocusUp:
-          input = Shortcut.FocusNext;
-          break;
-        case Shortcut.FocusDown:
-          input = Shortcut.FocusPrev;
-          break;
-        case Shortcut.FocusLeft:
-          input = Shortcut.DWMLeft;
-          break;
-        case Shortcut.FocusRight:
-          input = Shortcut.DWMRight;
-          break;
-      }
-    } else if (CONFIG.directionalKeyMode === "focus") {
-      switch (input) {
-        case Shortcut.ShiftUp:
-          input = Shortcut.SwapUp;
-          break;
-        case Shortcut.ShiftDown:
-          input = Shortcut.SwapDown;
-          break;
-        case Shortcut.ShiftLeft:
-          input = Shortcut.SwapLeft;
-          break;
-        case Shortcut.ShiftRight:
-          input = Shortcut.SwapRight;
-          break;
-      }
-    }
-
     let currentCapacity: number | null;
     const window = ctx.currentWindow;
+
     if (
-      window !== null &&
-      window.state === WindowState.Docked &&
-      this.engine.handleDockShortcut(ctx, window, input)
+      this.engine.handleDockWinShortcut(ctx, window, action, reason) ||
+      this.engine.handleFloatWinShortcut(ctx, window, action) ||
+      this.engine.handleLayoutShortcut(ctx, action, reason) ||
+      this.engine.handleTiledWinShortcut(ctx, window, action, reason)
     ) {
       if (CONFIG.movePointerOnFocus) {
         window?.moveMouseToFocus();
       }
-      this.engine.arrange(ctx, getMethodName());
-      return;
-    } else if (this.engine.handleLayoutShortcut(ctx, input, data)) {
-      if (CONFIG.movePointerOnFocus) {
-        window?.moveMouseToFocus();
-      }
-      this.engine.arrange(ctx, getMethodName());
       return;
     }
-
-    switch (input) {
-      case Shortcut.FocusNext:
+    switch (action) {
+      case KrohnkiteAction.AlterRegister:
+      case KrohnkiteAction.ToggleRegister:
+        ctx.alterRegisterHdl(action);
+        isArrangeNeeded = false;
+        break;
+      case KrohnkiteAction.FocusNext:
         this.engine.focusOrder(ctx, +1);
         isArrangeNeeded = false;
         break;
-      case Shortcut.FocusPrev:
+      case KrohnkiteAction.FocusPrev:
         this.engine.focusOrder(ctx, -1);
         isArrangeNeeded = false;
         break;
 
-      case Shortcut.MetaFocusUp:
-      case Shortcut.FocusUp:
+      case KrohnkiteAction.FocusUp:
         isArrangeNeeded = this.engine.focusDir(ctx, "up");
         break;
-      case Shortcut.MetaFocusDown:
-      case Shortcut.FocusDown:
+      case KrohnkiteAction.FocusDown:
         isArrangeNeeded = this.engine.focusDir(ctx, "down");
         break;
-      case Shortcut.MetaFocusLeft:
-      case Shortcut.DWMLeft:
-      case Shortcut.FocusLeft:
+      case KrohnkiteAction.DWMLeft:
+      case KrohnkiteAction.FocusLeft:
         isArrangeNeeded = this.engine.focusDir(ctx, "left");
         break;
-      case Shortcut.MetaFocusRight:
-      case Shortcut.DWMRight:
-      case Shortcut.FocusRight:
+      case KrohnkiteAction.DWMRight:
+      case KrohnkiteAction.FocusRight:
         isArrangeNeeded = this.engine.focusDir(ctx, "right");
         break;
 
-      case Shortcut.GrowWidth:
-        if (window) {
-          if (window.state === WindowState.Docked && window.dock) {
-            if (
-              window.dock.position === DockPosition.left ||
-              window.dock.position === DockPosition.right
-            ) {
-              window.dock.cfg.vWide += 1;
-            } else if (
-              window.dock.position === DockPosition.top ||
-              window.dock.position === DockPosition.bottom
-            ) {
-              window.dock.cfg.hWide += 1;
-            }
-          } else this.engine.resizeWindow(window, "east", 1);
-        }
+      case KrohnkiteAction.SetMaster:
+        if (window) this.engine.setMaster(ctx, window);
         break;
-      case Shortcut.ShrinkWidth:
-        if (window) {
-          if (window.state === WindowState.Docked && window.dock) {
-            if (
-              window.dock.position === DockPosition.left ||
-              window.dock.position === DockPosition.right
-            ) {
-              window.dock.cfg.vWide -= 1;
-            } else if (
-              window.dock.position === DockPosition.top ||
-              window.dock.position === DockPosition.bottom
-            ) {
-              window.dock.cfg.hWide -= 1;
-            }
-          } else this.engine.resizeWindow(window, "east", -1);
-        }
-        break;
-      case Shortcut.GrowHeight:
-        if (window) {
-          if (window.state === WindowState.Docked && window.dock) {
-            if (
-              window.dock.position === DockPosition.left ||
-              window.dock.position === DockPosition.right
-            ) {
-              window.dock.cfg.vHeight += 1;
-            } else if (
-              window.dock.position === DockPosition.top ||
-              window.dock.position === DockPosition.bottom
-            ) {
-              window.dock.cfg.hHeight += 1;
-            }
-          } else this.engine.resizeWindow(window, "south", 1);
-        }
-        break;
-      case Shortcut.ShrinkHeight:
-        if (window) {
-          if (window.state === WindowState.Docked && window.dock) {
-            if (
-              window.dock.position === DockPosition.left ||
-              window.dock.position === DockPosition.right
-            ) {
-              window.dock.cfg.vHeight -= 1;
-            } else if (
-              window.dock.position === DockPosition.top ||
-              window.dock.position === DockPosition.bottom
-            ) {
-              window.dock.cfg.hHeight -= 1;
-            }
-          } else this.engine.resizeWindow(window, "south", -1);
-        }
-        break;
-
-      case Shortcut.ShiftUp:
-        if (window) this.engine.swapOrder(window, -1);
-        break;
-      case Shortcut.ShiftDown:
-        if (window) this.engine.swapOrder(window, +1);
-        break;
-
-      case Shortcut.SwapUp:
-        isArrangeNeeded = this.engine.swapDirOrMoveFloat(ctx, "up");
-        break;
-      case Shortcut.SwapDown:
-        isArrangeNeeded = this.engine.swapDirOrMoveFloat(ctx, "down");
-        break;
-      case Shortcut.SwapLeft:
-        isArrangeNeeded = this.engine.swapDirOrMoveFloat(ctx, "left");
-        break;
-      case Shortcut.SwapRight:
-        isArrangeNeeded = this.engine.swapDirOrMoveFloat(ctx, "right");
-        break;
-
-      case Shortcut.SetMaster:
-        if (window) this.engine.setMaster(window);
-        break;
-      case Shortcut.ToggleFloat:
+      case KrohnkiteAction.ToggleFloat:
         if (window) this.engine.toggleFloat(window);
         break;
-      case Shortcut.ToggleFloatAll:
+      case KrohnkiteAction.ToggleFloatAll:
         this.engine.floatAll(ctx, ctx.currentSurface);
         break;
 
-      case Shortcut.NextLayout:
+      case KrohnkiteAction.NextLayout:
         this.engine.cycleLayout(ctx, 1);
         break;
-      case Shortcut.PreviousLayout:
+      case KrohnkiteAction.PreviousLayout:
         this.engine.cycleLayout(ctx, -1);
         break;
-      case Shortcut.SetLayout:
-        if (typeof data === "string") this.engine.setLayout(ctx, data);
+      case KrohnkiteAction.LayoutChooser:
+        ctx.showLayoutChooser();
+        isArrangeNeeded = false;
+        break;
+      case KrohnkiteAction.SetTileLayout:
+      case KrohnkiteAction.SetMonocleLayout:
+      case KrohnkiteAction.SetThreeColumnLayout:
+      case KrohnkiteAction.SetSpreadLayout:
+      case KrohnkiteAction.SetStairLayout:
+      case KrohnkiteAction.SetFloatingLayout:
+      case KrohnkiteAction.SetQuarterLayout:
+      case KrohnkiteAction.SetStackedLayout:
+      case KrohnkiteAction.SetColumnsLayout:
+      case KrohnkiteAction.SetSpiralLayout:
+      case KrohnkiteAction.SetBinaryTreeLayout:
+      case KrohnkiteAction.SetCascadeLayout:
+        this.engine.setLayout(ctx, LayoutShortcutIds[action]!);
         break;
 
-      case Shortcut.ToggleDock:
+      case KrohnkiteAction.ToggleDock:
         if (window) this.engine.toggleDock(window);
         break;
 
-      case Shortcut.RaiseSurfaceCapacity:
+      case KrohnkiteAction.RaiseSurfaceCapacity:
         currentCapacity = this.engine.raiseSurfaceCapacity(ctx);
         ctx.showNotification(
           `Surface capacity: ${currentCapacity !== null ? currentCapacity : "unlimited"}`,
         );
         break;
-      case Shortcut.LowerSurfaceCapacity:
+      case KrohnkiteAction.LowerSurfaceCapacity:
         currentCapacity = this.engine.lowerSurfaceCapacity(ctx);
         ctx.showNotification(`Surface capacity: ${currentCapacity}`);
         break;
-      case Shortcut.MetaResetSurfaceCapacity:
+      case KrohnkiteAction.ResetSurfaceCapacity:
         currentCapacity = this.engine.ResetSurfaceCapacity(ctx);
         ctx.showNotification(
           `Surface capacity: ${currentCapacity !== null ? currentCapacity : "unlimited"}`,
@@ -460,37 +577,11 @@ class TilingController {
         isArrangeNeeded = false;
         break;
     }
-    if (!isArrangeNeeded) return;
+    if (isArrangeNeeded) {
+      this.engine.arrange(ctx, reason, `${getMethodName()}:shortcut=${action}`);
+    }
     if (CONFIG.movePointerOnFocus) {
       window?.moveMouseToFocus();
     }
-    this.engine.arrange(ctx, getMethodName());
-  }
-
-  private _initMetaShortcuts() {
-    let metaShortcuts: { [key: string]: Shortcut } = CONFIG.defaultMetaConfig;
-    CONFIG.metaConf.forEach((shortcutPair) => {
-      let splitted = shortcutPair.split("=").map((p) => p.trim());
-      if (splitted.length !== 2) {
-        warning(`"Meta Config: ${splitted}" have to has the one equal sign`);
-        return;
-      }
-      let [pushedShortcut, runShortcut] = splitted;
-      if (!(pushedShortcut in Shortcut)) {
-        warning(`Meta Config: "${pushedShortcut}" unknown shortcut`);
-        return;
-      } else if (!(runShortcut in Shortcut)) {
-        warning(`Meta Config: "${runShortcut}" unknown shortcut`);
-        return;
-      }
-      metaShortcuts[pushedShortcut] = runShortcut as Shortcut;
-    });
-    return metaShortcuts;
-  }
-
-  private _getMetaShortcut(input: Shortcut): Shortcut | null {
-    if (input in this._metaShortcuts) {
-      return this._metaShortcuts[input];
-    } else return null;
   }
 }

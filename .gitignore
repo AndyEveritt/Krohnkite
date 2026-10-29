@@ -4,6 +4,7 @@
 /.idea/
 /.task/
 **/__pycache__/
+/bin/
 
 /TODO.md
 /krohnkite.js

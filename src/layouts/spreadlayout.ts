@@ -16,18 +16,20 @@ class SpreadLayout implements ILayout {
 
   constructor(capacity?: number | null) {
     this.capacity = capacity !== undefined ? capacity : null;
-    this.space = 0.07;
+    this.space = KWINCONFIG.spreadLayoutSpace / 100;
   }
 
   public apply(
     ctx: EngineContext,
     tileables: WindowClass[],
     area: Rect,
-    gap: number
+    gap: number,
   ): void {
     /* Tile all tileables */
     tileables.forEach((tileable) => (tileable.state = WindowState.Tiled));
-    const tiles = tileables;
+    const tiles = [...tileables].sort(
+      (a, b) => a.window.stackingOrder - b.window.stackingOrder,
+    );
 
     let numTiles = tiles.length;
     const spaceWidth = Math.floor(area.width * this.space);
@@ -45,7 +47,7 @@ class SpreadLayout implements ILayout {
         area.x + (i < numTiles ? spaceWidth * (numTiles - i - 1) : 0),
         area.y,
         cardWidth,
-        area.height
+        area.height,
       );
   }
 
@@ -55,13 +57,13 @@ class SpreadLayout implements ILayout {
     return other;
   }
 
-  public handleShortcut(ctx: EngineContext, input: Shortcut) {
+  public handleShortcut(ctx: EngineContext, input: KrohnkiteAction) {
     switch (input) {
-      case Shortcut.Decrease:
+      case KrohnkiteAction.Decrease:
         // TODO: define arbitrary constants
         this.space = Math.max(0.04, this.space - 0.01);
         break;
-      case Shortcut.Increase:
+      case KrohnkiteAction.Increase:
         // TODO: define arbitrary constants
         this.space = Math.min(0.1, this.space + 0.01);
         break;

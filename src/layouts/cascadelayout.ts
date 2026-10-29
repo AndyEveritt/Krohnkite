@@ -23,7 +23,7 @@ class CascadeLayout implements ILayout {
 
   /** Decompose direction into vertical and horizontal steps */
   public static decomposeDirection(
-    dir: CascadeDirection
+    dir: CascadeDirection,
   ): [-1 | 0 | 1, -1 | 0 | 1] {
     switch (dir) {
       case CascadeDirection.NorthWest:
@@ -53,7 +53,7 @@ class CascadeLayout implements ILayout {
 
   constructor(
     capacity?: number | null,
-    private dir: CascadeDirection = CascadeDirection.SouthEast
+    private dir: CascadeDirection = CascadeDirection.SouthEast,
   ) {
     this.capacity = capacity !== undefined ? capacity : null;
   }
@@ -62,7 +62,7 @@ class CascadeLayout implements ILayout {
     ctx: EngineContext,
     tileables: WindowClass[],
     area: Rect,
-    gap: number
+    gap: number,
   ): void {
     const [vertStep, horzStep] = CascadeLayout.decomposeDirection(this.dir);
 
@@ -96,17 +96,13 @@ class CascadeLayout implements ILayout {
     return new CascadeLayout(this.capacity, this.dir);
   }
 
-  public handleShortcut(
-    ctx: EngineContext,
-    input: Shortcut,
-    data?: any
-  ): boolean {
+  public handleShortcut(ctx: EngineContext, input: KrohnkiteAction): boolean {
     switch (input) {
-      case Shortcut.Increase:
+      case KrohnkiteAction.Increase:
         this.dir = (this.dir + 1 + 8) % 8;
         ctx.showNotification(this.description);
         break;
-      case Shortcut.Decrease:
+      case KrohnkiteAction.Decrease:
         this.dir = (this.dir - 1 + 8) % 8;
         ctx.showNotification(this.description);
         break;

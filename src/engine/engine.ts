@@ -4,7 +4,6 @@
 
     SPDX-License-Identifier: MIT
 */
-
 type ScreenData = {
   visibles: WindowClass[];
   tileables: WindowClass[];
@@ -15,23 +14,132 @@ type ScreenData = {
   overCapacity: WindowClass[];
   awaitToMove: WindowClass[];
 };
+interface IRelocationWindows {
+  readonly totalNumWinsPrepareToOutput: number;
+  readonly totalNumWinsPrepareToVDesktop: number;
+  isSending: boolean;
+  startTime: number;
+  toOutputs: WrapperMap<Output, WindowClass[]>;
+  toVDesktops: WrapperMap<VirtualDesktop, WindowClass[]>;
+  activeWindow: WindowClass | null;
+  direction: Direction | null;
 
+  clear(): void;
+}
+class RelocationWindows implements IRelocationWindows {
+  public get totalNumWinsPrepareToOutput() {
+    let total = 0;
+    for (const windows of this.toOutputs) {
+      total += windows.length;
+    }
+    return total;
+  }
+  public get totalNumWinsPrepareToVDesktop() {
+    let total = 0;
+    for (const windows of this.toVDesktops) {
+      total += windows.length;
+    }
+    return total;
+  }
+  public get getWinsSendingToOutput() {
+    let total = 0;
+    for (const [output, windows] of this.toOutputs.entries()) {
+      for (const w of windows) {
+        if (output.name === w.surface.output.name && w.isSendingToOutput)
+          total++;
+      }
+    }
+    return total;
+  }
+  public get isExistSendingWindowsToOutput(): boolean {
+    for (const [output, windows] of this.toOutputs.entries()) {
+      for (const w of windows) {
+        if (output.name !== w.surface.output.name && w.isSendingToOutput)
+          return true;
+      }
+    }
+    return false;
+  }
+  public get isExistTransferWindowsToVDesktop(): boolean {
+    for (const windows of this.toVDesktops) {
+      for (const w of windows) {
+        if (w instanceof WindowClass) return true;
+      }
+    }
+    return false;
+  }
+  public isSending: boolean;
+  public startTime: number;
+  public toOutputs: WrapperMap<Output, WindowClass[]>;
+  public toVDesktops: WrapperMap<VirtualDesktop, WindowClass[]>;
+  public activeWindow: WindowClass | null;
+  public direction: Direction | null;
+
+  constructor() {
+    this.isSending = false;
+    this.startTime = 0;
+    this.toOutputs = new WrapperMap(
+      (client: Output) => client.name,
+      (_: Output) => new Array(),
+    );
+    this.toVDesktops = new WrapperMap(
+      (client: VirtualDesktop) => client.id,
+      (_: VirtualDesktop) => new Array(),
+    );
+
+    this.activeWindow = null;
+    this.direction = null;
+  }
+  public clear() {
+    for (const windows of this.toOutputs) {
+      windows.forEach((w) => {
+        w.isSendingToOutput = false;
+        w.relocationTargetOutput = null;
+      });
+    }
+    this.isSending = false;
+    this.startTime = 0;
+    this.toOutputs.clear();
+    this.toVDesktops.clear();
+    this.activeWindow = null;
+    this.direction = null;
+  }
+}
 /**
  * Maintains tiling context and performs various tiling actions.
  */
 class TilingEngine {
+  // max time for waiting KWin to move relocated windows to outputs calling KWin func sendClientToScreen() and to Virtual Desktops
+  static SENDING_WINDOWS_MAX_WAIT_TIME = 100;
+  // upper bound for coalesced arrange passes to stop a genuine layout loop
+  static MAX_ARRANGE_PASSES = 10;
+
   public layouts: LayoutStore;
   public windows: WindowStore;
   public docks: DockStore;
+  public relocationWindows: RelocationWindows;
+  public makeWinActive: WindowClass | null;
+  public arrangeProcessId: number | null;
   private _defaultGaps: DefaultGapsCfg | null;
-  private _gapsSurfacesCfg: gapsSurfaceCfg[];
+  private _gapsSurfacesCfg: SurfaceCfg<IGaps>[];
+  private _arranging: boolean;
+  private _arrangePending: boolean;
+  private _pendingExtraSurfaces: Map<string, ISurface>;
+  private _batchDepth: number;
 
   constructor() {
     this.layouts = new LayoutStore();
     this.windows = new WindowStore();
     this.docks = new DockStore();
+    this.relocationWindows = new RelocationWindows();
+    this.arrangeProcessId = null;
+    this.makeWinActive = null;
     this._defaultGaps = null;
     this._gapsSurfacesCfg = [];
+    this._arranging = false;
+    this._arrangePending = false;
+    this._pendingExtraSurfaces = new Map();
+    this._batchDepth = 0;
   }
 
   /**
@@ -64,10 +172,10 @@ class TilingEngine {
     if (basis.actualGeometry === basis.geometry) return;
     let widthDiff = basis.actualGeometry.width - basis.geometry.width;
     let heightDiff = basis.actualGeometry.height - basis.geometry.height;
-    let dockCfg = basis.dock!.cfg;
+    let dockCfg = basis.dock.cfg;
     const workingArea = basis.surface.workingArea;
 
-    switch (basis.dock!.position) {
+    switch (basis.dock.position) {
       case DockPosition.left:
       case DockPosition.right:
         dockCfg.vHeight =
@@ -89,15 +197,17 @@ class TilingEngine {
    * @param window a floating window
    */
   public resizeFloat(
+    ctx: IDriverContext,
     window: WindowClass,
     dir: "east" | "west" | "south" | "north",
     step: -1 | 1,
   ) {
     const srf = window.surface;
 
-    // TODO: configurable step size?
-    const hStepSize = srf.workingArea.width * 0.05;
-    const vStepSize = srf.workingArea.height * 0.05;
+    const hStepSize =
+      (srf.workingArea.width * window.window.floatConfig.stepWidth) / 100;
+    const vStepSize =
+      (srf.workingArea.height * window.window.floatConfig.stepHeight) / 100;
 
     let hStep, vStep;
     switch (dir) {
@@ -119,7 +229,10 @@ class TilingEngine {
     const width = geometry.width + hStepSize * hStep;
     const height = geometry.height + vStepSize * vStep;
 
-    window.forceSetGeometry(new Rect(geometry.x, geometry.y, width, height));
+    window.forceSetGeometry(
+      ctx,
+      new Rect(geometry.x, geometry.y, width, height),
+    );
   }
 
   /**
@@ -192,94 +305,328 @@ class TilingEngine {
       );
     }
   }
-
   /**
-   * Resize the given window, by moving border inward or outward.
+   * Defer arrange requests until endArrangeBatch().
    *
-   * The actual behavior depends on the state of the given window.
-   *
-   * @param dir which border
-   * @param step which direction. 1 means outward, -1 means inward.
+   * Used for multi-step actions (e.g. moving a window to another virtual
+   * desktop) where the intermediate state is not worth laying out and only
+   * the final state matters. Requests made by the events fired inside the
+   * batch are coalesced, and any extra surfaces are kept for the final pass.
+   * Batches can be nested; the outermost endArrangeBatch() flushes.
    */
-  public resizeWindow(
-    window: WindowClass,
-    dir: "east" | "west" | "south" | "north",
-    step: -1 | 1,
-  ) {
-    const state = window.state;
-    if (WindowClass.isFloatingState(state)) this.resizeFloat(window, dir, step);
-    else if (WindowClass.isTiledState(state))
-      this.resizeTile(window, dir, step);
+  public beginArrangeBatch(): void {
+    this._batchDepth++;
+  }
+
+  public endArrangeBatch(
+    ctx: IDriverContext,
+    reason: keyof typeof ArrangeReason,
+    message?: string,
+    extraSurfaces?: ISurface[],
+  ): void {
+    if (this._batchDepth === 0) return;
+    this._batchDepth--;
+    this._addPendingExtraSurfaces(extraSurfaces);
+    if (this._batchDepth > 0) return;
+    this.arrange(ctx, reason, message);
   }
 
   /**
    * Arrange tiles on all screens.
+   *
+   * Arranging is not re-entrant: KWin emits signals synchronously while
+   * windows are committed, and some of those handlers request another
+   * arrange. Running one inside another would interleave layout passes and
+   * commit stale geometries over the inner pass, so nested requests are
+   * coalesced into another pass of the current arrange instead.
    */
-  public arrange(ctx: IDriverContext, reason: string) {
-    LOG?.send(
-      LogModules.arrangeScreen,
-      "ArrangeScreens",
-      `###################################################Reason: ${reason}####################################`,
-    );
+  public arrange(
+    ctx: IDriverContext,
+    reason: keyof typeof ArrangeReason,
+    message?: string,
+    extraSurfaces?: ISurface[],
+  ) {
+    this._addPendingExtraSurfaces(extraSurfaces);
+    if (this._arranging || this._batchDepth > 0) {
+      this._arrangePending = true;
+      return;
+    }
+
+    this._arranging = true;
+    try {
+      let passes = 0;
+      do {
+        this._arrangePending = false;
+        const extras = [...this._pendingExtraSurfaces.values()];
+        this._pendingExtraSurfaces.clear();
+        this._arrangeOnce(ctx, reason, message, extras);
+      } while (
+        this._arrangePending &&
+        ++passes < TilingEngine.MAX_ARRANGE_PASSES
+      );
+      if (this._arrangePending) {
+        warning(
+          `${getMethodName()}: arrange did not settle after ${TilingEngine.MAX_ARRANGE_PASSES} passes.`,
+        );
+      }
+    } finally {
+      this._arranging = false;
+      this._arrangePending = false;
+      this._pendingExtraSurfaces.clear();
+    }
+  }
+
+  private _addPendingExtraSurfaces(extraSurfaces?: ISurface[]) {
+    if (extraSurfaces === undefined) return;
+    for (const srf of extraSurfaces) this._pendingExtraSurfaces.set(srf.id, srf);
+  }
+
+  private _arrangeOnce(
+    ctx: IDriverContext,
+    reason: keyof typeof ArrangeReason,
+    message: string | undefined,
+    extraSurfaces: ISurface[],
+  ) {
+    this.arrangeProcessId = getRandomInt(1000000);
+    if (LOG?.isModuleOn(LogModules.arrangeScreen)) {
+      LOG.send(
+        LogModules.arrangeScreen,
+        "ArrangeScreens",
+        `#######Reason: ${reason}:${message} arrangeProcessID:${this.arrangeProcessId}########`,
+      );
+    }
     const surfaces = ctx.currentSurfaces;
+    /* Surfaces vacated by a window that moved to another desktop as part of
+     * a desktop switch (e.g. KWin's "Window One Desktop to the ..."). By the
+     * time the event reaches us, the source desktop is no longer current, so
+     * it is not part of ctx.currentSurfaces and the windows left behind keep
+     * the old layout. Arrange the vacated surfaces explicitly and first: a
+     * window on all desktops is visible on both surfaces and must finish with
+     * the layout of the surface that is actually current now. */
+    const extraScreensData: ScreenData[] = [];
+    const knownSrfIds = new Set(surfaces.map((srf) => srf.id));
+    for (const srf of extraSurfaces) {
+      if (knownSrfIds.has(srf.id)) continue;
+      knownSrfIds.add(srf.id);
+      extraScreensData.push(this.getTileables(srf));
+    }
+    extraScreensData.forEach((screenData: ScreenData) => {
+      this.arrangeScreen(ctx, screenData, reason, this.arrangeProcessId!);
+    });
     let screensData: ScreenData[] = [];
     surfaces.forEach((srf) => {
       screensData.push(this.getTileables(srf));
     });
-    if (CONFIG.surfacesIsMoveWindows && reason !== "moveWindowsToScreen") {
-      let isMoving = false;
+    if (
+      this._isCheckCapacity(reason) &&
+      (CONFIG.srfExceededToScreen || CONFIG.srfExceededToVDesktop)
+    ) {
+      if (this.relocationWindows.isSending) {
+        const time = getTime();
+        if (
+          time - this.relocationWindows.startTime <
+          TilingEngine.SENDING_WINDOWS_MAX_WAIT_TIME
+        ) {
+          warning(
+            `Method: ${getMethodName()}.Attempt to Check OverCapacityWindows during sending Process.`,
+          );
+          return;
+        }
+        warning(
+          `Method: ${getMethodName()}. OverCapacityWindows sending process is: enabled but SENDING_WINDOWS_MAX_WAIT_TIME is up.`,
+        );
+      }
+      this.relocationWindows.clear();
       screensData.forEach((screenData: ScreenData) => {
         if (screenData.overCapacity.length > 0) {
-          for (let i = 0; i < screensData.length; i++) {
-            let sd = screensData[i];
-            if (sd.capacity === null) {
-              sd.awaitToMove.push(
-                ...screenData.overCapacity.splice(
-                  0,
-                  screenData.overCapacity.length,
-                ),
-              );
-              isMoving = true;
-            } else if (sd.capacity - sd.awaitToMove.length > 0) {
-              const availableSlots = Math.min(
-                sd.capacity - sd.awaitToMove.length,
-                screenData.overCapacity.length,
-              );
-              sd.awaitToMove.push(
-                ...screenData.overCapacity.splice(0, availableSlots),
-              );
-              isMoving = true;
-            }
-            if (screenData.overCapacity.length === 0) {
-              break;
-            }
-          }
+          CONFIG.srfExceededToScreen &&
+            this._prepareWindowsMoveToOutput(ctx, screenData);
+          CONFIG.srfExceededToVDesktop &&
+            this._prepareOverCapacityWindowsTranferToVDesktop(ctx, screenData);
         }
       });
-      if (isMoving) {
-        let moveTiles: [Output, WindowClass[]][] = [];
-        screensData.forEach((screenData: ScreenData) => {
-          if (screenData.awaitToMove.length > 0)
-            moveTiles.push([screenData.srf.output, screenData.awaitToMove]);
-        });
-        ctx.moveWindowsToScreen(moveTiles);
+      if (
+        !this.relocationWindows.isSending &&
+        (this.relocationWindows.totalNumWinsPrepareToOutput > 0 ||
+          this.relocationWindows.totalNumWinsPrepareToVDesktop > 0)
+      ) {
+        this.relocationWindows.activeWindow = ctx.currentWindow;
+        ctx.relocateWindows();
+        this.arrangeProcessId = null;
         return;
       }
     }
 
     screensData.forEach((screenData: ScreenData) => {
-      this.arrangeScreen(ctx, screenData, reason);
+      this.arrangeScreen(ctx, screenData, reason, this.arrangeProcessId!);
     });
+    this.arrangeProcessId = null;
+  }
+
+  private _isCheckCapacity(reason: keyof typeof ArrangeReason) {
+    /* These reasons are part of the relocation process itself; checking
+     * capacity again while they run would re-enter the relocation logic. */
+    const reasons: string[] = [
+      "forcedArrangeScreen",
+      "moveWindowToOutput",
+      "transferWindowToVDesktop",
+      "sendToOutputProcessFinish",
+    ];
+    return reasons.indexOf(reason) < 0;
+  }
+
+  private _searchAvailableSlotsForOvercapacity(
+    ctx: IDriverContext,
+    sourceScreenData: ScreenData,
+    output: Output,
+    screenDataStore: Map<string, ScreenData>,
+    vDesktop?: VirtualDesktop,
+  ): WindowClass[] {
+    const overCapacity = sourceScreenData.overCapacity.length;
+    if (overCapacity <= 0) return [];
+    let targetSrf = ctx.getSurface(output, vDesktop);
+    if (targetSrf == null || !targetSrf.isOvercapacityCandidate) return [];
+    if (!screenDataStore.has(targetSrf.id)) {
+      screenDataStore.set(targetSrf.id, this.getTileables(targetSrf));
+    }
+    const sd = screenDataStore.get(targetSrf.id)!;
+    if (sd.capacity === null || sd.capacity - sd.awaitToMove.length > 0) {
+      const availableSlots =
+        sd.capacity === null
+          ? overCapacity
+          : Math.min(sd.capacity - sd.awaitToMove.length, overCapacity);
+      const windowsToAvailableSlots = sourceScreenData.overCapacity.splice(
+        0,
+        availableSlots,
+      );
+      sd.awaitToMove.push(...windowsToAvailableSlots);
+      return windowsToAvailableSlots;
+    } else return [];
+  }
+
+  private _prepareWindowsMoveToOutput(
+    ctx: IDriverContext,
+    sourceScreenData: ScreenData,
+    direction?: Direction,
+  ) {
+    let alreadyDone = new Set<Output>();
+    const screenDataStore = new Map<string, ScreenData>();
+    const sourceOutput = sourceScreenData.srf.output;
+    alreadyDone.add(sourceOutput);
+    let outputQueue = new UniqueLifoFifo<Output>();
+    this._getPossibleOutputs(
+      ctx,
+      sourceOutput,
+      outputQueue,
+      alreadyDone,
+      direction,
+    );
+    while (sourceScreenData.overCapacity.length > 0 && outputQueue.size !== 0) {
+      let neighborOutput = outputQueue.shift();
+      if (!neighborOutput) return false;
+      const windowsToMove = this._searchAvailableSlotsForOvercapacity(
+        ctx,
+        sourceScreenData,
+        neighborOutput,
+        screenDataStore,
+      );
+      const windowsArr = this.relocationWindows.toOutputs.add(neighborOutput);
+      windowsArr.push(...windowsToMove);
+      if (sourceScreenData.overCapacity.length === 0) break;
+      alreadyDone.add(neighborOutput);
+      this._getPossibleOutputs(
+        ctx,
+        neighborOutput,
+        outputQueue,
+        alreadyDone,
+        direction,
+      );
+    }
+  }
+
+  private _getPossibleOutputs(
+    ctx: IDriverContext,
+    sourceOutput: Output,
+    outputQueue: UniqueLifoFifo<Output>,
+    alreadyDone: Set<Output>,
+    direction?: Direction,
+  ) {
+    let order: Direction[];
+    if (direction) order = [direction];
+    else order = CONFIG.srfToScreenOrder;
+    for (let i = 0; i < order.length; i++) {
+      const direction = order[i];
+      const output = ctx.getNeighborOutput(direction, sourceOutput);
+      if (output && !alreadyDone.has(output)) outputQueue.push(output);
+    }
+  }
+
+  private _getPossibleVDesktops(
+    ctx: IDriverContext,
+    sourceVDesktop: VirtualDesktop,
+    vDesktopsQueue: UniqueLifoFifo<VirtualDesktop>,
+    alreadyDone: Set<VirtualDesktop>,
+  ) {
+    for (let i = 0; i < CONFIG.srfToVDesktopOrder.length; i++) {
+      const direction = CONFIG.srfToScreenOrder[i];
+      const vDesktop = ctx.getNeighborVDesktop(direction, sourceVDesktop);
+      if (vDesktop && !alreadyDone.has(vDesktop)) vDesktopsQueue.push(vDesktop);
+    }
+  }
+
+  private _prepareOverCapacityWindowsTranferToVDesktop(
+    ctx: IDriverContext,
+    sourceScreenData: ScreenData,
+  ) {
+    let alreadyDone = new Set<VirtualDesktop>();
+    const screenDataStore = new Map<string, ScreenData>();
+    alreadyDone.add(ctx.currentDesktop);
+    let vDesktopsQueue = new UniqueLifoFifo<VirtualDesktop>();
+    this._getPossibleVDesktops(
+      ctx,
+      ctx.currentDesktop,
+      vDesktopsQueue,
+      alreadyDone,
+    );
+    while (
+      sourceScreenData.overCapacity.length > 0 &&
+      vDesktopsQueue.size !== 0
+    ) {
+      let neighborVDesktop = vDesktopsQueue.shift();
+      if (!neighborVDesktop) return;
+      const windowsToTransfer = this._searchAvailableSlotsForOvercapacity(
+        ctx,
+        sourceScreenData,
+        sourceScreenData.srf.output,
+        screenDataStore,
+        neighborVDesktop,
+      );
+      if (windowsToTransfer.length !== 0) {
+        const windowsArr =
+          this.relocationWindows.toVDesktops.add(neighborVDesktop);
+        windowsArr.push(...windowsToTransfer);
+      }
+      if (sourceScreenData.overCapacity.length === 0) break;
+      alreadyDone.add(neighborVDesktop);
+      this._getPossibleVDesktops(
+        ctx,
+        neighborVDesktop,
+        vDesktopsQueue,
+        alreadyDone,
+      );
+    }
   }
 
   private getTileables(srf: ISurface): ScreenData {
     let visibles = this.windows.getVisibleWindows(srf);
     visibles.forEach((window) => {
-      if (window.state === WindowState.Undecided) {
-        window.state =
-          window.shouldFloat || CONFIG.floatDefault
-            ? WindowState.Floating
-            : WindowState.Tiled;
+      window.window.updateSrfTime(srf.id);
+      if (!window.window.isCommittedEver && window.window.floatConfig.auto) {
+        window.state = WindowState.Floating;
+      } else if (window.state === WindowState.Undecided) {
+        window.state = window.shouldFloat
+          ? WindowState.Floating
+          : WindowState.Tiled;
       }
     });
     if (LOG?.isModuleOn(LogModules.arrangeScreen)) {
@@ -290,6 +637,32 @@ class TilingEngine {
       LOG.print(LogModules.arrangeScreen, "visibles", mes);
     }
     let tileables = this.windows.getVisibleTileables(srf);
+    const newWins = tileables.filter((t) => !t.window.isCommittedEver);
+    if (
+      CONFIG.newWindowPosition !== "last" &&
+      newWins.length > 0 &&
+      tileables.length > 1
+    ) {
+      const anchor = tileables.find((t) => t.window.isCommittedEver);
+      if (anchor) {
+        this.windows.moveGroup(
+          newWins,
+          anchor,
+          CONFIG.newWindowPosition === "second",
+        );
+      } else {
+        // A batched startup has no committed anchor. Reproduce the order that
+        // sequential windowAdded arrangements would have produced without
+        // arranging the whole workspace once per existing window.
+        let bootstrapAnchor = newWins[0];
+        for (const window of newWins.slice(1)) {
+          const insertAfter = CONFIG.newWindowPosition === "second";
+          this.windows.move(window, bootstrapAnchor, insertAfter);
+          if (!insertAfter) bootstrapAnchor = window;
+        }
+      }
+      tileables = this.windows.getVisibleTileables(srf);
+    }
     let layout = this.layouts.getCurrentLayout(srf);
 
     let capacity: number | null;
@@ -303,10 +676,22 @@ class TilingEngine {
     }
     let overCapacity: WindowClass[];
     if (capacity !== null && tileables.length > capacity) {
-      if (!CONFIG.surfacesIsMoveOldestWindows) {
-        overCapacity = tileables.splice(capacity - tileables.length);
+      const excess = tileables.length - capacity;
+      const sorted = [...tileables].sort(
+        (a, b) => a.window.srfTime - b.window.srfTime,
+      );
+
+      if (!CONFIG.srfIsMoveOldestWindows) {
+        // Move newest: last `excess` from sorted copy
+        overCapacity = sorted.slice(-excess);
       } else {
-        overCapacity = tileables.splice(0, tileables.length - capacity);
+        // Move oldest: first `excess` from sorted copy
+        overCapacity = sorted.slice(0, excess);
+      }
+      // Remove overCapacity from original tileables in-place
+      const toRemove = new Set(overCapacity);
+      for (let i = tileables.length - 1; i >= 0; i--) {
+        if (toRemove.has(tileables[i])) tileables.splice(i, 1);
       }
       capacity = 0;
     } else {
@@ -347,15 +732,16 @@ class TilingEngine {
     ctx: IDriverContext,
     screenData: ScreenData,
     reason: string,
+    processID?: number,
   ) {
     const outputName = screenData.srf.output.name;
     LOG?.send(
       LogModules.arrangeScreen,
       "arrangeScreen",
-      `output: ${outputName}`,
+      `output:processID: ${outputName}:${processID}`,
     );
     screenData.overCapacity.forEach((win) => {
-      win.state = WindowState.Floating;
+      win.floatInPlace();
     });
     const gaps = this.getGaps(screenData.srf);
 
@@ -402,9 +788,7 @@ class TilingEngine {
         if (LOG?.isModuleOn(LogModules.arrangeScreen)) {
           let mes = "";
           screenData.tileables.forEach((tile) => {
-            mes += `${tile.id}, state:${windowStateStr(
-              tile.state,
-            )}, commitGeometry:${tile.geometry}\n`;
+            mes += `${tile.id}, state:${tile.state}, commitGeometry:${tile.geometry}\n`;
           });
           LOG?.send(LogModules.arrangeScreen, "LayoutApply", mes);
         }
@@ -450,7 +834,7 @@ class TilingEngine {
                 tile.maxSize.height < tile.geometry.height
               }, widthUnfit: ${tile.maxSize.width < tile.geometry.width}`,
             );
-            tile.state = WindowState.Floating;
+            tile.floatInPlace();
             return false;
           } else if (
             CONFIG.unfitGreater &&
@@ -479,7 +863,7 @@ class TilingEngine {
           }
           while (screenData.tileables.length > 0 && unfitGreaterQuantity > 0) {
             let tile = screenData.tileables.shift();
-            tile!.state = WindowState.Floating;
+            tile!.floatInPlace();
             layoutApply();
             unfitGreaterQuantity = getNumberTileablesGreaterThenMin(
               screenData.tileables,
@@ -512,11 +896,11 @@ class TilingEngine {
     if (soleWindowProps.noBorders && tileablesLen === 1) {
       screenData.visibles.forEach((window) => {
         if (window.state === WindowState.Tiled)
-          window.commit(soleWindowProps.noBorders);
-        else window.commit();
+          window.commit(ctx, soleWindowProps.noBorders);
+        else window.commit(ctx);
       });
     } else {
-      screenData.visibles.forEach((window) => window.commit());
+      screenData.visibles.forEach((window) => window.commit(ctx));
     }
     LOG?.send(
       LogModules.arrangeScreen,
@@ -533,10 +917,28 @@ class TilingEngine {
    * move/resize such windows back to where/how they should be.
    */
   public enforceSize(ctx: IDriverContext, window: WindowClass) {
-    if (window.isTiled && !window.actualGeometry.equals(window.geometry))
+    /* While a window is being relocated between outputs or desktops, its
+     * geometry legitimately differs from the last layout rect. Enforcing the
+     * old rect here would undo the relocation. */
+    if (window.isRelocationPending || window.isSendingToOutput) return;
+    if (window.isTiled && !window.actualGeometry.equals(window.geometry)) {
+      /* The deferred commit is meant to undo application-driven geometry
+       * changes on the current surface. If the window moves to another
+       * surface in the meantime (e.g. KWin's Grid View drag), the remembered
+       * geometry belongs to the old output/desktop; committing it would move
+       * the window back and undo the relocation. */
+      const srfId = window.surface.id;
       ctx.setTimeout(() => {
-        if (window.isTiled) window.commit();
+        if (
+          window.isAlive() &&
+          !window.isRelocationPending &&
+          !window.isSendingToOutput &&
+          window.isTiled &&
+          window.surface.id === srfId
+        )
+          window.commit(ctx);
       }, 10);
+    }
   }
 
   /**
@@ -544,14 +946,12 @@ class TilingEngine {
    */
   public manage(window: WindowClass) {
     if (!window.shouldIgnore) {
+      this.docks.attachWindow(window);
       if (this.docks.isNewWindowHaveDocked(window)) {
         window.state = WindowState.Docked;
       } else window.state = WindowState.Undecided;
       /* engine#arrange will update the state when required. */
-      if (CONFIG.newWindowPosition === 1) this.windows.unshift(window);
-      else if (CONFIG.newWindowPosition === 2) {
-        this.windows.beside_first(window);
-      } else this.windows.push(window);
+      this.windows.push(window);
     }
   }
 
@@ -607,23 +1007,21 @@ class TilingEngine {
    * Focus a neighbor at the given direction.
    */
   public focusDir(ctx: IDriverContext, dir: Direction): boolean {
-    let winTypes = ctx.isMetaMode ? CONFIG.focusMetaCfg : CONFIG.focusNormalCfg;
+    let winTypes = ctx.isRegister ? CONFIG.focusMetaCfg : CONFIG.focusNormalCfg;
     if (winTypes === WinTypes.special) {
       return ctx.focusSpecial(dir);
     }
-    let surfaceWin = ctx.focusNeighborWindow(dir, winTypes);
-    if (surfaceWin === true) {
+    if (ctx.focusNeighborWindow(dir, winTypes)) {
       if (CONFIG.movePointerOnFocus) {
         DBUS.moveMouseToFocus();
       }
       return false;
     }
-    if (surfaceWin === false) surfaceWin = null;
     if (
-      (!ctx.isMetaMode && !CONFIG.focusNormalDisableScreens) ||
-      (ctx.isMetaMode && !CONFIG.focusMetaDisableScreens)
+      (!ctx.isRegister && CONFIG.focusMoveScreensNormal) ||
+      (ctx.isRegister && CONFIG.focusMoveScreensMeta)
     ) {
-      const result = ctx.focusOutput(surfaceWin, dir, winTypes);
+      const result = ctx.focusOutput(null, dir, winTypes);
       if (result) {
         if (CONFIG.movePointerOnFocus) {
           DBUS.moveMouseToCenter();
@@ -633,10 +1031,10 @@ class TilingEngine {
     }
 
     if (
-      (!ctx.isMetaMode && !CONFIG.focusNormalDisableVDesktops) ||
-      (ctx.isMetaMode && !CONFIG.focusMetaDisableVDesktops)
+      (!ctx.isRegister && CONFIG.focusMoveVDesktopsNormal) ||
+      (ctx.isRegister && CONFIG.focusMoveVDesktopsMeta)
     ) {
-      return ctx.focusVDesktop(surfaceWin, dir, winTypes);
+      return ctx.focusVDesktop(null, dir, winTypes);
     }
     return false;
   }
@@ -659,7 +1057,7 @@ class TilingEngine {
   /**
    * Swap the position of the current window with a neighbor at the given direction.
    */
-  public swapDirection(
+  private _moveTiled(
     ctx: IDriverContext,
     direction: Direction,
     window: WindowClass,
@@ -669,10 +1067,37 @@ class TilingEngine {
       this.windows.swap(window, neighbor);
       return true;
     }
-    if (ctx.moveToScreen(window, direction)) {
-      return false; // the screens already arranged
+    if (
+      ctx.isRegister
+        ? CONFIG.focusMoveScreensMeta
+        : CONFIG.focusMoveScreensNormal
+    ) {
+      const sd = this.getTileables(window.surface);
+      const idx = sd.tileables.indexOf(window);
+      if (idx < 0) {
+        warning(`${getMethodName()}: there is not windows among tileables.`);
+        return false;
+      }
+      sd.overCapacity.push(...sd.tileables.splice(idx, 1));
+      this._prepareWindowsMoveToOutput(ctx, sd, direction);
+      if (
+        !this.relocationWindows.isSending &&
+        this.relocationWindows.totalNumWinsPrepareToOutput > 0
+      ) {
+        if (!ctx.relocateWindows())
+          warning(
+            `${getMethodName()}: window cannot send to direction ${direction}`,
+          );
+        return false; // sendClientToScreen() run arrange after output was Changed
+      }
     }
-    return ctx.moveToVDesktop(window, direction);
+    if (
+      ctx.isRegister
+        ? CONFIG.focusMoveVDesktopsMeta
+        : CONFIG.focusMoveVDesktopsNormal
+    )
+      return ctx.moveWinToVDesktopByDirection(window, direction);
+    return false;
   }
 
   /**
@@ -680,12 +1105,85 @@ class TilingEngine {
    * @param window a floating window
    * @param dir which direction
    */
-  public moveFloat(window: WindowClass, dir: Direction) {
-    const srf = window.surface;
+  private _moveFloat(ctx: IDriverContext, window: WindowClass, dir: Direction) {
+    /* Declare these before the helpers: the helpers close over them and
+     * QJSEngine warns about the temporal-dead-zone ordering at load time. */
+    const relocation = this.relocationWindows;
+    const srcOutput = window.surface.output;
 
-    // TODO: configurable step size?
-    const hStepSize = srf.workingArea.width * 0.05;
-    const vStepSize = srf.workingArea.height * 0.05;
+    function isRelocationReady(): boolean {
+      if (relocation.isSending) {
+        if (
+          getTime() - relocation.startTime <=
+          TilingEngine.SENDING_WINDOWS_MAX_WAIT_TIME
+        ) {
+          warning(
+            `${getMethodName()} Relocation windows in process. relocationWindows.isSending=${relocation.isSending}`,
+          );
+          return false;
+        } else {
+          warning(
+            `${getMethodName()} Relocation windows with startTime:${relocation.startTime} was canceled.`,
+          );
+          relocation.clear();
+        }
+      }
+      return true;
+    }
+    function floatRelocation(target: "toOutput" | "toVDesktop"): boolean {
+      const neighbor =
+        target === "toOutput"
+          ? ctx.getNeighborOutput(dir, srcOutput)
+          : ctx.getNeighborVDesktop(dir);
+      if (neighbor === null) return false;
+      if (!isRelocationReady()) return false;
+      const winArr =
+        target === "toOutput"
+          ? relocation.toOutputs.add(neighbor as Output)
+          : relocation.toVDesktops.add(neighbor as VirtualDesktop);
+      winArr.push(window);
+      return true;
+    }
+    const srf = window.surface;
+    const srfRect = srf.workingArea;
+
+    const geometry = window.actualGeometry;
+    let x = geometry.x;
+    let y = geometry.y;
+    if (
+      (x === srfRect.x && dir === "left") ||
+      (x === srfRect.maxX - geometry.width && dir === "right") ||
+      (y === srfRect.y && dir === "up") ||
+      (y === srfRect.maxY - geometry.height && dir === "down")
+    ) {
+      if (
+        (ctx.isRegister
+          ? CONFIG.focusMoveScreensMeta
+          : CONFIG.focusMoveScreensNormal) &&
+        floatRelocation("toOutput")
+      ) {
+        this.relocationWindows.activeWindow = window;
+        this.relocationWindows.direction = dir;
+        ctx.relocateWindows();
+        return;
+      }
+      if (
+        (ctx.isRegister
+          ? CONFIG.focusMoveVDesktopsMeta
+          : CONFIG.focusMoveVDesktopsNormal) &&
+        floatRelocation("toVDesktop")
+      ) {
+        this.relocationWindows.activeWindow = window;
+        this.relocationWindows.direction = dir;
+        ctx.relocateWindows();
+      }
+      return;
+    }
+
+    const hStepSize =
+      (srfRect.width * window.window.floatConfig.stepWidth) / 100;
+    const vStepSize =
+      (srfRect.height * window.window.floatConfig.stepHeight) / 100;
 
     let hStep, vStep;
     switch (dir) {
@@ -703,17 +1201,25 @@ class TilingEngine {
         break;
     }
 
-    const geometry = window.actualGeometry;
-    const x = geometry.x + hStepSize * hStep;
-    const y = geometry.y + vStepSize * vStep;
+    x = geometry.x + hStepSize * hStep;
+    y = geometry.y + vStepSize * vStep;
 
+    if (x < srfRect.x) x = srfRect.x;
+    else if (x + geometry.width > srfRect.maxX)
+      x = srfRect.maxX - geometry.width;
+    if (y < srfRect.y) y = srfRect.y;
+    else if (y + geometry.height > srfRect.maxY)
+      y = srfRect.maxY - geometry.height;
     if (CONFIG.movePointerOnFocus) {
       window.moveMouseToFocus();
     }
-    window.forceSetGeometry(new Rect(x, y, geometry.width, geometry.height));
+    window.forceSetGeometry(
+      ctx,
+      new Rect(x, y, geometry.width, geometry.height),
+    );
   }
 
-  public swapDirOrMoveFloat(ctx: IDriverContext, dir: Direction): boolean {
+  public moveTiledWindow(ctx: IDriverContext, dir: Direction): boolean {
     const window = ctx.currentWindow;
     if (window === null) {
       /* if no current window, select the first tile. */
@@ -725,21 +1231,17 @@ class TilingEngine {
       return false;
     }
 
-    const state = window.state;
-    if (WindowClass.isFloatingState(state)) {
-      this.moveFloat(window, dir);
-      return false;
-    } else if (WindowClass.isTiledState(state)) {
-      return this.swapDirection(ctx, dir, window);
+    if (window.isTiled) {
+      return this._moveTiled(ctx, dir, window);
     }
-    return true;
+    return false;
   }
 
   public toggleDock(window: WindowClass) {
-    window.state =
-      window.state !== WindowState.Docked
-        ? WindowState.Docked
-        : WindowState.Tiled;
+    if (WindowClass.isToggleableState(window.state)) {
+      if (window.isDocked) window.state = window.previousState;
+      else window.state = WindowState.Docked;
+    }
   }
 
   public raiseSurfaceCapacity(ctx: IDriverContext): number | null {
@@ -754,6 +1256,7 @@ class TilingEngine {
     }
     return currentSurface.capacity;
   }
+
   public lowerSurfaceCapacity(ctx: IDriverContext): number | null {
     const currentSurface = ctx.currentSurface;
     if (currentSurface.capacity !== null) {
@@ -765,6 +1268,7 @@ class TilingEngine {
     }
     return currentSurface.capacity;
   }
+
   public ResetSurfaceCapacity(ctx: IDriverContext): number | null {
     return (ctx.currentSurface.capacity = null);
   }
@@ -773,9 +1277,10 @@ class TilingEngine {
    * Toggle float mode of window.
    */
   public toggleFloat(window: WindowClass) {
-    window.state = !window.isTileable
-      ? WindowState.Tiled
-      : WindowState.Floating;
+    if (WindowClass.isToggleableState(window.state)) {
+      if (window.isFloating) window.state = window.previousState;
+      else window.state = WindowState.Floating;
+    }
   }
 
   /**
@@ -793,12 +1298,14 @@ class TilingEngine {
 
     if (numFloats === 0) {
       windows.forEach((window) => {
-        window.state = WindowState.Floating;
+        if (WindowClass.isToggleableState(window.state))
+          window.state = WindowState.Floating;
       });
       ctx.showNotification("Float All");
     } else {
       windows.forEach((window) => {
-        window.state = WindowState.Tiled;
+        if (WindowClass.isToggleableState(window.state))
+          window.state = window.previousState;
       });
       ctx.showNotification("Tile All");
     }
@@ -810,9 +1317,17 @@ class TilingEngine {
    * The "master" window is simply the first window in the window list.
    * Some layouts depend on this assumption, and will make such windows more
    * visible than others.
+   *
+   * The target is swapped with the current master of its surface. Calling
+   * this on the window that is already master toggles back to the previous
+   * master.
    */
-  public setMaster(window: WindowClass) {
+  public setMaster(ctx: IDriverContext, window: WindowClass) {
     this.windows.setMaster(window);
+    const master = this.windows.surfaceMaster(window);
+    if (master === null) return;
+    ctx.currentWindow = master;
+    if (CONFIG.movePointerOnFocus) DBUS.moveMouseToFocus();
   }
 
   /**
@@ -820,17 +1335,78 @@ class TilingEngine {
    */
   public cycleLayout(ctx: IDriverContext, step: 1 | -1) {
     const layout = this.layouts.cycleLayout(ctx.currentSurface, step);
-    if (layout) ctx.showNotification(layout.description);
+    if (layout) ctx.showLayoutOSD();
   }
 
   /**
    * Set the layout of the current surface to the specified layout.
    */
-  public setLayout(ctx: IDriverContext, layoutClassID: string) {
+  public setLayout(
+    ctx: IDriverContext,
+    layoutClassID: string,
+    showOSD: boolean = true,
+  ) {
     const layout = this.layouts.setLayout(ctx.currentSurface, layoutClassID);
-    if (layout) ctx.showNotification(layout.description);
+    if (layout && showOSD) ctx.showLayoutShortcut(layout.classID);
   }
 
+  /**
+   * Let the docked window override shortcut.
+   *
+   * @returns True if the docked window overrides the shortcut. False, otherwise.
+   */
+  public handleDockWinShortcut(
+    ctx: IDriverContext,
+    window: WindowClass | null,
+    action: KrohnkiteAction,
+    reason: keyof typeof ArrangeReason,
+  ): boolean {
+    if (window === null || !window.isDocked) return false;
+    const isHandled = this.docks.handleShortcut(ctx, window, action);
+    if (isHandled) {
+      this.arrange(ctx, reason, `${getMethodName()}:action=${action}`);
+    }
+    return isHandled;
+  }
+  public handleFloatWinShortcut(
+    ctx: IDriverContext,
+    window: WindowClass | null,
+    action: KrohnkiteAction,
+  ): boolean {
+    if (window === null || !window.isFloating) return false;
+    switch (action) {
+      case KrohnkiteAction.Increase:
+      case KrohnkiteAction.Decrease:
+        break;
+      case KrohnkiteAction.GrowWidth:
+        this.resizeFloat(ctx, window, "east", 1);
+        break;
+      case KrohnkiteAction.ShrinkWidth:
+        this.resizeFloat(ctx, window, "east", -1);
+        break;
+      case KrohnkiteAction.GrowHeight:
+        this.resizeFloat(ctx, window, "south", 1);
+        break;
+      case KrohnkiteAction.ShrinkHeight:
+        this.resizeFloat(ctx, window, "south", -1);
+        break;
+      case KrohnkiteAction.MoveLeft:
+        this._moveFloat(ctx, window, "left");
+        break;
+      case KrohnkiteAction.MoveUp:
+        this._moveFloat(ctx, window, "up");
+        break;
+      case KrohnkiteAction.MoveRight:
+        this._moveFloat(ctx, window, "right");
+        break;
+      case KrohnkiteAction.MoveDown:
+        this._moveFloat(ctx, window, "down");
+        break;
+      default:
+        return false;
+    }
+    return true;
+  }
   /**
    * Let the current layout override shortcut.
    *
@@ -838,25 +1414,70 @@ class TilingEngine {
    */
   public handleLayoutShortcut(
     ctx: IDriverContext,
-    input: Shortcut,
-    data?: any,
+    action: KrohnkiteAction,
+    reason: keyof typeof ArrangeReason,
   ): boolean {
     const layout = this.layouts.getCurrentLayout(ctx.currentSurface);
-    if (layout.handleShortcut)
-      return layout.handleShortcut(new EngineContext(ctx, this), input, data);
+    if (layout.handleShortcut) {
+      const isHandled = layout.handleShortcut(
+        new EngineContext(ctx, this),
+        action,
+      );
+      if (isHandled) {
+        this.arrange(ctx, reason, `${getMethodName()}:shortcut=${action}`);
+        return true;
+      }
+    }
     return false;
   }
-  /**
-   * Let the docked window override shortcut.
-   *
-   * @returns True if the layout overrides the shortcut. False, otherwise.
-   */
-  public handleDockShortcut(
+  public handleTiledWinShortcut(
     ctx: IDriverContext,
-    window: WindowClass,
-    input: Shortcut,
+    window: WindowClass | null,
+    action: KrohnkiteAction,
+    reason: keyof typeof ArrangeReason,
   ): boolean {
-    return this.docks.handleShortcut(ctx, window, input);
+    if (window === null || !window.isTiled) return false;
+    let isArrangeNeeded = true;
+    switch (action) {
+      case KrohnkiteAction.GrowWidth:
+        this.resizeTile(window, "east", 1);
+        break;
+      case KrohnkiteAction.ShrinkWidth:
+        this.resizeTile(window, "east", -1);
+        break;
+      case KrohnkiteAction.GrowHeight:
+        this.resizeTile(window, "south", 1);
+        break;
+      case KrohnkiteAction.ShrinkHeight:
+        this.resizeTile(window, "south", -1);
+        break;
+
+      case KrohnkiteAction.SwapUp:
+        this.swapOrder(window, -1);
+        break;
+      case KrohnkiteAction.SwapDown:
+        this.swapOrder(window, +1);
+        break;
+
+      case KrohnkiteAction.MoveUp:
+        isArrangeNeeded = this.moveTiledWindow(ctx, "up");
+        break;
+      case KrohnkiteAction.MoveDown:
+        isArrangeNeeded = this.moveTiledWindow(ctx, "down");
+        break;
+      case KrohnkiteAction.MoveLeft:
+        isArrangeNeeded = this.moveTiledWindow(ctx, "left");
+        break;
+      case KrohnkiteAction.MoveRight:
+        isArrangeNeeded = this.moveTiledWindow(ctx, "right");
+        break;
+      default:
+        return false;
+    }
+    if (isArrangeNeeded) {
+      this.arrange(ctx, reason, `${getMethodName()}:shortcut=${action}`);
+    }
+    return true;
   }
 
   private getNeighborByDirection(
@@ -929,7 +1550,7 @@ class TilingEngine {
         : (tile) => tile.geometry.x === min,
     );
 
-    return closest.sort((a, b) => b.timestamp - a.timestamp)[0];
+    return closest.sort((a, b) => b.focusTime - a.focusTime)[0];
   }
 
   private getGaps(srf: ISurface): IGaps {
@@ -938,7 +1559,7 @@ class TilingEngine {
       this._gapsSurfacesCfg = gapsSurfaceCfg.parseGapsUserSurfacesCfg();
     }
     const surfaceCfg = this._gapsSurfacesCfg.find((surfaceCfg) =>
-      surfaceCfg.isFit(srf),
+      srf.isFit(surfaceCfg.userLabel),
     );
     if (surfaceCfg === undefined) return this._defaultGaps;
     return surfaceCfg.cfg;

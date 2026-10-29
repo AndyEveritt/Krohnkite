@@ -5,12 +5,14 @@
 */
 
 class DockEntry implements IDockEntry {
+  public tilesArea: Rect | null;
   private _slots: DockSlot[];
-  private surfaceCfg: SurfaceCfg<IDockCfg>;
+  private dockCfg: IDockCfg;
   private _id: string;
 
-  constructor(cfg: SurfaceCfg<IDockCfg>, id: string) {
-    this.surfaceCfg = cfg;
+  constructor(cfg: IDockCfg, id: string) {
+    this.tilesArea = null;
+    this.dockCfg = cfg;
     this._slots = this.parseSlots();
     this._id = id;
   }
@@ -30,6 +32,12 @@ class DockEntry implements IDockEntry {
         slot.window = null;
         break;
       }
+    }
+  }
+
+  public clearSlots(): void {
+    for (const slot of this.slots) {
+      slot.window = null;
     }
   }
 
@@ -55,7 +63,7 @@ class DockEntry implements IDockEntry {
 
     function leftSlotArrange() {
       if (leftSlot !== null) {
-        dockCfg = leftSlot.window!.dock!.cfg;
+        dockCfg = leftSlot.window!.dock.cfg;
         let leftSlotHeight = Math.min(
           (workingArea.height * dockCfg.vHeight) / 100,
           height,
@@ -76,13 +84,13 @@ class DockEntry implements IDockEntry {
           dockCfg,
           height,
         );
-        leftSlot.window!.dock!.renderedTime = renderedTime;
-        leftSlot.window!.dock!.renderedOutputId = renderedOutputId;
+        leftSlot.window!.dock.renderedTime = renderedTime;
+        leftSlot.window!.dock.renderedOutputId = renderedOutputId;
       }
     }
     function rightSlotArrange() {
       if (rightSlot !== null) {
-        dockCfg = rightSlot.window!.dock!.cfg;
+        dockCfg = rightSlot.window!.dock.cfg;
         let rightSlotHeight = Math.min(
           (workingArea.height * dockCfg.vHeight) / 100,
           height,
@@ -103,13 +111,13 @@ class DockEntry implements IDockEntry {
           dockCfg,
           height,
         );
-        rightSlot.window!.dock!.renderedTime = renderedTime;
-        rightSlot.window!.dock!.renderedOutputId = renderedOutputId;
+        rightSlot.window!.dock.renderedTime = renderedTime;
+        rightSlot.window!.dock.renderedOutputId = renderedOutputId;
       }
     }
     function topSlotArrange() {
       if (topSlot !== null) {
-        dockCfg = topSlot.window!.dock!.cfg;
+        dockCfg = topSlot.window!.dock.cfg;
         let topSlotWidth = Math.min(
           (workingArea.width * dockCfg.hWide) / 100,
           width,
@@ -129,13 +137,13 @@ class DockEntry implements IDockEntry {
           dockCfg,
           width,
         );
-        topSlot.window!.dock!.renderedTime = renderedTime;
-        topSlot.window!.dock!.renderedOutputId = renderedOutputId;
+        topSlot.window!.dock.renderedTime = renderedTime;
+        topSlot.window!.dock.renderedOutputId = renderedOutputId;
       }
     }
     function bottomSlotArrange() {
       if (bottomSlot !== null) {
-        dockCfg = bottomSlot.window!.dock!.cfg;
+        dockCfg = bottomSlot.window!.dock.cfg;
         let bottomSlotWidth = Math.min(
           (workingArea.width * dockCfg.hWide) / 100,
           width,
@@ -156,8 +164,8 @@ class DockEntry implements IDockEntry {
           dockCfg,
           width,
         );
-        bottomSlot.window!.dock!.renderedTime = renderedTime;
-        bottomSlot.window!.dock!.renderedOutputId = renderedOutputId;
+        bottomSlot.window!.dock.renderedTime = renderedTime;
+        bottomSlot.window!.dock.renderedOutputId = renderedOutputId;
       }
     }
 
@@ -172,26 +180,30 @@ class DockEntry implements IDockEntry {
       leftSlotArrange();
       rightSlotArrange();
     }
-    return new Rect(leftBorder, topBorder, width, height);
+    this.tilesArea = new Rect(leftBorder, topBorder, width, height);
+    return this.tilesArea;
   }
 
-  public handleShortcut(window: WindowClass, shortcut: Shortcut): boolean {
+  public handleShortcut(
+    window: WindowClass,
+    shortcut: KrohnkiteAction,
+  ): boolean {
     const slot = this.getSlotByWindow(window);
     let desiredPosition: DockPosition;
-    if (!slot || !window.dock) {
+    if (!slot) {
       return false;
     }
     switch (shortcut) {
-      case Shortcut.SwapLeft:
+      case KrohnkiteAction.MoveLeft:
         desiredPosition = DockPosition.left;
         break;
-      case Shortcut.SwapUp:
+      case KrohnkiteAction.MoveUp:
         desiredPosition = DockPosition.top;
         break;
-      case Shortcut.SwapRight:
+      case KrohnkiteAction.MoveRight:
         desiredPosition = DockPosition.right;
         break;
-      case Shortcut.SwapDown:
+      case KrohnkiteAction.MoveDown:
         desiredPosition = DockPosition.bottom;
         break;
       default:
@@ -299,7 +311,7 @@ class DockEntry implements IDockEntry {
       return null;
     } else if (
       slot.window.state !== WindowState.Docked ||
-      slot.window.dock!.position !== position
+      slot.window.dock.position !== position
     ) {
       slot.window = null;
       return null;
@@ -327,7 +339,7 @@ class DockEntry implements IDockEntry {
   private arrangeSlots(dockedWindows: WindowClass[]) {
     let contenders = this.arrangeContenders(dockedWindows, true);
     if (contenders.length !== 0 && this.isHasEmptySlot()) {
-      contenders.forEach((w) => (w.dock!.position = null));
+      contenders.forEach((w) => (w.dock.position = null));
       contenders = this.arrangeContenders(contenders, false);
     }
     contenders.forEach((w) => {
@@ -349,10 +361,6 @@ class DockEntry implements IDockEntry {
       let tempDockedWindows: WindowClass[] = [];
       contenders.push(
         ...windows.filter((w) => {
-          if (w.dock === null) {
-            w.dock = new Dock(this.surfaceCfg.cfg);
-            return true;
-          }
           if (w.dock.position === slot.position) {
             return true;
           }
@@ -366,7 +374,7 @@ class DockEntry implements IDockEntry {
       if (contenders.length !== 0) {
         this.contendersSort(contenders, slot.position, this.id);
         slot.window = contenders.pop()!;
-        slot.window.dock!.position = slot.position;
+        slot.window.dock.position = slot.position;
       } else {
         slot.window = null;
       }
@@ -388,7 +396,7 @@ class DockEntry implements IDockEntry {
 
     for (const slot of this.slots) {
       if (slot.window === null) continue;
-      dockCfg = slot.window!.dock!.cfg;
+      dockCfg = slot.window!.dock.cfg;
       const minSize: ISize = {
         width: Math.max(
           (slot.window.minSize.width * 100) / workingArea.width,
@@ -430,7 +438,7 @@ class DockEntry implements IDockEntry {
             dockCfg.vWide =
               minSize.width + (200 * dockCfg.vGap) / workingArea.width;
           if (oppositeSlot !== null) {
-            oppositeDockCfg = oppositeSlot.window!.dock!.cfg;
+            oppositeDockCfg = oppositeSlot.window!.dock.cfg;
             let opMinSize: ISize = {
               width: Math.max(
                 (oppositeSlot.window!.minSize.width * 100) / workingArea.width,
@@ -487,7 +495,7 @@ class DockEntry implements IDockEntry {
             dockCfg.hHeight =
               minSize.height + (200 * dockCfg.hGap) / workingArea.height;
           if (oppositeSlot !== null) {
-            oppositeDockCfg = oppositeSlot.window!.dock!.cfg;
+            oppositeDockCfg = oppositeSlot.window!.dock.cfg;
 
             let opMinSize: ISize = {
               width: Math.max(
@@ -547,10 +555,7 @@ class DockEntry implements IDockEntry {
     id: string,
   ) {
     function compare(a: WindowClass, b: WindowClass) {
-      if (a.dock === null && b.dock === null) return 0;
-      else if (a.dock === null) return -1;
-      else if (b.dock === null) return 1;
-      else if (a.dock.position === position && b.dock.position !== position)
+      if (a.dock.position === position && b.dock.position !== position)
         return 1;
       else if (b.dock.position === position && a.dock.position !== position)
         return -1;
