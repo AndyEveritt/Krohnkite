@@ -170,25 +170,9 @@ class TilingEngine {
 
   public adjustDock(basis: WindowClass) {
     if (basis.actualGeometry === basis.geometry) return;
-    let widthDiff = basis.actualGeometry.width - basis.geometry.width;
-    let heightDiff = basis.actualGeometry.height - basis.geometry.height;
-    let dockCfg = basis.dock.cfg;
-    const workingArea = basis.surface.workingArea;
-
-    switch (basis.dock.position) {
-      case DockPosition.left:
-      case DockPosition.right:
-        dockCfg.vHeight =
-          dockCfg.vHeight + (100 * heightDiff) / workingArea.height;
-        dockCfg.vWide = dockCfg.vWide + (100 * widthDiff) / workingArea.width;
-        break;
-      case DockPosition.top:
-      case DockPosition.bottom:
-        dockCfg.hHeight =
-          dockCfg.hHeight + (100 * heightDiff) / workingArea.height;
-        dockCfg.hWide = dockCfg.hWide + (100 * widthDiff) / workingArea.width;
-        break;
-    }
+    const widthDiff = basis.actualGeometry.width - basis.geometry.width;
+    const heightDiff = basis.actualGeometry.height - basis.geometry.height;
+    this.docks.adjust(basis, widthDiff, heightDiff);
   }
 
   /**

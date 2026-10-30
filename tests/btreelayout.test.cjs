@@ -153,9 +153,8 @@ function makeDragAction(scene, window, x, y, area) {
     middlePointer: pointer,
     neighbors: { left: false, right: false, up: false, down: false },
     neighborsSrfId: null,
-    swapping: { window: null, position: null },
+    dockSnapshots: {},
     initialState: 'Tiled',
-    initialDockPosition: null,
     isLayoutHasDragStep: true,
   };
 }

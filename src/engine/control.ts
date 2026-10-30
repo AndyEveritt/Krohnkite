@@ -47,12 +47,8 @@ interface DragAction {
   /* Surface id the neighbors were resolved for; the set is recalculated only
    * when the window crosses to another surface. */
   neighborsSrfId: string | null;
-  swapping: {
-    window: WindowClass | null;
-    position: DockPosition | null;
-  };
+  dockSnapshots: { [srfId: string]: DockDragSnapshot };
   initialState: ToggleableState;
-  initialDockPosition: DockPosition | null;
   isLayoutHasDragStep: boolean;
 }
 
@@ -186,10 +182,8 @@ class TilingController {
         middlePointer,
         neighbors: getNeighbors(srf),
         neighborsSrfId: srf.id,
-        swapping: { window: null, position: null },
+        dockSnapshots: {},
         initialState,
-        initialDockPosition:
-          initialState === WindowState.Docked ? window.dock.position : null,
         isLayoutHasDragStep: false,
       };
     };
@@ -338,7 +332,8 @@ class TilingController {
     const dragAction = this.dragAction;
     if (dragAction === null) return;
     ctx.hideDragPreview();
-    const { window, initialState, swapping } = dragAction;
+    const { window, initialState } = dragAction;
+    this.engine.docks.finishDrag(dragAction);
     this.dragAction = null;
     if (window.isAlive()) {
       window.isDragging = false;
@@ -346,12 +341,6 @@ class TilingController {
       // still holds the pre-drag value; only overwrite it if the state changed.
       if (window.state !== initialState) window.previousState = initialState;
     }
-    if (
-      swapping.window !== null &&
-      swapping.window.isAlive() &&
-      swapping.window.state !== WindowState.Docked
-    )
-      swapping.window.previousState = WindowState.Docked;
   }
 
   public onWindowResizeStart(window: WindowClass): void {

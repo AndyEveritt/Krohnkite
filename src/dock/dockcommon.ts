@@ -73,3 +73,14 @@ interface IDockStore {
   render(srf: ISurface, win: WindowClass[], workingArea: Rect): Rect;
   attachWindow(window: WindowClass): void;
 }
+
+interface DockDragSnapshot {
+  srfId: string;
+  slots: { position: DockPosition; windows: WindowClass[] }[];
+  states: {
+    window: WindowClass;
+    state: WindowState;
+    dockPosition: DockPosition | null;
+    geometry: Rect;
+  }[];
+}
