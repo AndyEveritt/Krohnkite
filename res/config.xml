@@ -419,16 +419,7 @@
 	    <label>Automatically float utility windows (Dialog, Splash, Utility)</label>
         <default>true</default>
     </entry>
-    <!-- TODO: will be removed from Krohnkite Settings>Float>ByClass and ByTitle -->
-    <entry name="floatingClass" type="String">
-     <label>Float windows with certain classes(comma-separated list)</label>
-        <default></default>
-    </entry>
 
-    <entry name="floatingTitle" type="String">
-     <label>Float windows with certain string in title(comma-separated list)</label>
-        <default></default>
-    </entry>
     <!-- ############# -->
     <entry name="floatConfig" type="String">
 	    <label>Override default screen gaps</label>

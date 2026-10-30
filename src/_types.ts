@@ -83,14 +83,11 @@ const ConfigVariables = {
   cascadeLayoutOrder: "cascadeLayoutOrder",
   /* Layout capacities */
   tileLayoutCapacity: "tileLayoutCapacity",
-  monocleLayoutCapacity: "monocleLayoutCapacity",
   threeColumnLayoutCapacity: "threeColumnLayoutCapacity",
   spiralLayoutCapacity: "spiralLayoutCapacity",
-  quarterLayoutCapacity: "quarterLayoutCapacity",
   stackedLayoutCapacity: "stackedLayoutCapacity",
   columnsLayoutCapacity: "columnsLayoutCapacity",
   spreadLayoutCapacity: "spreadLayoutCapacity",
-  floatingLayoutCapacity: "floatingLayoutCapacity",
   stairLayoutCapacity: "stairLayoutCapacity",
   binaryTreeLayoutCapacity: "binaryTreeLayoutCapacity",
   cascadeLayoutCapacity: "cascadeLayoutCapacity",
@@ -118,7 +115,7 @@ const ConfigVariables = {
   limitTileWidth: "limitTileWidth",
   limitTileWidthRatio: "limitTileWidthRatio",
   /* Shortcuts */
-  shortcutConf: "metaConf",
+  shortcutConf: "shortcutConf",
   altRegisterTimeout: "altRegisterTimeout",
   altRegisterIsToggle: "altRegisterIsToggle",
   altRegisterIsPushedTwice: "altRegisterIsPushedTwice",
@@ -155,9 +152,6 @@ const ConfigVariables = {
   floatSizeStepHeight: "floatSizeStepHeight",
   floatAsDefault: "floatAsDefault",
   floatUtility: "floatUtility",
-  //TODO: will be removed
-  // floatingClass: "floatingClass",
-  // floatingTitle: "floatingTitle",
   floatConfig: "floatConfig",
 
   /* Dock */

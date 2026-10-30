@@ -176,8 +176,6 @@ class KWinConfig implements IConfig {
   /*
    * Float
    * */
-  // public floatingClass: string[];
-  // public floatingTitle: string[];
   public floatAsDefault: boolean;
   public floatUtility: boolean;
   public floatConfig: IFloatWindowsConfig;
@@ -276,7 +274,7 @@ class KWinConfig implements IConfig {
       [StackedLayout, true],
       [ColumnsLayout, true],
       [SpreadLayout, true],
-      [FloatingLayout, true],
+      [FloatingLayout, false],
       [StairLayout, true],
       [BinaryTreeLayout, true],
       [CascadeLayout, true],
@@ -387,7 +385,7 @@ class KWinConfig implements IConfig {
     this.shortcutSequenceTime = validateNumberWithDefault(
       KWIN.readConfig("shortcutSequenceTime", 400),
       400,
-      "altRegisterTimeout",
+      "shortcutSequenceTime",
       0,
       9999,
     );
@@ -472,21 +470,19 @@ class KWinConfig implements IConfig {
     //***************************
     //****************** Float
     //***************************
-    // this.floatingClass = separate(KWIN.readConfig("floatingClass", ""), ",");
-    // this.floatingTitle = separate(KWIN.readConfig("floatingTitle", ""), ",");
     this.floatConfig = {
       isNativeSizeOverride: KWIN.readConfig("floatDefaultSizeEnable", false),
       floatWidth: validateNumberWithDefault(
         KWIN.readConfig("floatDefaultWidth", 50),
         50,
-        "floatInitWindowWidth",
+        "floatDefaultWidth",
         1,
         100,
       ),
       floatHeight: validateNumberWithDefault(
         KWIN.readConfig("floatDefaultHeight", 50),
         50,
-        "floatInitWindowHeight",
+        "floatDefaultHeight",
         1,
         100,
       ),
