@@ -243,6 +243,7 @@ test('layout settings blocks follow their enable checkbox', () => {
     ['monocleLayoutEnabled', 'GB_2_MonocleLayoutSettings'],
     ['quarterLayoutEnabled', 'GB_5_QuarterLayoutSettings'],
     ['columnsLayoutEnabled', 'GB_7_columnsLayoutSettings'],
+    ['spreadLayoutEnabled', 'GB_8_spreadLayoutSettings'],
     ['stairLayoutEnabled', 'GB_a_stairLayoutSettings'],
   ];
 

@@ -384,7 +384,7 @@ layouts = [
     ("quarter", "Quarter Layout", "quarterLayout", "GB_5_QuarterLayout", "GB_5_QuarterLayoutSettings", "label_45", "label_49", None, False),
     ("stacked", "Stacked Layout", "stackedLayout", "GB_6_stackedLayout", None, "label_50", "label_51", "label_44", True),
     ("columns", "Columns Layout", "columnsLayout", "GB_7_columnsLayout", "GB_7_columnsLayoutSettings", "label_52", "label_53", "label_54", True),
-    ("spread", "Spread Layout", "spreadLayout", "GB_8_spreadLayout", None, "label_105", "label_106", "label_55", True),
+    ("spread", "Spread Layout", "spreadLayout", "GB_8_spreadLayout", "GB_8_spreadLayoutSettings", "label_105", "label_106", "label_55", True),
     ("floating", "Floating Layout", "floatingLayout", "GB_9_floatingLayout", None, "label_103", "label_104", None, False),
     ("stair", "Stair Layout", "stairLayout", "GB_a_stairLayout", "GB_a_stairLayoutSettings", "label_109", "label_110", "label_56", True),
     ("binarytree", "Binary Tree Layout", "binaryTreeLayout", "GB_b_binaryTreeLayout", None, "label_111", "label_112", "label_57", True),
@@ -439,6 +439,10 @@ for name, title, prefix, group_name, settings_group, title_label_name, order_lab
         assert not capacity.isEnabled(), name
     if settings is not None:
         assert not settings.isEnabled(), name
+    if prefix == "spreadLayout":
+        space = form.findChild(QSpinBox, "kcfg_spreadLayoutSpace")
+        assert space is not None, name
+        assert not space.isEnabled(), name
     checkbox.setChecked(True)
     assert title_label.isEnabled(), name
     assert order_label.isEnabled(), name
@@ -450,6 +454,8 @@ for name, title, prefix, group_name, settings_group, title_label_name, order_lab
         assert capacity.isEnabled(), name
     if settings is not None:
         assert settings.isEnabled(), name
+    if prefix == "spreadLayout":
+        assert space.isEnabled(), name
 form.deleteLater()
 `;
     const result = spawnSync(PYTHON, ['-c', script, ROOT, dataHome], {

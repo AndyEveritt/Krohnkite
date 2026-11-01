@@ -1880,7 +1880,7 @@
         </widget>
        </item>
        <item>
-        <widget class="QGroupBox" name="groupBox_35">
+        <widget class="QGroupBox" name="GB_8_spreadLayoutSettings">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Minimum" vsizetype="Maximum">
            <horstretch>0</horstretch>
@@ -7441,6 +7441,12 @@
    <sender>kcfg_spreadLayoutEnabled</sender>
    <signal>toggled(bool)</signal>
    <receiver>kcfg_spreadLayoutCapacity</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_spreadLayoutEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>GB_8_spreadLayoutSettings</receiver>
    <slot>setEnabled(bool)</slot>
   </connection>
   <connection>
