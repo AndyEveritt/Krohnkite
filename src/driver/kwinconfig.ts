@@ -757,6 +757,15 @@ class KWinConfig implements IConfig {
   ): ISortedLayouts[] {
     let sortedLayouts: ISortedLayouts[] = [];
     for (const [idx, [layoutClass, isCapacity]] of layoutsList.entries()) {
+      const enabledConfigKey = `${unCapitalize(layoutClass.id)}Enabled`;
+      if (!isValidConfigKey(enabledConfigKey)) {
+        warning(
+          `kwinconfig: unrecognized config key "${enabledConfigKey}" for layout ${layoutClass.id}, treating layout as enabled`,
+        );
+      } else if (!KWIN.readConfig(enabledConfigKey, true)) {
+        continue;
+      }
+
       const orderConfigKey = `${unCapitalize(layoutClass.id)}Order`;
       if (!isValidConfigKey(orderConfigKey)) {
         warning(
@@ -766,7 +775,7 @@ class KWinConfig implements IConfig {
       }
       let validatedOrder = validateNumber(
         KWIN.readConfig(orderConfigKey, idx + 1),
-        0,
+        1,
         12,
       );
       if (validatedOrder instanceof Err) {
@@ -775,7 +784,6 @@ class KWinConfig implements IConfig {
           `kwinconfig: layout order for ${layoutClass.id} is invalid, using default value ${validatedOrder}`,
         );
       }
-      if (validatedOrder === 0) continue;
       sortedLayouts.push({
         order: validatedOrder as number,
         layoutClass: layoutClass,

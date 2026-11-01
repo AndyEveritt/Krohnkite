@@ -99,9 +99,9 @@ test('layoutOrder contains every enabled layout exactly once', () => {
   assert.equal(new Set(config.layoutOrder).size, 12);
 });
 
-test('layoutOrder excludes disabled layouts without duplicating the rest', () => {
+test('layoutOrder excludes layouts disabled by the enable flag', () => {
   const config = buildConfig({
-    tileLayoutOrder: 0,
+    tileLayoutEnabled: false,
     monocleLayoutOrder: 12,
   });
 
@@ -113,6 +113,35 @@ test('layoutOrder excludes disabled layouts without duplicating the rest', () =>
     config.layoutOrder.indexOf('MonocleLayout') >
       config.layoutOrder.indexOf('BinaryTreeLayout'),
   );
+});
+
+test('layoutOrder excludes layouts disabled even when an order is set', () => {
+  const config = buildConfig({
+    tileLayoutEnabled: false,
+    tileLayoutOrder: 1,
+  });
+
+  assert.equal(config.layoutOrder.length, 11);
+  assert.equal(config.layoutOrder.includes('TileLayout'), false);
+});
+
+test('layout order zero no longer disables a layout', () => {
+  const config = buildConfig({ tileLayoutOrder: 0 });
+
+  assert.equal(config.layoutOrder.length, 12);
+  assert.equal(config.layoutOrder.includes('TileLayout'), true);
+  assert.equal(config.layoutOrder[0], 'TileLayout');
+});
+
+test('layoutOrder falls back to TileLayout when every layout is disabled', () => {
+  const values = {};
+  for (const id of LAYOUT_CLASSES) {
+    values[`${id.charAt(0).toLowerCase()}${id.slice(1)}Enabled`] = false;
+  }
+
+  const config = buildConfig(values);
+
+  assert.deepEqual([...config.layoutOrder], ['TileLayout']);
 });
 
 test('layoutOrder keeps the configured cycle order', () => {
