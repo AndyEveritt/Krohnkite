@@ -70,6 +70,26 @@ interface IShortcutConfEntry {
   sequenceTime: number | null;
 }
 
+/* Window classes that are always ignored, regardless of the user config.
+ * They are merged with the "ignoreClass" setting, so the Rules -> By Class
+ * field can stay empty by default without tiling KDE system windows. */
+const hardcodedIgnoreClasses: string[] = [
+  "krunner",
+  "yakuake",
+  "spectacle",
+  "kded5",
+  "xwaylandvideobridge",
+  "plasmashell",
+  "ksplashqml",
+  "org.kde.plasmashell",
+  "org.kde.polkit-kde-authentication-agent-1",
+  "org.kde.kruler",
+  "kruler",
+  "kwin_wayland",
+  "ksmserver-logout-greeter",
+  "org.krohnkite.configurator",
+];
+
 function isValidConfigKey(key: string): key is keyof typeof ConfigVariables {
   return key in ConfigVariables;
 }
@@ -448,12 +468,8 @@ class KWinConfig implements IConfig {
     //***************************
     //****************** Rules
     //***************************
-    this.ignoreClass = separate(
-      KWIN.readConfig(
-        "ignoreClass",
-        "krunner,yakuake,spectacle,kded5,xwaylandvideobridge,plasmashell,ksplashqml,org.kde.plasmashell,org.kde.polkit-kde-authentication-agent-1,org.kde.kruler,kruler,kwin_wayland,ksmserver-logout-greeter",
-      ),
-      ",",
+    this.ignoreClass = hardcodedIgnoreClasses.concat(
+      separate(KWIN.readConfig("ignoreClass", ""), ","),
     );
     this.ignoreTitle = separate(KWIN.readConfig("ignoreTitle", ""), ",");
     this.ignoreRole = separate(KWIN.readConfig("ignoreRole", "quake"), ",");

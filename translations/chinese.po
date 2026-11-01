@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Krohnkite\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-01 06:04+0300\n"
+"POT-Creation-Date: 2026-11-01 12:27+0300\n"
 "PO-Revision-Date: 2026-10-22 09:00+0300\n"
 "Last-Translator: \n"
 "Language-Team: \n"
@@ -861,8 +861,8 @@ msgid "By Class"
 msgstr "通过类型"
 
 #: KrohnkiteConfigForm%23213
-msgid "Comma-separated list of window classes. Matching windows will not be tiled."
-msgstr "逗号分隔的窗口类列表。匹配的窗口将不会被平铺。"
+msgid "Comma-separated list of window classes. Matching windows will not be tiled. These classes are always ignored: krunner, yakuake, spectacle, kded5, xwaylandvideobridge, plasmashell, ksplashqml, org.kde.plasmashell, org.kde.polkit-kde-authentication-agent-1, org.kde.kruler, kruler, kwin_wayland, ksmserver-logout-greeter, org.krohnkite.configurator"
+msgstr "逗号分隔的窗口类列表。匹配的窗口将不会被平铺。以下类始终被忽略：krunner, yakuake, spectacle, kded5, xwaylandvideobridge, plasmashell, ksplashqml, org.kde.plasmashell, org.kde.polkit-kde-authentication-agent-1, org.kde.kruler, kruler, kwin_wayland, ksmserver-logout-greeter, org.krohnkite.configurator"
 
 #: KrohnkiteConfigForm%23214
 msgid "Comma-separated list of keywords(or substrings). Any windows with matching title will not be tiled."
