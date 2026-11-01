@@ -373,6 +373,10 @@
       <label>Move the pointer on focus only when focus changes through a Krohnkite shortcut</label>
       <default>false</default>
     </entry>
+    <entry name="movePointerOnResize" type="Bool">
+      <label>Move mouse cursor to the center of the focused window when it is resized</label>
+      <default>false</default>
+    </entry>
 
     <entry name="newWindowPosition" type="Int">
         <label>The position every new window in the screen window array</label>

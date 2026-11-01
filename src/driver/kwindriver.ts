@@ -155,6 +155,10 @@ class KWinDriver implements IDriverContext {
   }>;
   private _started: boolean;
   private _disposed: boolean;
+  /* Last time any window was moved/resized with the mouse; see
+   * _onWindowSizeChanged. */
+  private _lastInteractiveMoveResize: number;
+  private _centerPointerPending: boolean;
 
   constructor(api: Api, config?: KWinConfig) {
     KWIN = api.kwin;
@@ -180,6 +184,8 @@ class KWinDriver implements IDriverContext {
     this._connections = [];
     this._started = false;
     this._disposed = false;
+    this._lastInteractiveMoveResize = 0;
+    this._centerPointerPending = false;
     this._surfaceStore = new KWinSurfaceStore(this.workspace);
     this._isRegister = {
       state: false,
@@ -1645,9 +1651,48 @@ class KWinDriver implements IDriverContext {
      * https://bugs.kde.org/show_bug.cgi?id=463292
      */
   }
+  /* Grace period after a mouse move/resize during which size changes are
+   * treated as its aftermath (drop re-tile, final snap), not a reason to warp
+   * the pointer away from where the user just released it. */
+  private static readonly INTERACTIVE_POINTER_GRACE_MS = 500;
+
+  private _onWindowSizeChanged(client: KwinWindow) {
+    if (!CONFIG.movePointerOnResize) return;
+    if (!client.active || client.move || client.resize) return;
+    if (
+      getTime() - this._lastInteractiveMoveResize <
+      KWinDriver.INTERACTIVE_POINTER_GRACE_MS
+    )
+      return;
+    /* One arrange commits several geometries in a row (and may hand focus to
+     * a new window); coalesce them and center on whatever is active once the
+     * layout has settled. */
+    if (this._centerPointerPending) return;
+    this._centerPointerPending = true;
+    this.setTimeout(() => {
+      this._centerPointerPending = false;
+      DBUS.moveMouseToFocus();
+    }, 30);
+  }
+
   private _bindWindowEvents(window: WindowClass, client: KwinWindow) {
     let moving = false;
     let resizing = false;
+    let lastSize = {
+      width: client.frameGeometry.width,
+      height: client.frameGeometry.height,
+    };
+    this._connect(client.frameGeometryChanged, () => {
+      if (!client || client.deleted) return;
+      const geometry = client.frameGeometry;
+      if (
+        geometry.width === lastSize.width &&
+        geometry.height === lastSize.height
+      )
+        return;
+      lastSize = { width: geometry.width, height: geometry.height };
+      this._onWindowSizeChanged(client);
+    });
     this._connect(client.activitiesChanged, () => {
       if (!client || client.deleted) return;
       LOG?.send(
@@ -1740,6 +1785,7 @@ class KWinDriver implements IDriverContext {
         `window: caption:${client.caption} internalID:${client.internalId},interactiveMoveResizeStepped:${geometry}`,
         { winClass: [`${client.resourceClass}`] },
       );
+      this._lastInteractiveMoveResize = getTime();
       if (client.resize) return;
       this.control.onWindowDragging(
         this,
@@ -1796,6 +1842,7 @@ class KWinDriver implements IDriverContext {
         `Window: caption:${client.caption} internalId:${client.internalId}, moving:${moving}, resizing:${resizing}`,
         { winClass: [`${client.resourceClass}`] },
       );
+      this._lastInteractiveMoveResize = getTime();
       if (moving !== client.move) {
         moving = client.move;
         if (moving) {
