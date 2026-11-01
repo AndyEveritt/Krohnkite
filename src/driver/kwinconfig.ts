@@ -90,6 +90,16 @@ const hardcodedIgnoreClasses: string[] = [
   "org.krohnkite.configurator",
 ];
 
+/* System Settings hosts the Krohnkite configuration form in a separate
+ * "Configure — System Settings" dialog. Match that dialog's exact localized
+ * caption, not just the app name: brackets would also match the main System
+ * Settings window, which must stay tiled. */
+const hardcodedFloatConfig: string[] = [
+  "systemsettings:Configure — System Settings:auto=1",
+  "systemsettings:Настройка — Параметры системы:auto=1",
+  "systemsettings:配置 — 系统设置:auto=1",
+];
+
 function isValidConfigKey(key: string): key is keyof typeof ConfigVariables {
   return key in ConfigVariables;
 }
@@ -532,7 +542,9 @@ class KWinConfig implements IConfig {
         100,
       ),
       config: parseFloatConfig(
-        separate(KWIN.readConfig("floatConfig", ""), "\n"),
+        hardcodedFloatConfig.concat(
+          separate(KWIN.readConfig("floatConfig", ""), "\n"),
+        ),
       ),
     };
     this.floatAsDefault = KWIN.readConfig("floatAsDefault", false);
