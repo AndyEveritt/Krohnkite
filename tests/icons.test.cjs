@@ -321,9 +321,8 @@ test('settings use SVG theme references for every layout pictogram', () => {
     assert.equal(accessibleName[1], `${LAYOUT_LABELS[name]} Layout preview`);
     accessibleNames.push(accessibleName[1]);
 
-    const toolTip = widget[1].match(/<property name="toolTip"><string>([^<]+)<\/string><\/property>/);
-    assert.ok(toolTip, `${name} toolTip missing`);
-    assert.equal(toolTip[1], `${LAYOUT_LABELS[name]} Layout preview`);
+    assert.doesNotMatch(widget[1], /<property name="toolTip">/, `${name} toolTip should be removed`);
+    assert.match(widget[1], /<property name="styleSheet">\s*<string notr="true">QToolButton \{ border: none; background: transparent; \} QToolButton:hover \{ border: none; background: transparent; \} QToolButton:pressed \{ border: none; background: transparent; \}<\/string>/);
   }
   assert.equal(new Set(accessibleNames).size, LAYOUTS.length);
 });
@@ -362,7 +361,7 @@ import os, sys
 from PySide6.QtCore import QFile, QIODevice
 from PySide6.QtGui import QIcon
 from PySide6.QtUiTools import QUiLoader
-from PySide6.QtWidgets import QApplication, QToolButton
+from PySide6.QtWidgets import QApplication, QCheckBox, QGroupBox, QLabel, QSpinBox, QToolButton
 root, data_home = sys.argv[1:]
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 app = QApplication.instance() or QApplication([])
@@ -377,12 +376,27 @@ assert ui_file.open(QIODevice.OpenModeFlag.ReadOnly), "could not open settings U
 form = loader.load(ui_file)
 ui_file.close()
 assert form is not None, loader.errorString()
-layouts = "tile monocle threecolumn spiral quarter stacked columns spread floating stair binarytree cascade".split()
-for name in layouts:
+layouts = [
+    ("tile", "Tile Layout", "tileLayout", "GB_1_TileLayout", "GB_1_TileLayoutSettings", "label_35", "label_39", "label_41", True),
+    ("monocle", "Monocle Layout", "monocleLayout", "GB_2_MonocleLayout", "GB_2_MonocleLayoutSettings", "label_36", "label_46", None, False),
+    ("threecolumn", "Three Column Layout", "threeColumnLayout", "GB_3_threeColumnLayout", None, "label_37", "label_47", "label_42", True),
+    ("spiral", "Spiral Layout", "spiralLayout", "GB_4_spiralLayout", None, "label_38", "label_48", "label_43", True),
+    ("quarter", "Quarter Layout", "quarterLayout", "GB_5_QuarterLayout", "GB_5_QuarterLayoutSettings", "label_45", "label_49", None, False),
+    ("stacked", "Stacked Layout", "stackedLayout", "GB_6_stackedLayout", None, "label_50", "label_51", "label_44", True),
+    ("columns", "Columns Layout", "columnsLayout", "GB_7_columnsLayout", "GB_7_columnsLayoutSettings", "label_52", "label_53", "label_54", True),
+    ("spread", "Spread Layout", "spreadLayout", "GB_8_spreadLayout", None, "label_105", "label_106", "label_55", True),
+    ("floating", "Floating Layout", "floatingLayout", "GB_9_floatingLayout", None, "label_103", "label_104", None, False),
+    ("stair", "Stair Layout", "stairLayout", "GB_a_stairLayout", "GB_a_stairLayoutSettings", "label_109", "label_110", "label_56", True),
+    ("binarytree", "Binary Tree Layout", "binaryTreeLayout", "GB_b_binaryTreeLayout", None, "label_111", "label_112", "label_57", True),
+    ("cascade", "Cascade Layout", "cascadeLayout", "GB_c_cascadeLayout", None, "label_113", "label_114", "label_58", True),
+]
+for name, title, prefix, group_name, settings_group, title_label_name, order_label_name, capacity_label_name, has_capacity in layouts:
     button = form.findChild(QToolButton, name + "LayoutPictogram")
     assert button is not None, name
     assert button.accessibleName(), name
-    assert button.toolTip(), name
+    assert not button.toolTip(), name
+    assert "border: none" in button.styleSheet(), name
+    assert "background: transparent" in button.styleSheet(), name
     assert not button.icon().isNull(), name
     image = button.icon().pixmap(48, 32).toImage()
     expected = QIcon(os.path.join(root, "res/layouts", name + ".svg")).pixmap(48, 32).toImage()
@@ -393,6 +407,49 @@ for name in layouts:
     solid = next((image.pixelColor(x, y).rgb() for y in range(image.height()) for x in range(image.width()) if image.pixelColor(x, y).alpha() == 255), None)
     assert solid is not None, name
     assert any(painted.pixelColor(x, y).rgb() == solid for y in range(painted.height()) for x in range(painted.width())), name
+
+    checkbox = form.findChild(QCheckBox, "kcfg_" + prefix + "Enabled")
+    assert checkbox is not None, name
+    assert checkbox.isChecked(), name
+    assert checkbox.accessibleName() == title, name
+    group = form.findChild(QGroupBox, group_name)
+    assert group is not None, name
+    assert not group.isCheckable(), name
+    title_label = form.findChild(QLabel, title_label_name)
+    order_label = form.findChild(QLabel, order_label_name)
+    capacity_label = form.findChild(QLabel, capacity_label_name) if capacity_label_name else None
+    order = form.findChild(QSpinBox, "kcfg_" + prefix + "Order")
+    capacity = form.findChild(QSpinBox, "kcfg_" + prefix + "Capacity") if has_capacity else None
+    settings = form.findChild(QGroupBox, settings_group) if settings_group else None
+    assert title_label is not None, name
+    assert title_label.text() == title, name
+    assert title_label.buddy() is checkbox, name
+    assert order_label is not None, name
+    assert order is not None, name
+    checkbox.setChecked(False)
+    assert group.isEnabled(), name
+    assert checkbox.isEnabled(), name
+    assert not title_label.isEnabled(), name
+    assert not order_label.isEnabled(), name
+    assert not order.isEnabled(), name
+    assert not button.isEnabled(), name
+    if capacity_label is not None:
+        assert not capacity_label.isEnabled(), name
+    if capacity is not None:
+        assert not capacity.isEnabled(), name
+    if settings is not None:
+        assert not settings.isEnabled(), name
+    checkbox.setChecked(True)
+    assert title_label.isEnabled(), name
+    assert order_label.isEnabled(), name
+    assert order.isEnabled(), name
+    assert button.isEnabled(), name
+    if capacity_label is not None:
+        assert capacity_label.isEnabled(), name
+    if capacity is not None:
+        assert capacity.isEnabled(), name
+    if settings is not None:
+        assert settings.isEnabled(), name
 form.deleteLater()
 `;
     const result = spawnSync(PYTHON, ['-c', script, ROOT, dataHome], {

@@ -90,10 +90,23 @@
          <property name="flat">
           <bool>true</bool>
          </property>
-         <property name="checkable">
-          <bool>false</bool>
-         </property>
          <layout class="QGridLayout" name="gridLayout_14">
+          <property name="leftMargin">
+           <number>0</number>
+          </property>
+          <property name="horizontalSpacing">
+           <number>4</number>
+          </property>
+          <item row="2" column="0">
+           <widget class="QCheckBox" name="kcfg_tileLayoutEnabled">
+            <property name="accessibleName">
+             <string>Tile Layout</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
           <item row="2" column="1">
            <widget class="QToolButton" name="tileLayoutPictogram">
             <property name="icon">
@@ -111,12 +124,11 @@
             <property name="autoRaise"><bool>true</bool></property>
             <property name="focusPolicy"><enum>Qt::FocusPolicy::NoFocus</enum></property>
             <property name="accessibleName"><string>Tile Layout preview</string></property>
-            <property name="toolTip"><string>Tile Layout preview</string></property>
+            <property name="styleSheet">
+             <string notr="true">QToolButton { border: none; background: transparent; } QToolButton:hover { border: none; background: transparent; } QToolButton:pressed { border: none; background: transparent; }</string>
+            </property>
            </widget>
           </item>
-          <property name="leftMargin">
-           <number>6</number>
-          </property>
           <property name="topMargin">
            <number>0</number>
           </property>
@@ -181,7 +193,10 @@
              </font>
             </property>
             <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;0 - to disable&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>Order in layout rotation</string>
+            </property>
+            <property name="minimum">
+             <number>1</number>
             </property>
             <property name="maximum">
              <number>12</number>
@@ -268,6 +283,9 @@
             </property>
             <property name="margin">
              <number>0</number>
+            </property>
+            <property name="buddy">
+             <cstring>kcfg_tileLayoutEnabled</cstring>
             </property>
            </widget>
           </item>
@@ -391,6 +409,22 @@
           <bool>true</bool>
          </property>
          <layout class="QGridLayout" name="gridLayout_3">
+          <property name="leftMargin">
+           <number>0</number>
+          </property>
+          <property name="horizontalSpacing">
+           <number>4</number>
+          </property>
+          <item row="0" column="0">
+           <widget class="QCheckBox" name="kcfg_monocleLayoutEnabled">
+            <property name="accessibleName">
+             <string>Monocle Layout</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
           <item row="0" column="1">
            <widget class="QToolButton" name="monocleLayoutPictogram">
             <property name="icon">
@@ -408,7 +442,9 @@
             <property name="autoRaise"><bool>true</bool></property>
             <property name="focusPolicy"><enum>Qt::FocusPolicy::NoFocus</enum></property>
             <property name="accessibleName"><string>Monocle Layout preview</string></property>
-            <property name="toolTip"><string>Monocle Layout preview</string></property>
+            <property name="styleSheet">
+             <string notr="true">QToolButton { border: none; background: transparent; } QToolButton:hover { border: none; background: transparent; } QToolButton:pressed { border: none; background: transparent; }</string>
+            </property>
            </widget>
           </item>
           <property name="topMargin">
@@ -432,7 +468,10 @@
              </font>
             </property>
             <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;0 - to disable&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>Order in layout rotation</string>
+            </property>
+            <property name="minimum">
+             <number>1</number>
             </property>
             <property name="maximum">
              <number>12</number>
@@ -455,6 +494,22 @@
             </property>
            </spacer>
           </item>
+          <item row="0" column="4">
+           <widget class="QLabel" name="label_46">
+            <property name="font">
+             <font>
+              <family>Noto Sans</family>
+              <pointsize>12</pointsize>
+              <italic>false</italic>
+              <bold>false</bold>
+              <underline>false</underline>
+             </font>
+            </property>
+            <property name="text">
+             <string>Order:</string>
+            </property>
+           </widget>
+          </item>
           <item row="0" column="2">
            <widget class="QLabel" name="label_36">
             <property name="font">
@@ -472,21 +527,8 @@
             <property name="margin">
              <number>0</number>
             </property>
-           </widget>
-          </item>
-          <item row="0" column="4">
-           <widget class="QLabel" name="label_46">
-            <property name="font">
-             <font>
-              <family>Noto Sans</family>
-              <pointsize>12</pointsize>
-              <italic>false</italic>
-              <bold>false</bold>
-              <underline>false</underline>
-             </font>
-            </property>
-            <property name="text">
-             <string>Order:</string>
+            <property name="buddy">
+             <cstring>kcfg_monocleLayoutEnabled</cstring>
             </property>
            </widget>
           </item>
@@ -571,6 +613,22 @@
           <bool>true</bool>
          </property>
          <layout class="QGridLayout" name="gridLayout_23">
+          <property name="leftMargin">
+           <number>0</number>
+          </property>
+          <property name="horizontalSpacing">
+           <number>4</number>
+          </property>
+          <item row="1" column="0">
+           <widget class="QCheckBox" name="kcfg_threeColumnLayoutEnabled">
+            <property name="accessibleName">
+             <string>Three Column Layout</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
           <item row="1" column="1">
            <widget class="QToolButton" name="threecolumnLayoutPictogram">
             <property name="icon">
@@ -588,12 +646,11 @@
             <property name="autoRaise"><bool>true</bool></property>
             <property name="focusPolicy"><enum>Qt::FocusPolicy::NoFocus</enum></property>
             <property name="accessibleName"><string>Three Column Layout preview</string></property>
-            <property name="toolTip"><string>Three Column Layout preview</string></property>
+            <property name="styleSheet">
+             <string notr="true">QToolButton { border: none; background: transparent; } QToolButton:hover { border: none; background: transparent; } QToolButton:pressed { border: none; background: transparent; }</string>
+            </property>
            </widget>
           </item>
-          <property name="leftMargin">
-           <number>6</number>
-          </property>
           <property name="topMargin">
            <number>0</number>
           </property>
@@ -619,25 +676,6 @@
             </property>
             <property name="text">
              <string>Capacity</string>
-            </property>
-           </widget>
-          </item>
-          <item row="1" column="2">
-           <widget class="QLabel" name="label_37">
-            <property name="font">
-             <font>
-              <family>Noto Sans</family>
-              <pointsize>12</pointsize>
-              <italic>false</italic>
-              <bold>false</bold>
-              <underline>true</underline>
-             </font>
-            </property>
-            <property name="text">
-             <string>Three Column Layout</string>
-            </property>
-            <property name="margin">
-             <number>0</number>
             </property>
            </widget>
           </item>
@@ -675,7 +713,10 @@
              </font>
             </property>
             <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;0 - to disable&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>Order in layout rotation</string>
+            </property>
+            <property name="minimum">
+             <number>1</number>
             </property>
             <property name="maximum">
              <number>12</number>
@@ -714,6 +755,28 @@
             </property>
            </spacer>
           </item>
+          <item row="1" column="2">
+           <widget class="QLabel" name="label_37">
+            <property name="font">
+             <font>
+              <family>Noto Sans</family>
+              <pointsize>12</pointsize>
+              <italic>false</italic>
+              <bold>false</bold>
+              <underline>true</underline>
+             </font>
+            </property>
+            <property name="text">
+             <string>Three Column Layout</string>
+            </property>
+            <property name="margin">
+             <number>0</number>
+            </property>
+            <property name="buddy">
+             <cstring>kcfg_threeColumnLayoutEnabled</cstring>
+            </property>
+           </widget>
+          </item>
           </layout>
         </widget>
        </item>
@@ -732,6 +795,22 @@
           <bool>true</bool>
          </property>
          <layout class="QGridLayout" name="gridLayout_24">
+          <property name="leftMargin">
+           <number>0</number>
+          </property>
+          <property name="horizontalSpacing">
+           <number>4</number>
+          </property>
+          <item row="0" column="0">
+           <widget class="QCheckBox" name="kcfg_spiralLayoutEnabled">
+            <property name="accessibleName">
+             <string>Spiral Layout</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
           <item row="0" column="1">
            <widget class="QToolButton" name="spiralLayoutPictogram">
             <property name="icon">
@@ -749,12 +828,11 @@
             <property name="autoRaise"><bool>true</bool></property>
             <property name="focusPolicy"><enum>Qt::FocusPolicy::NoFocus</enum></property>
             <property name="accessibleName"><string>Spiral Layout preview</string></property>
-            <property name="toolTip"><string>Spiral Layout preview</string></property>
+            <property name="styleSheet">
+             <string notr="true">QToolButton { border: none; background: transparent; } QToolButton:hover { border: none; background: transparent; } QToolButton:pressed { border: none; background: transparent; }</string>
+            </property>
            </widget>
           </item>
-          <property name="leftMargin">
-           <number>6</number>
-          </property>
           <property name="topMargin">
            <number>0</number>
           </property>
@@ -767,25 +845,6 @@
           <property name="verticalSpacing">
            <number>0</number>
           </property>
-          <item row="0" column="2">
-           <widget class="QLabel" name="label_38">
-            <property name="font">
-             <font>
-              <family>Noto Sans</family>
-              <pointsize>12</pointsize>
-              <italic>false</italic>
-              <bold>false</bold>
-              <underline>true</underline>
-             </font>
-            </property>
-            <property name="text">
-             <string>Spiral Layout</string>
-            </property>
-            <property name="margin">
-             <number>0</number>
-            </property>
-           </widget>
-          </item>
           <item row="0" column="6">
            <widget class="QLabel" name="label_48">
             <property name="font">
@@ -814,7 +873,10 @@
              </font>
             </property>
             <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;0 - to disable&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>Order in layout rotation</string>
+            </property>
+            <property name="minimum">
+             <number>1</number>
             </property>
             <property name="maximum">
              <number>12</number>
@@ -875,6 +937,28 @@
             </property>
            </widget>
           </item>
+          <item row="0" column="2">
+           <widget class="QLabel" name="label_38">
+            <property name="font">
+             <font>
+              <family>Noto Sans</family>
+              <pointsize>12</pointsize>
+              <italic>false</italic>
+              <bold>false</bold>
+              <underline>true</underline>
+             </font>
+            </property>
+            <property name="text">
+             <string>Spiral Layout</string>
+            </property>
+            <property name="margin">
+             <number>0</number>
+            </property>
+            <property name="buddy">
+             <cstring>kcfg_spiralLayoutEnabled</cstring>
+            </property>
+           </widget>
+          </item>
           </layout>
         </widget>
        </item>
@@ -893,6 +977,22 @@
           <bool>true</bool>
          </property>
          <layout class="QGridLayout" name="gridLayout_32">
+          <property name="leftMargin">
+           <number>0</number>
+          </property>
+          <property name="horizontalSpacing">
+           <number>4</number>
+          </property>
+          <item row="0" column="0">
+           <widget class="QCheckBox" name="kcfg_quarterLayoutEnabled">
+            <property name="accessibleName">
+             <string>Quarter Layout</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
           <item row="0" column="1">
            <widget class="QToolButton" name="quarterLayoutPictogram">
             <property name="icon">
@@ -910,7 +1010,9 @@
             <property name="autoRaise"><bool>true</bool></property>
             <property name="focusPolicy"><enum>Qt::FocusPolicy::NoFocus</enum></property>
             <property name="accessibleName"><string>Quarter Layout preview</string></property>
-            <property name="toolTip"><string>Quarter Layout preview</string></property>
+            <property name="styleSheet">
+             <string notr="true">QToolButton { border: none; background: transparent; } QToolButton:hover { border: none; background: transparent; } QToolButton:pressed { border: none; background: transparent; }</string>
+            </property>
            </widget>
           </item>
           <property name="topMargin">
@@ -922,25 +1024,6 @@
           <property name="verticalSpacing">
            <number>0</number>
           </property>
-          <item row="0" column="2">
-           <widget class="QLabel" name="label_45">
-            <property name="font">
-             <font>
-              <family>Noto Sans</family>
-              <pointsize>12</pointsize>
-              <italic>false</italic>
-              <bold>false</bold>
-              <underline>true</underline>
-             </font>
-            </property>
-            <property name="text">
-             <string>Quarter Layout</string>
-            </property>
-            <property name="margin">
-             <number>0</number>
-            </property>
-           </widget>
-          </item>
           <item row="0" column="5">
            <widget class="QSpinBox" name="kcfg_quarterLayoutOrder">
             <property name="font">
@@ -953,7 +1036,10 @@
              </font>
             </property>
             <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;0 - to disable&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>Order in layout rotation</string>
+            </property>
+            <property name="minimum">
+             <number>1</number>
             </property>
             <property name="maximum">
              <number>12</number>
@@ -989,6 +1075,28 @@
             </property>
             <property name="text">
              <string>Order:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="2">
+           <widget class="QLabel" name="label_45">
+            <property name="font">
+             <font>
+              <family>Noto Sans</family>
+              <pointsize>12</pointsize>
+              <italic>false</italic>
+              <bold>false</bold>
+              <underline>true</underline>
+             </font>
+            </property>
+            <property name="text">
+             <string>Quarter Layout</string>
+            </property>
+            <property name="margin">
+             <number>0</number>
+            </property>
+            <property name="buddy">
+             <cstring>kcfg_quarterLayoutEnabled</cstring>
             </property>
            </widget>
           </item>
@@ -1055,6 +1163,22 @@
           <bool>true</bool>
          </property>
          <layout class="QGridLayout" name="gridLayout_25">
+          <property name="leftMargin">
+           <number>0</number>
+          </property>
+          <property name="horizontalSpacing">
+           <number>4</number>
+          </property>
+          <item row="0" column="0">
+           <widget class="QCheckBox" name="kcfg_stackedLayoutEnabled">
+            <property name="accessibleName">
+             <string>Stacked Layout</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
           <item row="0" column="1">
            <widget class="QToolButton" name="stackedLayoutPictogram">
             <property name="icon">
@@ -1072,12 +1196,11 @@
             <property name="autoRaise"><bool>true</bool></property>
             <property name="focusPolicy"><enum>Qt::FocusPolicy::NoFocus</enum></property>
             <property name="accessibleName"><string>Stacked Layout preview</string></property>
-            <property name="toolTip"><string>Stacked Layout preview</string></property>
+            <property name="styleSheet">
+             <string notr="true">QToolButton { border: none; background: transparent; } QToolButton:hover { border: none; background: transparent; } QToolButton:pressed { border: none; background: transparent; }</string>
+            </property>
            </widget>
           </item>
-          <property name="leftMargin">
-           <number>6</number>
-          </property>
           <property name="topMargin">
            <number>0</number>
           </property>
@@ -1118,7 +1241,10 @@
              </font>
             </property>
             <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;0 - to disable&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>Order in layout rotation</string>
+            </property>
+            <property name="minimum">
+             <number>1</number>
             </property>
             <property name="maximum">
              <number>12</number>
@@ -1163,6 +1289,22 @@
             </property>
            </widget>
           </item>
+          <item row="0" column="4">
+           <widget class="QLabel" name="label_44">
+            <property name="font">
+             <font>
+              <family>Noto Sans</family>
+              <pointsize>12</pointsize>
+              <italic>false</italic>
+              <bold>false</bold>
+              <underline>false</underline>
+             </font>
+            </property>
+            <property name="text">
+             <string>Capacity</string>
+            </property>
+           </widget>
+          </item>
           <item row="0" column="2">
            <widget class="QLabel" name="label_50">
             <property name="font">
@@ -1180,21 +1322,8 @@
             <property name="margin">
              <number>0</number>
             </property>
-           </widget>
-          </item>
-          <item row="0" column="4">
-           <widget class="QLabel" name="label_44">
-            <property name="font">
-             <font>
-              <family>Noto Sans</family>
-              <pointsize>12</pointsize>
-              <italic>false</italic>
-              <bold>false</bold>
-              <underline>false</underline>
-             </font>
-            </property>
-            <property name="text">
-             <string>Capacity</string>
+            <property name="buddy">
+             <cstring>kcfg_stackedLayoutEnabled</cstring>
             </property>
            </widget>
           </item>
@@ -1216,6 +1345,22 @@
           <bool>true</bool>
          </property>
          <layout class="QGridLayout" name="gridLayout_33">
+          <property name="leftMargin">
+           <number>0</number>
+          </property>
+          <property name="horizontalSpacing">
+           <number>4</number>
+          </property>
+          <item row="0" column="0">
+           <widget class="QCheckBox" name="kcfg_columnsLayoutEnabled">
+            <property name="accessibleName">
+             <string>Columns Layout</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
           <item row="0" column="1">
            <widget class="QToolButton" name="columnsLayoutPictogram">
             <property name="icon">
@@ -1233,7 +1378,9 @@
             <property name="autoRaise"><bool>true</bool></property>
             <property name="focusPolicy"><enum>Qt::FocusPolicy::NoFocus</enum></property>
             <property name="accessibleName"><string>Columns Layout preview</string></property>
-            <property name="toolTip"><string>Columns Layout preview</string></property>
+            <property name="styleSheet">
+             <string notr="true">QToolButton { border: none; background: transparent; } QToolButton:hover { border: none; background: transparent; } QToolButton:pressed { border: none; background: transparent; }</string>
+            </property>
            </widget>
           </item>
           <property name="topMargin">
@@ -1279,32 +1426,16 @@
              </font>
             </property>
             <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;0 - to disable&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>Order in layout rotation</string>
+            </property>
+            <property name="minimum">
+             <number>1</number>
             </property>
             <property name="maximum">
              <number>12</number>
             </property>
             <property name="value">
              <number>7</number>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="2">
-           <widget class="QLabel" name="label_52">
-            <property name="font">
-             <font>
-              <family>Noto Sans</family>
-              <pointsize>12</pointsize>
-              <italic>false</italic>
-              <bold>false</bold>
-              <underline>true</underline>
-             </font>
-            </property>
-            <property name="text">
-             <string>Columns Layout</string>
-            </property>
-            <property name="margin">
-             <number>0</number>
             </property>
            </widget>
           </item>
@@ -1350,6 +1481,28 @@
             </property>
             <property name="text">
              <string>Capacity</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="2">
+           <widget class="QLabel" name="label_52">
+            <property name="font">
+             <font>
+              <family>Noto Sans</family>
+              <pointsize>12</pointsize>
+              <italic>false</italic>
+              <bold>false</bold>
+              <underline>true</underline>
+             </font>
+            </property>
+            <property name="text">
+             <string>Columns Layout</string>
+            </property>
+            <property name="margin">
+             <number>0</number>
+            </property>
+            <property name="buddy">
+             <cstring>kcfg_columnsLayoutEnabled</cstring>
             </property>
            </widget>
           </item>
@@ -1559,6 +1712,22 @@
           <bool>true</bool>
          </property>
          <layout class="QGridLayout" name="gridLayout_62">
+          <property name="leftMargin">
+           <number>0</number>
+          </property>
+          <property name="horizontalSpacing">
+           <number>4</number>
+          </property>
+          <item row="0" column="0">
+           <widget class="QCheckBox" name="kcfg_spreadLayoutEnabled">
+            <property name="accessibleName">
+             <string>Spread Layout</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
           <item row="0" column="1">
            <widget class="QToolButton" name="spreadLayoutPictogram">
             <property name="icon">
@@ -1576,12 +1745,11 @@
             <property name="autoRaise"><bool>true</bool></property>
             <property name="focusPolicy"><enum>Qt::FocusPolicy::NoFocus</enum></property>
             <property name="accessibleName"><string>Spread Layout preview</string></property>
-            <property name="toolTip"><string>Spread Layout preview</string></property>
+            <property name="styleSheet">
+             <string notr="true">QToolButton { border: none; background: transparent; } QToolButton:hover { border: none; background: transparent; } QToolButton:pressed { border: none; background: transparent; }</string>
+            </property>
            </widget>
           </item>
-          <property name="leftMargin">
-           <number>6</number>
-          </property>
           <property name="topMargin">
            <number>0</number>
           </property>
@@ -1606,7 +1774,10 @@
              </font>
             </property>
             <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;0 - to disable&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>Order in layout rotation</string>
+            </property>
+            <property name="minimum">
+             <number>1</number>
             </property>
             <property name="maximum">
              <number>12</number>
@@ -1670,6 +1841,19 @@
             </property>
            </widget>
           </item>
+          <item row="0" column="3">
+           <spacer name="horizontalSpacer_56">
+            <property name="orientation">
+             <enum>Qt::Orientation::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
           <item row="0" column="2">
            <widget class="QLabel" name="label_105">
             <property name="font">
@@ -1687,20 +1871,10 @@
             <property name="margin">
              <number>0</number>
             </property>
+            <property name="buddy">
+             <cstring>kcfg_spreadLayoutEnabled</cstring>
+            </property>
            </widget>
-          </item>
-          <item row="0" column="3">
-           <spacer name="horizontalSpacer_56">
-            <property name="orientation">
-             <enum>Qt::Orientation::Horizontal</enum>
-            </property>
-            <property name="sizeHint" stdset="0">
-             <size>
-              <width>40</width>
-              <height>20</height>
-             </size>
-            </property>
-           </spacer>
           </item>
           </layout>
         </widget>
@@ -1798,6 +1972,22 @@
           <bool>true</bool>
          </property>
          <layout class="QGridLayout" name="gridLayout_61">
+          <property name="leftMargin">
+           <number>0</number>
+          </property>
+          <property name="horizontalSpacing">
+           <number>4</number>
+          </property>
+          <item row="0" column="0">
+           <widget class="QCheckBox" name="kcfg_floatingLayoutEnabled">
+            <property name="accessibleName">
+             <string>Floating Layout</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
           <item row="0" column="1">
            <widget class="QToolButton" name="floatingLayoutPictogram">
             <property name="icon">
@@ -1815,12 +2005,11 @@
             <property name="autoRaise"><bool>true</bool></property>
             <property name="focusPolicy"><enum>Qt::FocusPolicy::NoFocus</enum></property>
             <property name="accessibleName"><string>Floating Layout preview</string></property>
-            <property name="toolTip"><string>Floating Layout preview</string></property>
+            <property name="styleSheet">
+             <string notr="true">QToolButton { border: none; background: transparent; } QToolButton:hover { border: none; background: transparent; } QToolButton:pressed { border: none; background: transparent; }</string>
+            </property>
            </widget>
           </item>
-          <property name="leftMargin">
-           <number>6</number>
-          </property>
           <property name="topMargin">
            <number>0</number>
           </property>
@@ -1845,7 +2034,10 @@
              </font>
             </property>
             <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;0 - to disable&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>Order in layout rotation</string>
+            </property>
+            <property name="minimum">
+             <number>1</number>
             </property>
             <property name="maximum">
              <number>12</number>
@@ -1901,6 +2093,9 @@
             <property name="margin">
              <number>0</number>
             </property>
+            <property name="buddy">
+             <cstring>kcfg_floatingLayoutEnabled</cstring>
+            </property>
            </widget>
           </item>
           </layout>
@@ -1921,6 +2116,22 @@
           <bool>true</bool>
          </property>
          <layout class="QGridLayout" name="gridLayout_64">
+          <property name="leftMargin">
+           <number>0</number>
+          </property>
+          <property name="horizontalSpacing">
+           <number>4</number>
+          </property>
+          <item row="0" column="0">
+           <widget class="QCheckBox" name="kcfg_stairLayoutEnabled">
+            <property name="accessibleName">
+             <string>Stair Layout</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
           <item row="0" column="1">
            <widget class="QToolButton" name="stairLayoutPictogram">
             <property name="icon">
@@ -1938,7 +2149,9 @@
             <property name="autoRaise"><bool>true</bool></property>
             <property name="focusPolicy"><enum>Qt::FocusPolicy::NoFocus</enum></property>
             <property name="accessibleName"><string>Stair Layout preview</string></property>
-            <property name="toolTip"><string>Stair Layout preview</string></property>
+            <property name="styleSheet">
+             <string notr="true">QToolButton { border: none; background: transparent; } QToolButton:hover { border: none; background: transparent; } QToolButton:pressed { border: none; background: transparent; }</string>
+            </property>
            </widget>
           </item>
           <property name="topMargin">
@@ -1962,7 +2175,10 @@
              </font>
             </property>
             <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;0 - to disable&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>Order in layout rotation</string>
+            </property>
+            <property name="minimum">
+             <number>1</number>
             </property>
             <property name="maximum">
              <number>12</number>
@@ -2023,6 +2239,22 @@
             </property>
            </widget>
           </item>
+          <item row="0" column="4">
+           <widget class="QLabel" name="label_56">
+            <property name="font">
+             <font>
+              <family>Noto Sans</family>
+              <pointsize>12</pointsize>
+              <italic>false</italic>
+              <bold>false</bold>
+              <underline>false</underline>
+             </font>
+            </property>
+            <property name="text">
+             <string>Capacity</string>
+            </property>
+           </widget>
+          </item>
           <item row="0" column="2">
            <widget class="QLabel" name="label_109">
             <property name="font">
@@ -2040,21 +2272,8 @@
             <property name="margin">
              <number>0</number>
             </property>
-           </widget>
-          </item>
-          <item row="0" column="4">
-           <widget class="QLabel" name="label_56">
-            <property name="font">
-             <font>
-              <family>Noto Sans</family>
-              <pointsize>12</pointsize>
-              <italic>false</italic>
-              <bold>false</bold>
-              <underline>false</underline>
-             </font>
-            </property>
-            <property name="text">
-             <string>Capacity</string>
+            <property name="buddy">
+             <cstring>kcfg_stairLayoutEnabled</cstring>
             </property>
            </widget>
           </item>
@@ -2127,6 +2346,22 @@
           <bool>true</bool>
          </property>
          <layout class="QGridLayout" name="gridLayout_65">
+          <property name="leftMargin">
+           <number>0</number>
+          </property>
+          <property name="horizontalSpacing">
+           <number>4</number>
+          </property>
+          <item row="0" column="0">
+           <widget class="QCheckBox" name="kcfg_binaryTreeLayoutEnabled">
+            <property name="accessibleName">
+             <string>Binary Tree Layout</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
           <item row="0" column="1">
            <widget class="QToolButton" name="binarytreeLayoutPictogram">
             <property name="icon">
@@ -2144,12 +2379,11 @@
             <property name="autoRaise"><bool>true</bool></property>
             <property name="focusPolicy"><enum>Qt::FocusPolicy::NoFocus</enum></property>
             <property name="accessibleName"><string>Binary Tree Layout preview</string></property>
-            <property name="toolTip"><string>Binary Tree Layout preview</string></property>
+            <property name="styleSheet">
+             <string notr="true">QToolButton { border: none; background: transparent; } QToolButton:hover { border: none; background: transparent; } QToolButton:pressed { border: none; background: transparent; }</string>
+            </property>
            </widget>
           </item>
-          <property name="leftMargin">
-           <number>6</number>
-          </property>
           <property name="topMargin">
            <number>0</number>
           </property>
@@ -2203,7 +2437,10 @@
              </font>
             </property>
             <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;0 - to disable&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>Order in layout rotation</string>
+            </property>
+            <property name="minimum">
+             <number>1</number>
             </property>
             <property name="maximum">
              <number>12</number>
@@ -2235,6 +2472,22 @@
             </property>
            </widget>
           </item>
+          <item row="0" column="4">
+           <widget class="QLabel" name="label_57">
+            <property name="font">
+             <font>
+              <family>Noto Sans</family>
+              <pointsize>12</pointsize>
+              <italic>false</italic>
+              <bold>false</bold>
+              <underline>false</underline>
+             </font>
+            </property>
+            <property name="text">
+             <string>Capacity</string>
+            </property>
+           </widget>
+          </item>
           <item row="0" column="2">
            <widget class="QLabel" name="label_111">
             <property name="font">
@@ -2252,21 +2505,8 @@
             <property name="margin">
              <number>0</number>
             </property>
-           </widget>
-          </item>
-          <item row="0" column="4">
-           <widget class="QLabel" name="label_57">
-            <property name="font">
-             <font>
-              <family>Noto Sans</family>
-              <pointsize>12</pointsize>
-              <italic>false</italic>
-              <bold>false</bold>
-              <underline>false</underline>
-             </font>
-            </property>
-            <property name="text">
-             <string>Capacity</string>
+            <property name="buddy">
+             <cstring>kcfg_binaryTreeLayoutEnabled</cstring>
             </property>
            </widget>
           </item>
@@ -2288,6 +2528,22 @@
           <bool>true</bool>
          </property>
          <layout class="QGridLayout" name="gridLayout_29">
+          <property name="leftMargin">
+           <number>0</number>
+          </property>
+          <property name="horizontalSpacing">
+           <number>4</number>
+          </property>
+          <item row="0" column="0">
+           <widget class="QCheckBox" name="kcfg_cascadeLayoutEnabled">
+            <property name="accessibleName">
+             <string>Cascade Layout</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
           <item row="0" column="1">
            <widget class="QToolButton" name="cascadeLayoutPictogram">
             <property name="icon">
@@ -2305,12 +2561,11 @@
             <property name="autoRaise"><bool>true</bool></property>
             <property name="focusPolicy"><enum>Qt::FocusPolicy::NoFocus</enum></property>
             <property name="accessibleName"><string>Cascade Layout preview</string></property>
-            <property name="toolTip"><string>Cascade Layout preview</string></property>
+            <property name="styleSheet">
+             <string notr="true">QToolButton { border: none; background: transparent; } QToolButton:hover { border: none; background: transparent; } QToolButton:pressed { border: none; background: transparent; }</string>
+            </property>
            </widget>
           </item>
-          <property name="leftMargin">
-           <number>6</number>
-          </property>
           <property name="topMargin">
            <number>0</number>
           </property>
@@ -2320,31 +2575,9 @@
           <property name="bottomMargin">
            <number>0</number>
           </property>
-          <property name="horizontalSpacing">
-           <number>6</number>
-          </property>
           <property name="verticalSpacing">
            <number>0</number>
           </property>
-          <item row="0" column="2">
-           <widget class="QLabel" name="label_113">
-            <property name="font">
-             <font>
-              <family>Noto Sans</family>
-              <pointsize>12</pointsize>
-              <italic>false</italic>
-              <bold>false</bold>
-              <underline>true</underline>
-             </font>
-            </property>
-            <property name="text">
-             <string>Cascade Layout</string>
-            </property>
-            <property name="margin">
-             <number>0</number>
-            </property>
-           </widget>
-          </item>
           <item row="0" column="5">
            <widget class="QSpinBox" name="kcfg_cascadeLayoutCapacity">
             <property name="font">
@@ -2424,13 +2657,38 @@
              </font>
             </property>
             <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;0 - to disable&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>Order in layout rotation</string>
+            </property>
+            <property name="minimum">
+             <number>1</number>
             </property>
             <property name="maximum">
              <number>12</number>
             </property>
             <property name="value">
              <number>12</number>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="2">
+           <widget class="QLabel" name="label_113">
+            <property name="font">
+             <font>
+              <family>Noto Sans</family>
+              <pointsize>12</pointsize>
+              <italic>false</italic>
+              <bold>false</bold>
+              <underline>true</underline>
+             </font>
+            </property>
+            <property name="text">
+             <string>Cascade Layout</string>
+            </property>
+            <property name="margin">
+             <number>0</number>
+            </property>
+            <property name="buddy">
+             <cstring>kcfg_cascadeLayoutEnabled</cstring>
             </property>
            </widget>
           </item>
@@ -6890,6 +7148,432 @@
      <y>305</y>
     </hint>
    </hints>
+  </connection>
+  <connection>
+   <sender>kcfg_tileLayoutEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>GB_1_TileLayoutSettings</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_monocleLayoutEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>GB_2_MonocleLayoutSettings</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_quarterLayoutEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>GB_5_QuarterLayoutSettings</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_columnsLayoutEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>GB_7_columnsLayoutSettings</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_stairLayoutEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>GB_a_stairLayoutSettings</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_tileLayoutEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>kcfg_tileLayoutOrder</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_tileLayoutEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>tileLayoutPictogram</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_tileLayoutEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>label_35</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_tileLayoutEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>label_39</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_tileLayoutEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>label_41</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_tileLayoutEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>kcfg_tileLayoutCapacity</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_monocleLayoutEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>kcfg_monocleLayoutOrder</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_monocleLayoutEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>monocleLayoutPictogram</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_monocleLayoutEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>label_36</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_monocleLayoutEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>label_46</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_threeColumnLayoutEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>kcfg_threeColumnLayoutOrder</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_threeColumnLayoutEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>threecolumnLayoutPictogram</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_threeColumnLayoutEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>label_37</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_threeColumnLayoutEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>label_47</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_threeColumnLayoutEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>label_42</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_threeColumnLayoutEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>kcfg_threeColumnLayoutCapacity</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_spiralLayoutEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>kcfg_spiralLayoutOrder</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_spiralLayoutEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>spiralLayoutPictogram</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_spiralLayoutEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>label_38</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_spiralLayoutEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>label_48</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_spiralLayoutEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>label_43</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_spiralLayoutEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>kcfg_spiralLayoutCapacity</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_quarterLayoutEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>kcfg_quarterLayoutOrder</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_quarterLayoutEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>quarterLayoutPictogram</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_quarterLayoutEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>label_45</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_quarterLayoutEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>label_49</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_stackedLayoutEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>kcfg_stackedLayoutOrder</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_stackedLayoutEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>stackedLayoutPictogram</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_stackedLayoutEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>label_50</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_stackedLayoutEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>label_51</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_stackedLayoutEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>label_44</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_stackedLayoutEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>kcfg_stackedLayoutCapacity</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_columnsLayoutEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>kcfg_columnsLayoutOrder</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_columnsLayoutEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>columnsLayoutPictogram</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_columnsLayoutEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>label_52</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_columnsLayoutEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>label_53</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_columnsLayoutEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>label_54</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_columnsLayoutEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>kcfg_columnsLayoutCapacity</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_spreadLayoutEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>kcfg_spreadLayoutOrder</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_spreadLayoutEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>spreadLayoutPictogram</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_spreadLayoutEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>label_105</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_spreadLayoutEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>label_106</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_spreadLayoutEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>label_55</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_spreadLayoutEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>kcfg_spreadLayoutCapacity</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_floatingLayoutEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>kcfg_floatingLayoutOrder</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_floatingLayoutEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>floatingLayoutPictogram</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_floatingLayoutEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>label_103</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_floatingLayoutEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>label_104</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_stairLayoutEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>kcfg_stairLayoutOrder</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_stairLayoutEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>stairLayoutPictogram</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_stairLayoutEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>label_109</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_stairLayoutEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>label_110</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_stairLayoutEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>label_56</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_stairLayoutEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>kcfg_stairLayoutCapacity</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_binaryTreeLayoutEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>kcfg_binaryTreeLayoutOrder</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_binaryTreeLayoutEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>binarytreeLayoutPictogram</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_binaryTreeLayoutEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>label_111</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_binaryTreeLayoutEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>label_112</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_binaryTreeLayoutEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>label_57</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_binaryTreeLayoutEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>kcfg_binaryTreeLayoutCapacity</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_cascadeLayoutEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>kcfg_cascadeLayoutOrder</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_cascadeLayoutEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>cascadeLayoutPictogram</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_cascadeLayoutEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>label_113</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_cascadeLayoutEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>label_114</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_cascadeLayoutEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>label_58</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_cascadeLayoutEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>kcfg_cascadeLayoutCapacity</receiver>
+   <slot>setEnabled(bool)</slot>
   </connection>
  </connections>
 </ui>

@@ -169,3 +169,93 @@ test('layoutOrder keeps the configured cycle order', () => {
     ],
   );
 });
+
+test('layout enable flags are wired through xml, ui and ConfigVariables', () => {
+  const xml = fs.readFileSync(path.join(ROOT, 'res/config.xml'), 'utf8');
+  const ui = fs.readFileSync(path.join(ROOT, 'res/config.ui'), 'utf8');
+  const types = fs.readFileSync(path.join(ROOT, 'src/_types.ts'), 'utf8');
+
+  for (const id of LAYOUT_CLASSES) {
+    const prefix = `${id.charAt(0).toLowerCase()}${id.slice(1)}`;
+    const enabledKey = `${prefix}Enabled`;
+    const orderKey = `${prefix}Order`;
+
+    assert.match(
+      xml,
+      new RegExp(
+        `<entry name="${enabledKey}" type="Bool">\\s*` +
+          `<label>[^<]+</label>\\s*<default>true</default>\\s*</entry>`,
+      ),
+      enabledKey,
+    );
+    assert.match(types, new RegExp(`\\b${enabledKey}: "${enabledKey}"`));
+    assert.doesNotMatch(
+      ui,
+      new RegExp(`<widget class="QGroupBox" name="kcfg_${enabledKey}">`),
+      enabledKey,
+    );
+
+    const checkboxBlock = ui.match(
+      new RegExp(
+        `<widget class="QCheckBox" name="kcfg_${enabledKey}">[\\s\\S]*?</widget>`,
+      ),
+    );
+    assert.ok(checkboxBlock, `${enabledKey} checkbox missing`);
+    assert.match(
+      checkboxBlock[0],
+      /<property name="checked">\s*<bool>true<\/bool>\s*<\/property>/,
+      enabledKey,
+    );
+    const accessibleName = checkboxBlock[0].match(
+      /<property name="accessibleName">\s*<string>([^<]+)<\/string>/,
+    );
+    assert.ok(accessibleName, `${enabledKey} accessibleName missing`);
+    assert.equal(
+      accessibleName[1],
+      id.replace(/([a-z])([A-Z])/g, '$1 $2'),
+      enabledKey,
+    );
+
+    const orderBlock = ui.match(
+      new RegExp(
+        `<widget class="QSpinBox" name="kcfg_${orderKey}">[\\s\\S]*?</widget>`,
+      ),
+    );
+    assert.ok(orderBlock, orderKey);
+    assert.match(
+      orderBlock[0],
+      /<property name="minimum">\s*<number>1<\/number>\s*<\/property>/,
+      orderKey,
+    );
+    assert.doesNotMatch(orderBlock[0], /0 - to disable/, orderKey);
+    assert.match(
+      orderBlock[0],
+      /<string>Order in layout rotation<\/string>/,
+      orderKey,
+    );
+  }
+});
+
+test('layout settings blocks follow their enable checkbox', () => {
+  const ui = fs.readFileSync(path.join(ROOT, 'res/config.ui'), 'utf8');
+  const pairs = [
+    ['tileLayoutEnabled', 'GB_1_TileLayoutSettings'],
+    ['monocleLayoutEnabled', 'GB_2_MonocleLayoutSettings'],
+    ['quarterLayoutEnabled', 'GB_5_QuarterLayoutSettings'],
+    ['columnsLayoutEnabled', 'GB_7_columnsLayoutSettings'],
+    ['stairLayoutEnabled', 'GB_a_stairLayoutSettings'],
+  ];
+
+  for (const [sender, receiver] of pairs) {
+    assert.match(
+      ui,
+      new RegExp(
+        `<connection>\\s*<sender>kcfg_${sender}</sender>\\s*` +
+          `<signal>toggled\\(bool\\)</signal>\\s*` +
+          `<receiver>${receiver}</receiver>\\s*` +
+          `<slot>setEnabled\\(bool\\)</slot>\\s*</connection>`,
+      ),
+      sender,
+    );
+  }
+});
