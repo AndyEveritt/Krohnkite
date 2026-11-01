@@ -4641,6 +4641,19 @@
                </property>
               </widget>
              </item>
+             <item row="2" column="0">
+              <widget class="QCheckBox" name="kcfg_movePointerOnFocusShortcutsOnly">
+               <property name="enabled">
+                <bool>false</bool>
+               </property>
+               <property name="toolTip">
+                <string>Move the pointer only when focus changes through a Krohnkite shortcut, never when a window gets focus some other way (mouse, newly opened window)</string>
+               </property>
+               <property name="text">
+                <string>Only on Krohnkite shortcuts</string>
+               </property>
+              </widget>
+             </item>
             </layout>
            </widget>
           </item>
@@ -7579,6 +7592,12 @@
    <sender>kcfg_cascadeLayoutEnabled</sender>
    <signal>toggled(bool)</signal>
    <receiver>kcfg_cascadeLayoutCapacity</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_movePointerOnFocus</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>kcfg_movePointerOnFocusShortcutsOnly</receiver>
    <slot>setEnabled(bool)</slot>
   </connection>
  </connections>
