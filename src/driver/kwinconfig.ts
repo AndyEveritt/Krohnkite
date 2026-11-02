@@ -159,6 +159,7 @@ class KWinConfig implements IConfig {
   public srfToVDesktopOrder: Direction[];
   public srfOvercapacityEviction: OvercapacityEvictionPolicy;
   public srfOvercapacityMode: OvercapacityMode;
+  public srfAllowShortcutMoveToFullSurface: boolean;
   public srfDefineCfg: string[];
   public srfDefaultConfig: string[];
   /*
@@ -385,6 +386,10 @@ class KWinConfig implements IConfig {
       Number(KWIN.readConfig("srfOvercapacityMode", 1)) === 0
         ? "float"
         : "minimize";
+    this.srfAllowShortcutMoveToFullSurface = KWIN.readConfig(
+      "srfAllowShortcutMoveToFullSurface",
+      false,
+    );
     this.srfDefineCfg = separate(KWIN.readConfig("srfDefineCfg", ""), "\n");
     this.srfDefaultConfig = separate(
       KWIN.readConfig("srfDefaultConfig", ""),

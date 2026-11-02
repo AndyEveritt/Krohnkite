@@ -52,18 +52,43 @@ function isMinimizeOvercapacityMode(
 }
 
 /**
+ * Number of excess windows a target surface can accept.
+ *
+ * `capacity` is the number of free slots reported for the surface; `null`
+ * means unlimited. `allowOverfill` is used by shortcut moves: a surface with
+ * positive capacity but no free slots may still accept the moved window. A
+ * surface whose effective capacity is zero is rejected by the caller before
+ * this helper is reached.
+ */
+function resolveAvailableSlots(
+  capacity: number | null,
+  awaitToMove: number,
+  overCapacity: number,
+  allowOverfill: boolean,
+): number {
+  if (capacity === null) return overCapacity;
+  const freeSlots = capacity - awaitToMove;
+  if (freeSlots > 0) return Math.min(freeSlots, overCapacity);
+  return allowOverfill ? overCapacity : 0;
+}
+
+/**
  * Split `tileables` into the windows that fit the capacity and the excess.
  *
  * `oldest` orders the excess by the time a window appeared on the surface.
  * `lastFocused` orders it by focus time, so the window that received focus
  * most recently is evicted first; equal focus times fall back to the newer
- * surface time. `freeSlots` is the number of remaining places when nothing
- * had to be removed, and `0` otherwise.
+ * surface time. `protectedWindows` are skipped while choosing the excess, so
+ * a window that was just moved to a full surface survives its first arrange
+ * and the policy evicts another window instead.
+ * `freeSlots` is the number of remaining places when nothing had to be
+ * removed, and `0` otherwise.
  */
 function selectOverCapacityWindows<T extends ICapacityWindow>(
   tileables: T[],
   capacity: number | null,
   eviction: OvercapacityEvictionPolicy,
+  protectedWindows: T[] = [],
 ): { tileables: T[]; overCapacity: T[]; freeSlots: number | null } {
   if (capacity === null || tileables.length <= capacity) {
     return {
@@ -79,7 +104,11 @@ function selectOverCapacityWindows<T extends ICapacityWindow>(
       ? a.window.srfTime - b.window.srfTime
       : b.focusTime - a.focusTime || b.window.srfTime - a.window.srfTime,
   );
-  const overCapacity = sorted.slice(0, excess);
+  const candidates = sorted.filter(
+    (win) => protectedWindows.indexOf(win) < 0,
+  );
+  const pool = candidates.length >= excess ? candidates : sorted;
+  const overCapacity = pool.slice(0, excess);
   const toRemove = new Set(overCapacity);
 
   return {

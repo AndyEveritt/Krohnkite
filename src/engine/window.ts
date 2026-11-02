@@ -182,6 +182,10 @@ class WindowClass implements IWindowClass {
   public focusTime: number;
   public isSendingToOutput: boolean;
   public isRelocationPending: boolean;
+  /* Surface id where this window must survive the first overcapacity pass.
+   * Set when a shortcut moves the window onto a full surface, cleared once
+   * the target surface has arranged it. */
+  public preserveOnSurface: string | null;
   public surfaceArrangeToken: number;
   public relocationTargetOutput: Output | null;
   public isDragging: boolean;
@@ -203,6 +207,7 @@ class WindowClass implements IWindowClass {
     this.focusTime = 0;
     this.isSendingToOutput = false;
     this.isRelocationPending = false;
+    this.preserveOnSurface = null;
     this.surfaceArrangeToken = 0;
     this.relocationTargetOutput = null;
     this.isDragging = false;

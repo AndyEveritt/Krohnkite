@@ -253,6 +253,11 @@
         <default>1</default>
     </entry>
 
+    <entry name="srfAllowShortcutMoveToFullSurface" type="Bool">
+	    <label>Allow shortcut moves to a full surface</label>
+        <default>false</default>
+    </entry>
+
     <entry name="srfDefineCfg" type="String">
       <label>Define surfaces with user lable. Surface=userLabel</label>
         <default></default>

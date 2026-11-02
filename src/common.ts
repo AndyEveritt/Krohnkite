@@ -49,6 +49,7 @@ interface IConfig {
   srfToVDesktopOrder: Direction[];
   srfOvercapacityEviction: OvercapacityEvictionPolicy;
   srfOvercapacityMode: OvercapacityMode;
+  srfAllowShortcutMoveToFullSurface: boolean;
   srfDefineCfg: string[];
   srfDefaultConfig: string[];
 

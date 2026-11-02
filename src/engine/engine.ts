@@ -478,33 +478,56 @@ class TilingEngine {
     output: Output,
     screenDataStore: Map<string, ScreenData>,
     vDesktop?: VirtualDesktop,
+    allowOverfill: boolean = false,
   ): WindowClass[] {
     const overCapacity = sourceScreenData.overCapacity.length;
     if (overCapacity <= 0) return [];
-    let targetSrf = ctx.getSurface(output, vDesktop);
+
+    const targetSrf = ctx.getSurface(output, vDesktop);
     if (targetSrf == null || !targetSrf.isOvercapacityCandidate) return [];
+
+    /* A surface with no capacity at all must never receive windows, even
+     * when a shortcut is allowed to overfill a merely full surface. */
+    const targetCapacity = resolveSurfaceCapacity(
+      this.layouts.getCurrentLayout(targetSrf).capacity,
+      targetSrf.capacity,
+    );
+    if (targetCapacity === 0) return [];
+
     if (!screenDataStore.has(targetSrf.id)) {
       screenDataStore.set(targetSrf.id, this.getTileables(targetSrf));
     }
     const sd = screenDataStore.get(targetSrf.id)!;
-    if (sd.capacity === null || sd.capacity - sd.awaitToMove.length > 0) {
-      const availableSlots =
-        sd.capacity === null
-          ? overCapacity
-          : Math.min(sd.capacity - sd.awaitToMove.length, overCapacity);
-      const windowsToAvailableSlots = sourceScreenData.overCapacity.splice(
-        0,
-        availableSlots,
-      );
-      sd.awaitToMove.push(...windowsToAvailableSlots);
-      return windowsToAvailableSlots;
-    } else return [];
+    const wasFull =
+      sd.capacity !== null && sd.capacity - sd.awaitToMove.length <= 0;
+    const availableSlots = resolveAvailableSlots(
+      sd.capacity,
+      sd.awaitToMove.length,
+      overCapacity,
+      allowOverfill,
+    );
+    if (availableSlots <= 0) return [];
+
+    const windowsToAvailableSlots = sourceScreenData.overCapacity.splice(
+      0,
+      availableSlots,
+    );
+    if (allowOverfill && wasFull) {
+      /* The moved window must survive the target's first overcapacity pass;
+       * the eviction policy then removes another window on that surface. */
+      windowsToAvailableSlots.forEach((win) => {
+        win.preserveOnSurface = targetSrf.id;
+      });
+    }
+    sd.awaitToMove.push(...windowsToAvailableSlots);
+    return windowsToAvailableSlots;
   }
 
   private _prepareWindowsMoveToOutput(
     ctx: IDriverContext,
     sourceScreenData: ScreenData,
     direction?: Direction,
+    allowOverfill: boolean = false,
   ) {
     let alreadyDone = new Set<Output>();
     const screenDataStore = new Map<string, ScreenData>();
@@ -526,6 +549,8 @@ class TilingEngine {
         sourceScreenData,
         neighborOutput,
         screenDataStore,
+        undefined,
+        allowOverfill,
       );
       const windowsArr = this.relocationWindows.toOutputs.add(neighborOutput);
       windowsArr.push(...windowsToMove);
@@ -744,14 +769,30 @@ class TilingEngine {
     }
     const layout = this.layouts.getCurrentLayout(srf);
 
+    const protectedWindows = tileables.filter(
+      (win) => win.preserveOnSurface === srf.id,
+    );
     const selection = selectOverCapacityWindows(
       tileables,
       resolveSurfaceCapacity(layout.capacity, srf.capacity),
       CONFIG.srfOvercapacityEviction,
+      protectedWindows,
     );
     tileables = selection.tileables;
     const overCapacity = selection.overCapacity;
     const freeCapacity = selection.freeSlots;
+
+    /* Consume the one-shot protection on the target surface. A window whose
+     * move finished somewhere else must not keep a stale marker. */
+    visibles.forEach((win) => {
+      if (win.preserveOnSurface === null) return;
+      if (
+        win.preserveOnSurface === srf.id ||
+        (!win.isSendingToOutput && !win.isRelocationPending)
+      )
+        win.preserveOnSurface = null;
+    });
+
     let screenData = {
       visibles: visibles,
       tileables: tileables,
@@ -1124,7 +1165,12 @@ class TilingEngine {
         return false;
       }
       sd.overCapacity.push(...sd.tileables.splice(idx, 1));
-      this._prepareWindowsMoveToOutput(ctx, sd, direction);
+      this._prepareWindowsMoveToOutput(
+        ctx,
+        sd,
+        direction,
+        CONFIG.srfAllowShortcutMoveToFullSurface,
+      );
       if (
         !this.relocationWindows.isSending &&
         this.relocationWindows.totalNumWinsPrepareToOutput > 0

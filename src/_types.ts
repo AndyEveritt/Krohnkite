@@ -120,6 +120,7 @@ const ConfigVariables = {
   srfToVDesktopOrderBottom: "srfToVDesktopOrderBottom",
   srfOvercapacityEviction: "srfOvercapacityEviction",
   srfOvercapacityMode: "srfOvercapacityMode",
+  srfAllowShortcutMoveToFullSurface: "srfAllowShortcutMoveToFullSurface",
   srfDefineCfg: "srfDefineCfg",
   srfDefaultConfig: "srfDefaultConfig",
   /* Geometry */
