@@ -109,6 +109,53 @@ test('selectOverCapacityWindows reports free slots and leaves input intact', () 
   assert.equal(unlimited.freeSlots, null);
 });
 
+test('resolveAvailableSlots handles full and overfilled targets', () => {
+  const context = loadHelpers();
+  const slots = (capacity, awaitToMove, overCapacity, allowOverfill) =>
+    vm.runInContext(
+      `resolveAvailableSlots(${capacity}, ${awaitToMove}, ${overCapacity}, ${allowOverfill})`,
+      context,
+    );
+
+  assert.equal(slots('null', 0, 3, false), 3);
+  assert.equal(slots(2, 0, 3, false), 2);
+  assert.equal(slots(2, 1, 3, false), 1);
+  assert.equal(slots(0, 0, 1, false), 0);
+  assert.equal(slots(0, 0, 1, true), 1);
+  assert.equal(slots(-1, 0, 1, true), 1);
+});
+
+test('a protected window survives the overcapacity selection', () => {
+  const context = loadHelpers();
+  const older = windowAt(1, 100);
+  const middle = windowAt(2, 200);
+  const newest = windowAt(3, 300);
+  const tiles = [older, middle, newest];
+  context.tiles = tiles;
+
+  context.protectedOldest = [older];
+  const oldest = vm.runInContext(
+    'selectOverCapacityWindows(tiles, 2, "oldest", protectedOldest)',
+    context,
+  );
+  assert.equal(oldest.overCapacity.length, 1);
+  assert.equal(oldest.overCapacity[0], middle);
+  assert.equal(oldest.tileables.length, 2);
+  assert.equal(oldest.tileables[0], older);
+  assert.equal(oldest.tileables[1], newest);
+
+  context.protectedNewest = [newest];
+  const lastFocused = vm.runInContext(
+    'selectOverCapacityWindows(tiles, 2, "lastFocused", protectedNewest)',
+    context,
+  );
+  assert.equal(lastFocused.overCapacity.length, 1);
+  assert.equal(lastFocused.overCapacity[0], middle);
+  assert.equal(lastFocused.tileables.length, 2);
+  assert.equal(lastFocused.tileables[0], older);
+  assert.equal(lastFocused.tileables[1], newest);
+});
+
 test('minimize mode is disabled when minimizing is prevented', () => {
   const context = loadHelpers();
   assert.equal(
@@ -250,6 +297,35 @@ test('the overcapacity mode is wired through xml, ui, types and kwinconfig', () 
     evictionCombo[0],
     /<property name="currentIndex">\s*<number>1<\/number>\s*<\/property>/,
   );
+
+  assert.match(
+    xml,
+    /<entry name="srfAllowShortcutMoveToFullSurface" type="Bool">\s*<label>[^<]+<\/label>\s*<default>false<\/default>\s*<\/entry>/,
+  );
+  assert.match(
+    types,
+    /\bsrfAllowShortcutMoveToFullSurface: "srfAllowShortcutMoveToFullSurface"/,
+  );
+  assert.match(
+    common,
+    /\bsrfAllowShortcutMoveToFullSurface: boolean;/,
+  );
+  assert.match(
+    kwinconfig,
+    /readConfig\(\s*"srfAllowShortcutMoveToFullSurface",\s*false,?\s*\)/,
+  );
+
+  const fullSurfaceCheckbox = ui.match(
+    /<widget class="QCheckBox" name="kcfg_srfAllowShortcutMoveToFullSurface">[\s\S]*?<\/widget>/,
+  );
+  assert.ok(
+    fullSurfaceCheckbox,
+    'kcfg_srfAllowShortcutMoveToFullSurface checkbox missing',
+  );
+  assert.match(
+    fullSurfaceCheckbox[0],
+    /<string>allow shortcut moves to a full surface<\/string>/,
+  );
 });
 
 test('the old oldest-windows checkbox is removed', () => {
@@ -321,6 +397,8 @@ test('the engine minimizes in minimize mode and restores via LIFO', () => {
 
   assert.match(engine, /_isMinimizeOvercapacityMode\(\)/);
   assert.match(engine, /CONFIG\.srfOvercapacityEviction/);
+  assert.match(engine, /CONFIG\.srfAllowShortcutMoveToFullSurface/);
+  assert.match(engine, /preserveOnSurface/);
   assert.match(engine, /setMinimizedByScript\(true\)/);
   assert.match(engine, /setMinimizedByScript\(false\)/);
   assert.match(engine, /_restoreOverCapacityMinimized\(srf\)/);
