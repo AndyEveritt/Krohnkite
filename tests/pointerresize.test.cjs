@@ -55,8 +55,29 @@ function setup(config = {}) {
   return { driver, env };
 }
 
+/* Minimal WindowClass/controller surface the signal handlers reach for. */
+function withController(driver) {
+  driver.control = {
+    onWindowResizeStart() {},
+    onWindowResizeOver() {},
+    onWindowMoveStart() {},
+    onWindowMoveOver() {},
+    onWindowDragging() {},
+  };
+  return driver;
+}
+
 function client(props = {}) {
   return { active: true, move: false, resize: false, ...props };
+}
+
+/* Fabricates distinct signal objects for every property the driver binds, so
+ * _bindWindowEvents can be exercised without a KWin connection. */
+function kwinClient(props = {}) {
+  const target = client({ deleted: false, activities: [], ...props });
+  return new Proxy(target, {
+    get: (t, prop) => (prop in t ? t[prop] : (t[prop] = { name: prop })),
+  });
 }
 
 test('a layout pass moves the pointer once after it settles', () => {
@@ -124,29 +145,75 @@ test('the pointer stays put when the option is off or the window is not active',
   assert.equal(off.env.moves + inactive.env.moves + dragging.env.moves, 0);
 });
 
-test('mouse moves/resizes and their aftermath never move the pointer', () => {
+test('a mouse resize suppresses the pointer move during the grace period', () => {
   const { driver, env } = setup();
+  const target = kwinClient({
+    frameGeometry: { x: 0, y: 0, width: 100, height: 50 },
+  });
+  const signals = new Map();
+  driver._connect = (signal, callback) => signals.set(signal, callback);
+  withController(driver)._bindWindowEvents({}, target);
+
+  /* The user grabs the border: the window signals must stamp the grace. */
+  target.resize = true;
+  signals.get(target.moveResizedChanged)();
+
   driver.onLayoutStart();
-  driver.onWindowSizeCommitted(client({ move: true }));
-  driver.onWindowSizeCommitted(client({ resize: true }));
+  driver.onWindowSizeCommitted(target);
   driver.onLayoutSettled();
   env.flush();
   assert.equal(env.moves, 0);
 
-  driver._lastInteractiveMoveResize = env.now;
   env.now += KWinDriverGrace(driver) - 1;
   driver.onLayoutStart();
-  driver.onWindowSizeCommitted(client());
+  driver.onWindowSizeCommitted(target);
   driver.onLayoutSettled();
   env.flush();
   assert.equal(env.moves, 0);
 
-  env.now += 1;
+  /* Release restarts the grace, so the drop re-tile right after it is the
+   * resize's aftermath and must not move the pointer either. */
+  target.resize = false;
+  signals.get(target.moveResizedChanged)();
   driver.onLayoutStart();
-  driver.onWindowSizeCommitted(client());
+  driver.onWindowSizeCommitted(target);
+  driver.onLayoutSettled();
+  env.flush();
+  assert.equal(env.moves, 0);
+
+  env.now += KWinDriverGrace(driver);
+  driver.onLayoutStart();
+  driver.onWindowSizeCommitted(target);
   driver.onLayoutSettled();
   env.flush();
   assert.equal(env.moves, 1);
+});
+
+test('stepping a mouse move suppresses the pointer move', () => {
+  const { driver, env } = setup();
+  const target = kwinClient({
+    frameGeometry: { x: 0, y: 0, width: 100, height: 50 },
+  });
+  const signals = new Map();
+  driver._connect = (signal, callback) => signals.set(signal, callback);
+  withController(driver)._bindWindowEvents({}, target);
+
+  /* KWin can clear the move flag before the pass that follows the last step,
+   * so the step itself has to arm the grace. */
+  target.move = true;
+  signals.get(target.interactiveMoveResizeStepped)({
+    x: 0,
+    y: 0,
+    width: 100,
+    height: 50,
+  });
+  target.move = false;
+
+  driver.onLayoutStart();
+  driver.onWindowSizeCommitted(target);
+  driver.onLayoutSettled();
+  env.flush();
+  assert.equal(env.moves, 0);
 });
 
 test('only size changes are reported when a window is committed', () => {
