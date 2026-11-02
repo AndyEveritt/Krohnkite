@@ -284,6 +284,12 @@ interface IDriverContext {
     direction: Direction,
   ): boolean;
   relocateWindows(): boolean;
+  /* Layout pass bracketing, used to move the pointer once per settled
+   * layout instead of once per geometry change. */
+  onLayoutStart(): void;
+  onLayoutSettled(): void;
+  /* The driver wrote a new frame geometry for this window. */
+  onWindowSizeCommitted(client: KwinWindow): void;
   setTimeout(func: () => void, timeout: number): void;
   showNotification(text: string): void;
   showLayoutOSD(): void;

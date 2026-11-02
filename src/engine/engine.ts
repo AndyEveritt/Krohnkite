@@ -337,6 +337,7 @@ class TilingEngine {
     }
 
     this._arranging = true;
+    ctx.onLayoutStart();
     try {
       let passes = 0;
       do {
@@ -357,6 +358,9 @@ class TilingEngine {
       this._arranging = false;
       this._arrangePending = false;
       this._pendingExtraSurfaces.clear();
+      /* Runs even when a pass throws, so a half-applied layout cannot leave a
+       * pointer-move request behind for the next arrange. */
+      ctx.onLayoutSettled();
     }
   }
 

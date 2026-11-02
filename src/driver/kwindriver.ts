@@ -156,9 +156,15 @@ class KWinDriver implements IDriverContext {
   private _started: boolean;
   private _disposed: boolean;
   /* Last time any window was moved/resized with the mouse; see
-   * _onWindowSizeChanged. */
+   * onWindowSizeCommitted. */
   private _lastInteractiveMoveResize: number;
-  private _centerPointerPending: boolean;
+  /* Set by a size commit, consumed once the layout pass settles; see
+   * onLayoutSettled. */
+  private _pointerCenterRequested: boolean;
+  /* A pointer move is already scheduled and will use whatever geometry is
+   * current when it runs. */
+  private _pointerCenterPending: boolean;
+  private _layoutPassActive: boolean;
 
   constructor(api: Api, config?: KWinConfig) {
     KWIN = api.kwin;
@@ -185,7 +191,9 @@ class KWinDriver implements IDriverContext {
     this._started = false;
     this._disposed = false;
     this._lastInteractiveMoveResize = 0;
-    this._centerPointerPending = false;
+    this._pointerCenterRequested = false;
+    this._pointerCenterPending = false;
+    this._layoutPassActive = false;
     this._surfaceStore = new KWinSurfaceStore(this.workspace);
     this._isRegister = {
       state: false,
@@ -1655,8 +1663,39 @@ class KWinDriver implements IDriverContext {
    * treated as its aftermath (drop re-tile, final snap), not a reason to warp
    * the pointer away from where the user just released it. */
   private static readonly INTERACTIVE_POINTER_GRACE_MS = 500;
+  /* Delay between the settled layout and the move. The move goes through DBus
+   * and runs after the layout pass has returned either way; the delay only
+   * covers the window server applying the new geometry. */
+  private static readonly POINTER_CENTER_DELAY_MS = 30;
 
-  private _onWindowSizeChanged(client: KwinWindow) {
+  public onLayoutStart(): void {
+    this._layoutPassActive = true;
+  }
+
+  public onLayoutSettled(): void {
+    this._layoutPassActive = false;
+    if (!this._pointerCenterRequested) return;
+    this._pointerCenterRequested = false;
+    /* A move is already queued; it will read the geometry this pass just
+     * committed, so the second request needs no move of its own. */
+    if (this._pointerCenterPending) return;
+    this._pointerCenterPending = true;
+    this.setTimeout(() => {
+      this._pointerCenterPending = false;
+      if (!CONFIG.movePointerOnResize) return;
+      if (
+        getTime() - this._lastInteractiveMoveResize <
+        KWinDriver.INTERACTIVE_POINTER_GRACE_MS
+      )
+        return;
+      DBUS.moveMouseToFocus();
+    }, KWinDriver.POINTER_CENTER_DELAY_MS);
+  }
+
+  /* Called by the window wrapper right before it writes a new frame geometry,
+   * so the decision relies on the geometry this layout committed instead of
+   * waiting for KWin to report the applied size. */
+  public onWindowSizeCommitted(client: KwinWindow): void {
     if (!CONFIG.movePointerOnResize) return;
     if (!client.active || client.move || client.resize) return;
     if (
@@ -1664,35 +1703,15 @@ class KWinDriver implements IDriverContext {
       KWinDriver.INTERACTIVE_POINTER_GRACE_MS
     )
       return;
-    /* One arrange commits several geometries in a row (and may hand focus to
-     * a new window); coalesce them and center on whatever is active once the
-     * layout has settled. */
-    if (this._centerPointerPending) return;
-    this._centerPointerPending = true;
-    this.setTimeout(() => {
-      this._centerPointerPending = false;
-      DBUS.moveMouseToFocus();
-    }, 30);
+    this._pointerCenterRequested = true;
+    /* Commits made outside a layout pass (e.g. a floating-window resize
+     * shortcut) have no arrange to settle them. */
+    if (!this._layoutPassActive) this.onLayoutSettled();
   }
 
   private _bindWindowEvents(window: WindowClass, client: KwinWindow) {
     let moving = false;
     let resizing = false;
-    let lastSize = {
-      width: client.frameGeometry.width,
-      height: client.frameGeometry.height,
-    };
-    this._connect(client.frameGeometryChanged, () => {
-      if (!client || client.deleted) return;
-      const geometry = client.frameGeometry;
-      if (
-        geometry.width === lastSize.width &&
-        geometry.height === lastSize.height
-      )
-        return;
-      lastSize = { width: geometry.width, height: geometry.height };
-      this._onWindowSizeChanged(client);
-    });
     this._connect(client.activitiesChanged, () => {
       if (!client || client.deleted) return;
       LOG?.send(

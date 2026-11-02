@@ -13,15 +13,21 @@ const ts = require('typescript');
 
 const ROOT = path.resolve(__dirname, '..');
 
-function transpile(relativePath) {
-  return ts.transpileModule(
-    fs.readFileSync(path.join(ROOT, relativePath), 'utf8'),
-    { compilerOptions: { target: ts.ScriptTarget.ES2015 } },
-  ).outputText;
+function transpile(...relativePaths) {
+  return relativePaths
+    .map(
+      (relativePath) =>
+        ts.transpileModule(
+          fs.readFileSync(path.join(ROOT, relativePath), 'utf8'),
+          { compilerOptions: { target: ts.ScriptTarget.ES2015 } },
+        ).outputText,
+    )
+    .join('\n');
 }
 
-/* A KWinDriver with only what the resize-pointer path touches. Timers are
- * queued instead of run so a test can flush them explicitly. */
+/* A KWinDriver with only what the pointer path touches. Timers are queued
+ * instead of run so a test can flush them explicitly, and a layout pass is
+ * never active until the test opens one. */
 function setup(config = {}) {
   const env = {
     now: 10000,
@@ -29,7 +35,7 @@ function setup(config = {}) {
     timers: [],
   };
   const context = vm.createContext({
-    CONFIG: { movePointerOnResize: true, floatSkipPager: false, ...config },
+    CONFIG: { movePointerOnResize: true, ...config },
     DBUS: { moveMouseToFocus: () => env.moves++ },
     LOG: undefined,
     getTime: () => env.now,
@@ -37,7 +43,9 @@ function setup(config = {}) {
   const driver = vm.runInContext(`${transpile('src/driver/kwindriver.ts')}\n(() => {
     const driver = Object.create(KWinDriver.prototype);
     driver._lastInteractiveMoveResize = 0;
-    driver._centerPointerPending = false;
+    driver._pointerCenterRequested = false;
+    driver._pointerCenterPending = false;
+    driver._layoutPassActive = false;
     return driver;
   })()`, context);
   driver.setTimeout = (func) => env.timers.push(func);
@@ -51,81 +59,136 @@ function client(props = {}) {
   return { active: true, move: false, resize: false, ...props };
 }
 
-test('a resize of the active window centers the pointer once the layout settles', () => {
+test('a layout pass moves the pointer once after it settles', () => {
   const { driver, env } = setup();
-  driver._onWindowSizeChanged(client());
+  driver.onLayoutStart();
+  driver.onWindowSizeCommitted(client());
+  driver.onWindowSizeCommitted(client());
+  driver.onWindowSizeCommitted(client());
+  assert.equal(env.moves, 0);
+  driver.onLayoutSettled();
   assert.equal(env.moves, 0);
   env.flush();
   assert.equal(env.moves, 1);
 });
 
-test('several resizes from one arrange are coalesced into one pointer move', () => {
+test('two passes inside the delay still move the pointer once', () => {
   const { driver, env } = setup();
-  driver._onWindowSizeChanged(client());
-  driver._onWindowSizeChanged(client());
-  driver._onWindowSizeChanged(client());
-  assert.equal(env.timers.length, 1);
+  driver.onLayoutStart();
+  driver.onWindowSizeCommitted(client());
+  driver.onLayoutSettled();
+  env.now += 10;
+  driver.onLayoutStart();
+  driver.onWindowSizeCommitted(client());
+  driver.onLayoutSettled();
   env.flush();
   assert.equal(env.moves, 1);
-  driver._onWindowSizeChanged(client());
+
+  /* A pass after the queued move is a separate layout change. */
+  env.now += 100;
+  driver.onLayoutStart();
+  driver.onWindowSizeCommitted(client());
+  driver.onLayoutSettled();
   env.flush();
   assert.equal(env.moves, 2);
 });
 
-test('the pointer stays put when the option is off or the window is not active', () => {
-  const off = setup({ movePointerOnResize: false });
-  off.driver._onWindowSizeChanged(client());
-  const inactive = setup();
-  inactive.driver._onWindowSizeChanged(client({ active: false }));
-  assert.equal(off.env.timers.length + inactive.env.timers.length, 0);
-});
-
-test('mouse moves/resizes and their aftermath never move the pointer', () => {
+test('a size commit outside a layout pass moves the pointer once', () => {
   const { driver, env } = setup();
-  driver._onWindowSizeChanged(client({ resize: true }));
-  driver._onWindowSizeChanged(client({ move: true }));
-  assert.equal(env.timers.length, 0);
-
-  driver._lastInteractiveMoveResize = env.now;
-  env.now += KWinDriverGrace(driver) - 1;
-  driver._onWindowSizeChanged(client());
-  assert.equal(env.timers.length, 0);
-
-  env.now += 1;
-  driver._onWindowSizeChanged(client());
+  /* A floating-window resize shortcut commits geometry and arranges nothing. */
+  driver.onWindowSizeCommitted(client());
   env.flush();
   assert.equal(env.moves, 1);
 });
 
-test('only size changes, not moves, reach the resize handler', () => {
-  const { driver } = setup();
-  const signals = new Map();
-  driver._connect = (signal, callback) => signals.set(signal, callback);
-  const sizes = [];
-  driver._onWindowSizeChanged = (c) => sizes.push({ ...c.frameGeometry });
-  const target = client({
+test('the pointer stays put when the option is off or the window is not active', () => {
+  const off = setup({ movePointerOnResize: false });
+  off.driver.onLayoutStart();
+  off.driver.onWindowSizeCommitted(client());
+  off.driver.onLayoutSettled();
+  off.env.flush();
+
+  const inactive = setup();
+  inactive.driver.onLayoutStart();
+  inactive.driver.onWindowSizeCommitted(client({ active: false }));
+  inactive.driver.onLayoutSettled();
+  inactive.env.flush();
+
+  const dragging = setup();
+  dragging.driver.onLayoutStart();
+  dragging.driver.onWindowSizeCommitted(client({ move: true }));
+  dragging.driver.onWindowSizeCommitted(client({ resize: true }));
+  dragging.driver.onLayoutSettled();
+  dragging.env.flush();
+
+  assert.equal(off.env.moves + inactive.env.moves + dragging.env.moves, 0);
+});
+
+test('mouse moves/resizes and their aftermath never move the pointer', () => {
+  const { driver, env } = setup();
+  driver.onLayoutStart();
+  driver.onWindowSizeCommitted(client({ move: true }));
+  driver.onWindowSizeCommitted(client({ resize: true }));
+  driver.onLayoutSettled();
+  env.flush();
+  assert.equal(env.moves, 0);
+
+  driver._lastInteractiveMoveResize = env.now;
+  env.now += KWinDriverGrace(driver) - 1;
+  driver.onLayoutStart();
+  driver.onWindowSizeCommitted(client());
+  driver.onLayoutSettled();
+  env.flush();
+  assert.equal(env.moves, 0);
+
+  env.now += 1;
+  driver.onLayoutStart();
+  driver.onWindowSizeCommitted(client());
+  driver.onLayoutSettled();
+  env.flush();
+  assert.equal(env.moves, 1);
+});
+
+test('only size changes are reported when a window is committed', () => {
+  const calls = [];
+  const context = vm.createContext({
+    CONFIG: {},
+    LOG: undefined,
+    KWINCONFIG: { preventProtrusion: false },
+    getTime: () => 0,
+    Qt: {
+      rect: (x, y, width, height) => ({ x, y, width, height }),
+    },
+  });
+  const { DriverWindow, Rect } = vm.runInContext(
+    `${transpile(
+      'src/util/rect.ts',
+      'src/util/kwinutil.ts',
+      'src/driver/kwinwindow.ts',
+    )}
+    ({ DriverWindow, Rect })`,
+    context,
+  );
+
+  const window = {
     deleted: false,
+    resize: false,
     frameGeometry: { x: 0, y: 0, width: 100, height: 50 },
-  });
-  /* Every other signal _bindWindowEvents connects is a distinct dummy. */
-  const kwinClient = new Proxy(target, {
-    get: (t, prop) => (prop in t ? t[prop] : (t[prop] = { name: prop })),
-  });
-  driver._bindWindowEvents({}, kwinClient);
-  const geometryChanged = signals.get(kwinClient.frameGeometryChanged);
+  };
+  const driverWindow = Object.create(DriverWindow.prototype);
+  driverWindow.window = window;
+  driverWindow.noBorderManaged = false;
+  driverWindow.layerManaged = false;
+  driverWindow._movePointerToCenter = { isMove: false, time: 0 };
+  driverWindow.adjustGeometry = (geometry) => geometry;
+  const ctx = { onWindowSizeCommitted: (client) => calls.push(client) };
 
-  target.frameGeometry = { x: 40, y: 10, width: 100, height: 50 };
-  geometryChanged();
-  target.frameGeometry = { x: 40, y: 10, width: 120, height: 50 };
-  geometryChanged();
-  geometryChanged();
-  target.frameGeometry = { x: 0, y: 0, width: 120, height: 60 };
-  geometryChanged();
+  driverWindow.commit(ctx, new Rect(0, 0, 100, 50)); // move, same size
+  driverWindow.commit(ctx, new Rect(10, 0, 100, 50)); // still the same size
+  driverWindow.commit(ctx, new Rect(10, 0, 100, 60)); // taller
 
-  assert.deepEqual(sizes.map(({ width, height }) => [width, height]), [
-    [120, 50],
-    [120, 60],
-  ]);
+  assert.equal(calls.length, 1);
+  assert.equal(calls[0], window);
 });
 
 function KWinDriverGrace(driver) {
