@@ -155,6 +155,16 @@ class KWinDriver implements IDriverContext {
   }>;
   private _started: boolean;
   private _disposed: boolean;
+  /* Last time any window was moved/resized with the mouse; see
+   * onWindowSizeCommitted. */
+  private _lastInteractiveMoveResize: number;
+  /* Set by a size commit, consumed once the layout pass settles; see
+   * onLayoutSettled. */
+  private _pointerCenterRequested: boolean;
+  /* A pointer move is already scheduled and will use whatever geometry is
+   * current when it runs. */
+  private _pointerCenterPending: boolean;
+  private _layoutPassActive: boolean;
 
   constructor(api: Api, config?: KWinConfig) {
     KWIN = api.kwin;
@@ -180,6 +190,10 @@ class KWinDriver implements IDriverContext {
     this._connections = [];
     this._started = false;
     this._disposed = false;
+    this._lastInteractiveMoveResize = 0;
+    this._pointerCenterRequested = false;
+    this._pointerCenterPending = false;
+    this._layoutPassActive = false;
     this._surfaceStore = new KWinSurfaceStore(this.workspace);
     this._isRegister = {
       state: false,
@@ -1645,6 +1659,56 @@ class KWinDriver implements IDriverContext {
      * https://bugs.kde.org/show_bug.cgi?id=463292
      */
   }
+  /* Grace period after a mouse move/resize during which size changes are
+   * treated as its aftermath (drop re-tile, final snap), not a reason to warp
+   * the pointer away from where the user just released it. */
+  private static readonly INTERACTIVE_POINTER_GRACE_MS = 500;
+  /* Delay between the settled layout and the move. The move goes through DBus
+   * and runs after the layout pass has returned either way; the delay only
+   * covers the window server applying the new geometry. */
+  private static readonly POINTER_CENTER_DELAY_MS = 30;
+
+  public onLayoutStart(): void {
+    this._layoutPassActive = true;
+  }
+
+  public onLayoutSettled(): void {
+    this._layoutPassActive = false;
+    if (!this._pointerCenterRequested) return;
+    this._pointerCenterRequested = false;
+    /* A move is already queued; it will read the geometry this pass just
+     * committed, so the second request needs no move of its own. */
+    if (this._pointerCenterPending) return;
+    this._pointerCenterPending = true;
+    this.setTimeout(() => {
+      this._pointerCenterPending = false;
+      if (!CONFIG.movePointerOnResize) return;
+      if (
+        getTime() - this._lastInteractiveMoveResize <
+        KWinDriver.INTERACTIVE_POINTER_GRACE_MS
+      )
+        return;
+      DBUS.moveMouseToFocus();
+    }, KWinDriver.POINTER_CENTER_DELAY_MS);
+  }
+
+  /* Called by the window wrapper right before it writes a new frame geometry,
+   * so the decision relies on the geometry this layout committed instead of
+   * waiting for KWin to report the applied size. */
+  public onWindowSizeCommitted(client: KwinWindow): void {
+    if (!CONFIG.movePointerOnResize) return;
+    if (!client.active || client.move || client.resize) return;
+    if (
+      getTime() - this._lastInteractiveMoveResize <
+      KWinDriver.INTERACTIVE_POINTER_GRACE_MS
+    )
+      return;
+    this._pointerCenterRequested = true;
+    /* Commits made outside a layout pass (e.g. a floating-window resize
+     * shortcut) have no arrange to settle them. */
+    if (!this._layoutPassActive) this.onLayoutSettled();
+  }
+
   private _bindWindowEvents(window: WindowClass, client: KwinWindow) {
     let moving = false;
     let resizing = false;
@@ -1740,6 +1804,7 @@ class KWinDriver implements IDriverContext {
         `window: caption:${client.caption} internalID:${client.internalId},interactiveMoveResizeStepped:${geometry}`,
         { winClass: [`${client.resourceClass}`] },
       );
+      this._lastInteractiveMoveResize = getTime();
       if (client.resize) return;
       this.control.onWindowDragging(
         this,
@@ -1796,6 +1861,7 @@ class KWinDriver implements IDriverContext {
         `Window: caption:${client.caption} internalId:${client.internalId}, moving:${moving}, resizing:${resizing}`,
         { winClass: [`${client.resourceClass}`] },
       );
+      this._lastInteractiveMoveResize = getTime();
       if (moving !== client.move) {
         moving = client.move;
         if (moving) {

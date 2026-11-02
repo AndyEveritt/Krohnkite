@@ -308,7 +308,14 @@ class DriverWindow implements IDriverWindow {
         geometry = this.adjustGeometry(geometry);
       }
       if (this.window.deleted) return;
-      this.window.frameGeometry = toQRect(geometry);
+      const nextFrame = toQRect(geometry);
+      const currentFrame = this.window.frameGeometry;
+      if (
+        nextFrame.width !== currentFrame.width ||
+        nextFrame.height !== currentFrame.height
+      )
+        ctx.onWindowSizeCommitted(this.window);
+      this.window.frameGeometry = nextFrame;
       if (this._movePointerToCenter.isMove) {
         this._movePointerToCenter.isMove = false;
         if (CONFIG.movePointerOnFocus) {
