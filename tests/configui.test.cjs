@@ -72,7 +72,11 @@ test(`${KEY} suppresses the automatic focus warp`, () => {
     'utf8',
   );
 
-  /* Presence check only: the option must negate the automatic pointer warp,
-   * otherwise it would have no effect. */
-  assert.match(driver, /!CONFIG\.movePointerOnFocusShortcutsOnly/);
+  /* Presence check only: the shared focus funnel must drop a focus change
+   * that did not come from a shortcut, otherwise the option would have no
+   * effect. */
+  assert.match(
+    driver,
+    /CONFIG\.movePointerOnFocusShortcutsOnly && !byShortcut/,
+  );
 });

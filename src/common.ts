@@ -179,7 +179,6 @@ interface IDriverWindow {
     windowLayer?: WindowLayer,
   ): void;
   updateSrfTime(srfId: string): void;
-  moveMouseToFocus(): void;
   visible(srf: ISurface): boolean;
   dispose(): void;
   setMinimizedByScript(minimized: boolean): void;
@@ -218,7 +217,6 @@ interface IWindowClass {
   setDockTemplate(template: Dock): void;
   commit(ctx: IDriverContext, noBorders?: boolean): void;
   forceSetGeometry(ctx: IDriverContext, geometry: Rect): void;
-  moveMouseToFocus(): void;
   visible(srf: ISurface): boolean;
   isAlive(): boolean;
 }
@@ -290,6 +288,10 @@ interface IDriverContext {
   onLayoutSettled(): void;
   /* The driver wrote a new frame geometry for this window. */
   onWindowSizeCommitted(client: KwinWindow): void;
+  /* Focus moved as part of a Krohnkite action; the move happens once the
+   * layout settles, and `byShortcut` tells a shortcut apart from focus KWin
+   * granted on its own (mouse, newly opened window). */
+  requestPointerOnFocus(target: PointerTarget, byShortcut: boolean): void;
   setTimeout(func: () => void, timeout: number): void;
   showNotification(text: string): void;
   showLayoutOSD(): void;

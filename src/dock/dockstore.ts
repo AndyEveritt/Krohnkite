@@ -517,9 +517,6 @@ class DockStore implements IDockStore {
         }
         break;
     }
-    if (CONFIG.movePointerOnFocus && result) {
-      window.moveMouseToFocus();
-    }
     return result;
   }
 

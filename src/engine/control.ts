@@ -474,9 +474,7 @@ class TilingController {
       this.engine.handleLayoutShortcut(ctx, action, reason) ||
       this.engine.handleTiledWinShortcut(ctx, window, action, reason)
     ) {
-      if (CONFIG.movePointerOnFocus) {
-        window?.moveMouseToFocus();
-      }
+      if (window) ctx.requestPointerOnFocus("window", true);
       return;
     }
     switch (action) {
@@ -568,9 +566,6 @@ class TilingController {
     }
     if (isArrangeNeeded) {
       this.engine.arrange(ctx, reason, `${getMethodName()}:shortcut=${action}`);
-    }
-    if (CONFIG.movePointerOnFocus) {
-      window?.moveMouseToFocus();
     }
   }
 }

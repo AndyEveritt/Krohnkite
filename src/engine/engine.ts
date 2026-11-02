@@ -963,9 +963,7 @@ class TilingEngine {
     if (window === null) {
       const tiles = this.windows.getVisibleTiles(ctx.currentSurface);
       if (tiles.length > 1) ctx.currentWindow = tiles[0];
-      if (CONFIG.movePointerOnFocus) {
-        DBUS.moveMouseToFocus();
-      }
+      ctx.requestPointerOnFocus("window", true);
       return;
     }
 
@@ -976,9 +974,7 @@ class TilingEngine {
     if (!window || idx < 0) {
       /* unmanaged window -> focus master */
       ctx.currentWindow = visibles[0];
-      if (CONFIG.movePointerOnFocus) {
-        DBUS.moveMouseToFocus();
-      }
+      ctx.requestPointerOnFocus("window", true);
       return;
     }
 
@@ -986,9 +982,7 @@ class TilingEngine {
     const newIndex = (idx + (step % num) + num) % num;
 
     ctx.currentWindow = visibles[newIndex];
-    if (CONFIG.movePointerOnFocus) {
-      DBUS.moveMouseToFocus();
-    }
+    ctx.requestPointerOnFocus("window", true);
   }
 
   /**
@@ -1000,9 +994,7 @@ class TilingEngine {
       return ctx.focusSpecial(dir);
     }
     if (ctx.focusNeighborWindow(dir, winTypes)) {
-      if (CONFIG.movePointerOnFocus) {
-        DBUS.moveMouseToFocus();
-      }
+      ctx.requestPointerOnFocus("window", true);
       return false;
     }
     if (
@@ -1011,9 +1003,7 @@ class TilingEngine {
     ) {
       const result = ctx.focusOutput(null, dir, winTypes);
       if (result) {
-        if (CONFIG.movePointerOnFocus) {
-          DBUS.moveMouseToCenter();
-        }
+        ctx.requestPointerOnFocus("screen", true);
         return false;
       }
     }
@@ -1198,9 +1188,7 @@ class TilingEngine {
     if (y < srfRect.y) y = srfRect.y;
     else if (y + geometry.height > srfRect.maxY)
       y = srfRect.maxY - geometry.height;
-    if (CONFIG.movePointerOnFocus) {
-      window.moveMouseToFocus();
-    }
+    ctx.requestPointerOnFocus("window", true);
     window.forceSetGeometry(
       ctx,
       new Rect(x, y, geometry.width, geometry.height),
@@ -1213,9 +1201,7 @@ class TilingEngine {
       /* if no current window, select the first tile. */
       const tiles = this.windows.getVisibleTiles(ctx.currentSurface);
       if (tiles.length > 0) ctx.currentWindow = tiles[0];
-      if (CONFIG.movePointerOnFocus) {
-        DBUS.moveMouseToFocus();
-      }
+      ctx.requestPointerOnFocus("window", true);
       return false;
     }
 
@@ -1315,7 +1301,7 @@ class TilingEngine {
     const master = this.windows.surfaceMaster(window);
     if (master === null) return;
     ctx.currentWindow = master;
-    if (CONFIG.movePointerOnFocus) DBUS.moveMouseToFocus();
+    ctx.requestPointerOnFocus("window", true);
   }
 
   /**

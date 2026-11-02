@@ -10,6 +10,9 @@ type PartialWithRequired<T, K extends keyof T> = Partial<T> &
   Required<Pick<T, K>>;
 type percentType = number;
 type Direction = "up" | "down" | "left" | "right";
+/* Where the pointer should land when Krohnkite moves it: the center of the
+ * active window or the center of the active screen. */
+type PointerTarget = "window" | "screen";
 // TODO: DELETE Position type
 type Position = "left" | "middle" | "right" | "upper" | "bottom" | "single";
 function getOppositeDirection(direction: Direction): Direction {

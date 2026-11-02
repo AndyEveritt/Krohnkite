@@ -43,7 +43,7 @@ function setup(config = {}) {
   const driver = vm.runInContext(`${transpile('src/driver/kwindriver.ts')}\n(() => {
     const driver = Object.create(KWinDriver.prototype);
     driver._lastInteractiveMoveResize = 0;
-    driver._pointerCenterRequested = false;
+    driver._pointerRequest = null;
     driver._pointerCenterPending = false;
     driver._layoutPassActive = false;
     return driver;

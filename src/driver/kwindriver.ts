@@ -158,10 +158,12 @@ class KWinDriver implements IDriverContext {
   /* Last time any window was moved/resized with the mouse; see
    * onWindowSizeCommitted. */
   private _lastInteractiveMoveResize: number;
-  /* Set by a size commit, consumed once the layout pass settles; see
-   * onLayoutSettled. */
-  private _pointerCenterRequested: boolean;
-  /* A pointer move is already scheduled and will use whatever geometry is
+  /* Pending pointer move; see onLayoutSettled. */
+  private _pointerRequest: {
+    target: PointerTarget;
+    reason: "focus" | "resize";
+  } | null;
+  /* A pointer move is already scheduled and will use whatever request is
    * current when it runs. */
   private _pointerCenterPending: boolean;
   private _layoutPassActive: boolean;
@@ -191,7 +193,7 @@ class KWinDriver implements IDriverContext {
     this._started = false;
     this._disposed = false;
     this._lastInteractiveMoveResize = 0;
-    this._pointerCenterRequested = false;
+    this._pointerRequest = null;
     this._pointerCenterPending = false;
     this._layoutPassActive = false;
     this._surfaceStore = new KWinSurfaceStore(this.workspace);
@@ -385,9 +387,7 @@ class KWinDriver implements IDriverContext {
         }
         idx = idx < screens.length - 1 ? idx + 1 : 0;
         this._makeActiveScreen(screens[idx]);
-        if (CONFIG.movePointerOnFocus) {
-          DBUS.moveMouseToCenter();
-        }
+        this.requestPointerOnFocus("screen", true);
         return false;
       }
       case "down": {
@@ -402,17 +402,13 @@ class KWinDriver implements IDriverContext {
         let idx = windows.indexOf(window);
         if (idx < 0) {
           this.workspace.activeWindow = windows[0];
-          if (CONFIG.movePointerOnFocus) {
-            DBUS.moveMouseToFocus();
-          }
+          this.requestPointerOnFocus("window", true);
           return false;
         }
         if (windows.length === 1) return false;
         idx = idx < windows.length - 1 ? idx + 1 : 0;
         this.workspace.activeWindow = windows[idx];
-        if (CONFIG.movePointerOnFocus) {
-          DBUS.moveMouseToFocus();
-        }
+        this.requestPointerOnFocus("window", true);
         return false;
       }
       case "right":
@@ -464,9 +460,7 @@ class KWinDriver implements IDriverContext {
       direction,
       winTypes,
     );
-    if (CONFIG.movePointerOnFocus) {
-      DBUS.moveMouseToCenter();
-    }
+    this.requestPointerOnFocus("screen", true);
     return result;
   }
   public getNeighborOutput(
@@ -1590,12 +1584,7 @@ class KWinDriver implements IDriverContext {
       if (client.active && window !== null) {
         this.control.onWindowFocused(this, window);
         /* A new window takes focus without any Krohnkite shortcut. */
-        if (
-          CONFIG.movePointerOnFocus &&
-          !CONFIG.movePointerOnFocusShortcutsOnly
-        ) {
-          DBUS.moveMouseToCenter(20);
-        }
+        this.requestPointerOnFocus("screen", false);
       }
     });
 
@@ -1674,22 +1663,45 @@ class KWinDriver implements IDriverContext {
 
   public onLayoutSettled(): void {
     this._layoutPassActive = false;
-    if (!this._pointerCenterRequested) return;
-    this._pointerCenterRequested = false;
-    /* A move is already queued; it will read the geometry this pass just
-     * committed, so the second request needs no move of its own. */
+    if (this._pointerRequest === null) return;
+    /* A move is already queued; it reads whatever request is current when it
+     * runs, so a request from a later pass needs no move of its own. */
     if (this._pointerCenterPending) return;
     this._pointerCenterPending = true;
     this.setTimeout(() => {
       this._pointerCenterPending = false;
-      if (!CONFIG.movePointerOnResize) return;
+      const request = this._pointerRequest;
+      this._pointerRequest = null;
+      if (request === null) return;
+      if (request.reason === "focus" && !CONFIG.movePointerOnFocus) return;
+      if (request.reason === "resize" && !CONFIG.movePointerOnResize) return;
+      /* Only a resize is the aftermath of a mouse move/resize; a focus
+       * shortcut right after one still has to move the pointer. */
       if (
+        request.reason === "resize" &&
         getTime() - this._lastInteractiveMoveResize <
-        KWinDriver.INTERACTIVE_POINTER_GRACE_MS
+          KWinDriver.INTERACTIVE_POINTER_GRACE_MS
       )
         return;
-      DBUS.moveMouseToFocus();
+      if (request.target === "screen") DBUS.moveMouseToCenter();
+      else DBUS.moveMouseToFocus();
     }, KWinDriver.POINTER_CENTER_DELAY_MS);
+  }
+
+  /* Focus changes only state the intent; the move itself happens once per
+   * settled layout, next to the resize-driven one. A focus request keeps
+   * priority over a resize request from the same pass, because it knows
+   * whether the pointer belongs on a window or on a screen. */
+  public requestPointerOnFocus(
+    target: PointerTarget,
+    byShortcut: boolean,
+  ): void {
+    if (!CONFIG.movePointerOnFocus) return;
+    if (CONFIG.movePointerOnFocusShortcutsOnly && !byShortcut) return;
+    this._pointerRequest = { target, reason: "focus" };
+    /* Focus changes that do not rearrange (e.g. FocusNext) have no pass to
+     * settle them. */
+    if (!this._layoutPassActive) this.onLayoutSettled();
   }
 
   /* Called by the window wrapper right before it writes a new frame geometry,
@@ -1703,7 +1715,8 @@ class KWinDriver implements IDriverContext {
       KWinDriver.INTERACTIVE_POINTER_GRACE_MS
     )
       return;
-    this._pointerCenterRequested = true;
+    if (this._pointerRequest?.reason !== "focus")
+      this._pointerRequest = { target: "window", reason: "resize" };
     /* Commits made outside a layout pass (e.g. a floating-window resize
      * shortcut) have no arrange to settle them. */
     if (!this._layoutPassActive) this.onLayoutSettled();
