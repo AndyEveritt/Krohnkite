@@ -157,7 +157,8 @@ class KWinConfig implements IConfig {
   public srfToScreenOrder: Direction[];
   public srfExceededToVDesktop: boolean;
   public srfToVDesktopOrder: Direction[];
-  public srfIsMoveOldestWindows: boolean;
+  public srfOvercapacityEviction: OvercapacityEvictionPolicy;
+  public srfOvercapacityMode: OvercapacityMode;
   public srfDefineCfg: string[];
   public srfDefaultConfig: string[];
   /*
@@ -321,7 +322,7 @@ class KWinConfig implements IConfig {
     //***************************
     //****************** Surfaces
     //***************************
-    this.srfExceededToScreen = KWIN.readConfig("srfExceededToScreen", true);
+    this.srfExceededToScreen = KWIN.readConfig("srfExceededToScreen", false);
     // Define the config mapping (cleaner and easier to maintain)
     const directionConfigs: {
       direction: Direction;
@@ -364,7 +365,10 @@ class KWinConfig implements IConfig {
       .sort((a, b) => a.order - b.order) // ascending order
       .map((el) => el.direction); // extract direction strings
 
-    this.srfExceededToVDesktop = KWIN.readConfig("srfExceededToVDesktop", true);
+    this.srfExceededToVDesktop = KWIN.readConfig(
+      "srfExceededToVDesktop",
+      false,
+    );
     this.srfToVDesktopOrder = directionConfigs
       .map(({ direction, vDesktopKey: key, defaultOrder }) => ({
         direction,
@@ -373,10 +377,14 @@ class KWinConfig implements IConfig {
       .filter((el) => el.order !== 0) // exclude if order is 0
       .sort((a, b) => a.order - b.order) // ascending order
       .map((el) => el.direction); // extract direction strings
-    this.srfIsMoveOldestWindows = KWIN.readConfig(
-      "srfIsMoveOldestWindows",
-      false,
-    );
+    this.srfOvercapacityEviction =
+      Number(KWIN.readConfig("srfOvercapacityEviction", 1)) === 1
+        ? "oldest"
+        : "lastFocused";
+    this.srfOvercapacityMode =
+      Number(KWIN.readConfig("srfOvercapacityMode", 1)) === 0
+        ? "float"
+        : "minimize";
     this.srfDefineCfg = separate(KWIN.readConfig("srfDefineCfg", ""), "\n");
     this.srfDefaultConfig = separate(
       KWIN.readConfig("srfDefaultConfig", ""),

@@ -263,6 +263,10 @@ class KWinDriver implements IDriverContext {
       client.width * client.height > 10
     ) {
       const window = this.windowMap.add(client);
+      /* Record focus before arranging: a new active window must be a valid
+       * "last focused" candidate for the overcapacity selection that runs
+       * inside onWindowAdded(), otherwise its focusTime is still 0. */
+      if (client.active) this.control.onWindowFocused(this, window);
       if (client.maximizeMode > 0) {
         (window.window as DriverWindow).maximized = true;
         // it can set maximized to false when window start already with maximized flag

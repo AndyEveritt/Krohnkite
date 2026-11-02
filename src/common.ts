@@ -47,7 +47,8 @@ interface IConfig {
   srfToScreenOrder: Direction[];
   srfExceededToVDesktop: boolean;
   srfToVDesktopOrder: Direction[];
-  srfIsMoveOldestWindows: boolean;
+  srfOvercapacityEviction: OvercapacityEvictionPolicy;
+  srfOvercapacityMode: OvercapacityMode;
   srfDefineCfg: string[];
   srfDefaultConfig: string[];
 

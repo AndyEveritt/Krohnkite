@@ -120,6 +120,9 @@ class TilingEngine {
   public relocationWindows: RelocationWindows;
   public makeWinActive: WindowClass | null;
   public arrangeProcessId: number | null;
+  /* Windows hidden by the overcapacity logic, in minimization order. The
+   * array is used as a LIFO stack when space becomes available. */
+  private _overCapacityMinimized: WindowClass[];
   private _defaultGaps: DefaultGapsCfg | null;
   private _gapsSurfacesCfg: SurfaceCfg<IGaps>[];
   private _arranging: boolean;
@@ -134,6 +137,7 @@ class TilingEngine {
     this.relocationWindows = new RelocationWindows();
     this.arrangeProcessId = null;
     this.makeWinActive = null;
+    this._overCapacityMinimized = [];
     this._defaultGaps = null;
     this._gapsSurfacesCfg = [];
     this._arranging = false;
@@ -384,6 +388,11 @@ class TilingEngine {
       );
     }
     const surfaces = ctx.currentSurfaces;
+    /* A surface may have gained free slots since the last pass (a window was
+     * closed or moved away, capacity was raised, or the layout changed).
+     * Restore hidden windows before rebuilding the screen data so they take
+     * part in the layout of this pass. */
+    surfaces.forEach((srf) => this._restoreOverCapacityMinimized(srf));
     /* Surfaces vacated by a window that moved to another desktop as part of
      * a desktop switch (e.g. KWin's "Window One Desktop to the ..."). By the
      * time the event reaches us, the source desktop is no longer current, so
@@ -605,6 +614,88 @@ class TilingEngine {
     }
   }
 
+  private _isMinimizeOvercapacityMode(): boolean {
+    return isMinimizeOvercapacityMode(
+      CONFIG.srfOvercapacityMode,
+      KWINCONFIG.preventMinimize,
+    );
+  }
+
+  /**
+   * Hide an overcapacity window instead of floating it and remember it for
+   * later restoration.
+   */
+  private _minimizeOvercapacityWindow(window: WindowClass) {
+    if (this._overCapacityMinimized.indexOf(window) === -1)
+      this._overCapacityMinimized.push(window);
+    window.window.setMinimizedByScript(true);
+  }
+
+  private _handleOverCapacityWindows(screenData: ScreenData) {
+    if (!this._isMinimizeOvercapacityMode()) {
+      screenData.overCapacity.forEach((win) => win.floatInPlace());
+      return;
+    }
+
+    screenData.overCapacity.forEach((win) => {
+      this._minimizeOvercapacityWindow(win);
+      /* `visibles` was snapshotted before the window was hidden. Keep the
+       * final commit pass away from a window that is no longer on screen. */
+      const idx = screenData.visibles.indexOf(win);
+      if (idx >= 0) screenData.visibles.splice(idx, 1);
+    });
+  }
+
+  /**
+   * Restore windows hidden by the overcapacity logic when their surface has
+   * free capacity again.
+   *
+   * Minimize mode restores just enough windows to fill the free slots and
+   * does so in LIFO order: the most recently hidden window comes back first.
+   * In float mode (or when minimizing is disabled) every hidden window is
+   * restored so the normal overcapacity logic can decide what to do with it.
+   */
+  private _restoreOverCapacityMinimized(srf: ISurface) {
+    if (this._overCapacityMinimized.length === 0) return;
+
+    this._overCapacityMinimized = this._overCapacityMinimized.filter(
+      (win) =>
+        win.isAlive() &&
+        this.windows.indexOf(win) >= 0 &&
+        win.minimized,
+    );
+    if (this._overCapacityMinimized.length === 0) return;
+
+    const restoreAll = !this._isMinimizeOvercapacityMode();
+    let freeSlots: number | null = null;
+    if (!restoreAll) {
+      const layout = this.layouts.getCurrentLayout(srf);
+      const capacity = resolveSurfaceCapacity(layout.capacity, srf.capacity);
+      freeSlots =
+        capacity === null
+          ? null
+          : Math.max(
+              0,
+              capacity - this.windows.getVisibleTileables(srf).length,
+            );
+      if (freeSlots !== null && freeSlots <= 0) return;
+    }
+
+    const toRestore = selectRestorableWindows(
+      this._overCapacityMinimized,
+      srf.id,
+      freeSlots,
+      restoreAll,
+    );
+    if (toRestore.length === 0) return;
+
+    const restored = new Set(toRestore);
+    this._overCapacityMinimized = this._overCapacityMinimized.filter(
+      (win) => !restored.has(win),
+    );
+    toRestore.forEach((win) => win.window.setMinimizedByScript(false));
+  }
+
   private getTileables(srf: ISurface): ScreenData {
     let visibles = this.windows.getVisibleWindows(srf);
     visibles.forEach((window) => {
@@ -651,41 +742,16 @@ class TilingEngine {
       }
       tileables = this.windows.getVisibleTileables(srf);
     }
-    let layout = this.layouts.getCurrentLayout(srf);
+    const layout = this.layouts.getCurrentLayout(srf);
 
-    let capacity: number | null;
-    let layoutCap = layout.capacity === undefined ? null : layout.capacity;
-    if (layoutCap === null && srf.capacity === null) {
-      capacity = null;
-    } else if (layoutCap === null || srf.capacity === null) {
-      capacity = layoutCap || srf.capacity;
-    } else {
-      capacity = Math.min(layoutCap, srf.capacity);
-    }
-    let overCapacity: WindowClass[];
-    if (capacity !== null && tileables.length > capacity) {
-      const excess = tileables.length - capacity;
-      const sorted = [...tileables].sort(
-        (a, b) => a.window.srfTime - b.window.srfTime,
-      );
-
-      if (!CONFIG.srfIsMoveOldestWindows) {
-        // Move newest: last `excess` from sorted copy
-        overCapacity = sorted.slice(-excess);
-      } else {
-        // Move oldest: first `excess` from sorted copy
-        overCapacity = sorted.slice(0, excess);
-      }
-      // Remove overCapacity from original tileables in-place
-      const toRemove = new Set(overCapacity);
-      for (let i = tileables.length - 1; i >= 0; i--) {
-        if (toRemove.has(tileables[i])) tileables.splice(i, 1);
-      }
-      capacity = 0;
-    } else {
-      overCapacity = [];
-      capacity = capacity === null ? null : capacity - tileables.length;
-    }
+    const selection = selectOverCapacityWindows(
+      tileables,
+      resolveSurfaceCapacity(layout.capacity, srf.capacity),
+      CONFIG.srfOvercapacityEviction,
+    );
+    tileables = selection.tileables;
+    const overCapacity = selection.overCapacity;
+    const freeCapacity = selection.freeSlots;
     let screenData = {
       visibles: visibles,
       tileables: tileables,
@@ -693,7 +759,7 @@ class TilingEngine {
       workingArea: this.docks.render(srf, visibles, srf.workingArea.clone()),
       srf: srf,
       overCapacity: overCapacity,
-      capacity: capacity,
+      capacity: freeCapacity,
       awaitToMove: [],
     };
 
@@ -706,7 +772,7 @@ class TilingEngine {
         screenData.workingArea
       }, layout: ${
         screenData.layout
-      },capacity: ${capacity}, overCapacity: ${screenData.overCapacity.map(
+      },capacity: ${freeCapacity}, overCapacity: ${screenData.overCapacity.map(
         (win) => win.window.windowClassName,
       )}`,
     );
@@ -728,9 +794,7 @@ class TilingEngine {
       "arrangeScreen",
       `output:processID: ${outputName}:${processID}`,
     );
-    screenData.overCapacity.forEach((win) => {
-      win.floatInPlace();
-    });
+    this._handleOverCapacityWindows(screenData);
     const gaps = this.getGaps(screenData.srf);
 
     let tilingArea: Rect;
@@ -951,6 +1015,9 @@ class TilingEngine {
       this.docks.remove(window);
     }
     this.windows.remove(window);
+    this._overCapacityMinimized = this._overCapacityMinimized.filter(
+      (win) => win !== window,
+    );
   }
 
   /**

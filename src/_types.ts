@@ -118,7 +118,8 @@ const ConfigVariables = {
   srfToVDesktopOrderTop: "srfToVDesktopOrderTop",
   srfToVDesktopOrderRight: "srfToVDesktopOrderRight",
   srfToVDesktopOrderBottom: "srfToVDesktopOrderBottom",
-  srfIsMoveOldestWindows: "srfIsMoveOldestWindows",
+  srfOvercapacityEviction: "srfOvercapacityEviction",
+  srfOvercapacityMode: "srfOvercapacityMode",
   srfDefineCfg: "srfDefineCfg",
   srfDefaultConfig: "srfDefaultConfig",
   /* Geometry */
