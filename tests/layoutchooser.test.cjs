@@ -64,6 +64,9 @@ test('chooser receives enabled layouts and the current layout without a timeout'
     layoutChooserDialog: {
       showLayouts: (...args) => calls.push(args),
     },
+    DBUS: {
+      moveMouseToScreenCenter: () => {},
+    },
   });
   vm.runInContext(`${transpile('src/driver/kwindriver.ts')}\n(() => {
     const driver = Object.create(KWinDriver.prototype);
@@ -82,6 +85,103 @@ test('chooser receives enabled layouts and the current layout without a timeout'
       'SpiralLayout',
     ],
   ]);
+});
+
+test('opening the chooser centers the pointer on the screen after showing it', () => {
+  const events = [];
+  const context = vm.createContext({
+    CONFIG: {
+      notificationDuration: 0,
+      layoutOrder: ['TileLayout'],
+    },
+    layoutChooserDialog: {
+      showLayouts: () => events.push('showLayouts'),
+    },
+    DBUS: {
+      moveMouseToCenter: () => events.push('moveMouseToCenter'),
+      moveMouseToFocus: () => events.push('moveMouseToFocus'),
+      moveMouseToScreenCenter: (delay) =>
+        events.push(['moveMouseToScreenCenter', delay]),
+    },
+  });
+  vm.runInContext(`${transpile('src/driver/kwindriver.ts')}\n(() => {
+    const driver = Object.create(KWinDriver.prototype);
+    Object.defineProperty(driver, 'currentSurface', { value: {} });
+    driver.engine = {
+      layouts: { getCurrentLayout: () => ({ classID: 'TileLayout' }) },
+    };
+    driver.showLayoutChooser();
+  })()`, context);
+  assert.equal(events[0], 'showLayouts');
+  assert.equal(events[1][0], 'moveMouseToScreenCenter');
+  assert.equal(typeof events[1][1], 'number');
+  assert.equal(events.length, 2);
+});
+
+test('an empty layout list neither opens the chooser nor moves the pointer', () => {
+  const events = [];
+  const context = vm.createContext({
+    CONFIG: { notificationDuration: 0, layoutOrder: ['DisabledLayout'] },
+    layoutChooserDialog: { showLayouts: () => events.push('showLayouts') },
+    DBUS: { moveMouseToScreenCenter: () => events.push('moveMouseToScreenCenter') },
+  });
+  vm.runInContext(`${transpile('src/driver/kwindriver.ts')}\n(() => {
+    const driver = Object.create(KWinDriver.prototype);
+    Object.defineProperty(driver, 'currentSurface', { value: {} });
+    driver.engine = {};
+    driver.showLayoutChooser();
+  })()`, context);
+  assert.deepEqual(events, []);
+});
+
+/* Minimal DBusCall stand-in: `call()` reports itself and then emits `finished`,
+ * which is how KWin's DBusCall behaves. */
+function dbusCallStub(log, name) {
+  return {
+    finished: {
+      handlers: [],
+      connect(fn) {
+        this.handlers.push(fn);
+      },
+      disconnect() {},
+    },
+    failed: {
+      connect() {},
+      disconnect() {},
+    },
+    call() {
+      log.push(['call', name]);
+      for (const handler of this.finished.handlers.slice()) handler();
+    },
+  };
+}
+
+test('moving the pointer to the screen center is not chained to the focused window', () => {
+  const log = [];
+  const context = vm.createContext({
+    KWinSetTimeout: () => {},
+    info: () => {},
+    warning: () => {},
+    LOG: undefined,
+  });
+  vm.runInContext(transpile('src/driver/kwindbus.ts'), context);
+  context.__qml = {
+    getDBusExists: () => dbusCallStub(log, 'exists'),
+    getDBusMoveMouseToFocus: () => dbusCallStub(log, 'focus'),
+    getDBusMoveMouseToCenter: () => dbusCallStub(log, 'center'),
+    getDBusMoveMouseToScreenCenter: () => dbusCallStub(log, 'screenCenter'),
+    getDBusVirtualKeyboardVisible: () => dbusCallStub(log, 'vk'),
+  };
+  const manager = vm.runInContext('new DBusManager(__qml)', context);
+
+  /* The old center path deliberately falls through to the focused window. */
+  log.splice(0);
+  manager.moveMouseToCenter();
+  assert.deepEqual(log, [['call', 'center'], ['call', 'focus']]);
+
+  log.splice(0);
+  manager.moveMouseToScreenCenter();
+  assert.deepEqual(log, [['call', 'screenCenter']]);
 });
 
 test('chooser selection ignores disabled layouts and the current layout', () => {

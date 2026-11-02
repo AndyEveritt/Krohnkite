@@ -10,6 +10,7 @@ class DBusManager implements IDBus {
   private _existsCall: DBusCall;
   private _dBusMoveMouseToFocus: DBusCall;
   private _dBusMoveMouseToCenter: DBusCall;
+  private _dBusMoveMouseToScreenCenter: DBusCall;
   private _vkVisibleCall: DBusCall;
   private _vkCallbacks: Array<(isVisible: boolean) => void> = [];
   private _vkCallInFlight: boolean = false;
@@ -21,6 +22,8 @@ class DBusManager implements IDBus {
     try {
       this._dBusMoveMouseToFocus = dBusQml.getDBusMoveMouseToFocus();
       this._dBusMoveMouseToCenter = dBusQml.getDBusMoveMouseToCenter();
+      this._dBusMoveMouseToScreenCenter =
+        dBusQml.getDBusMoveMouseToScreenCenter();
       this._connect(
         this._dBusMoveMouseToCenter.finished,
         this.moveMouseToFocusCallback.bind(this),
@@ -60,6 +63,13 @@ class DBusManager implements IDBus {
     if (timeout !== undefined)
       this.setTimeout(this._dBusMoveMouseToCenter.call, timeout);
     else this._dBusMoveMouseToCenter.call();
+  }
+
+  public moveMouseToScreenCenter(timeout?: number) {
+    if (!this._isConnected) return;
+    if (timeout !== undefined)
+      this.setTimeout(this._dBusMoveMouseToScreenCenter.call, timeout);
+    else this._dBusMoveMouseToScreenCenter.call();
   }
 
   public moveMouseToFocus(timeout?: number) {

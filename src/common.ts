@@ -16,12 +16,14 @@ interface IDBusQml {
   getDBusExists(): DBusCall;
   getDBusMoveMouseToFocus(): DBusCall;
   getDBusMoveMouseToCenter(): DBusCall;
+  getDBusMoveMouseToScreenCenter(): DBusCall;
   getDBusVirtualKeyboardVisible(): DBusCall;
 }
 
 interface IDBus {
   moveMouseToFocus(timeout?: number): void;
   moveMouseToCenter(timeout?: number): void;
+  moveMouseToScreenCenter(timeout?: number): void;
   checkVirtualKeyboardVisible(callback: (isVisible: boolean) => void): void;
   dispose(): void;
 }

@@ -630,6 +630,11 @@ class KWinDriver implements IDriverContext {
       this.currentSurface,
     ).classID;
     layoutChooserDialog.showLayouts(entries, selected);
+    /* The chooser is centered on the active screen, so put the pointer on the
+     * same spot instead of leaving it wherever it was (possibly on another
+     * output). MoveMouseToCenter is a KWin global shortcut; the delay lets the
+     * dialog settle before the pointer lands on it. */
+    DBUS.moveMouseToScreenCenter(KWinDriver.POINTER_CENTER_DELAY_MS);
   }
   public selectLayoutFromOSD(id: string): void {
     if (CONFIG.layoutOrder.indexOf(id) === -1) return;
