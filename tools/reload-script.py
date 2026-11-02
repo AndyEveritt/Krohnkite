@@ -25,11 +25,23 @@ REQUIRED_FILES = ("contents/ui/main.qml", "contents/code/script.js", "metadata.j
 # login. This code tells the caller that nothing was done, as opposed to a
 # failure.
 SKIPPED_EXIT_CODE = 3
+# Qt 6's qdbus goes by different names: qdbus6 on Arch and openSUSE,
+# qdbus-qt6 on Fedora, and plain qdbus where Qt 6 is the only Qt installed.
+QDBUS_NAMES = ("qdbus6", "qdbus-qt6", "qdbus")
+
+
+def qdbus():
+    for name in QDBUS_NAMES:
+        if shutil.which(name):
+            return name
+    raise RuntimeError(
+        f"No qdbus found (tried {', '.join(QDBUS_NAMES)}); install Qt 6's qttools."
+    )
 
 
 def invoke(method, *args, path="/Scripting", interface=INTERFACE):
     return subprocess.run(
-        ["qdbus6", SERVICE, path, f"{interface}.{method}", *args],
+        [qdbus(), SERVICE, path, f"{interface}.{method}", *args],
         check=True, capture_output=True, text=True,
     ).stdout.strip()
 
@@ -239,7 +251,7 @@ def main():
              [str(cache / "<fresh-bundle>/contents/ui/main.qml"), PLUGIN]),
             ("/Scripting", INTERFACE, "start", []),
         ]:
-            print(shlex.join(["qdbus6", SERVICE, path, f"{interface}.{method}", *values]))
+            print(shlex.join([qdbus(), SERVICE, path, f"{interface}.{method}", *values]))
         return 0
     cache.mkdir(parents=True, exist_ok=True)
     # Pruning removes every bundle but the caller's own, so overlapping runs have
