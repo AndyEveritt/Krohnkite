@@ -404,3 +404,44 @@ test('the engine minimizes in minimize mode and restores via LIFO', () => {
   assert.match(engine, /_restoreOverCapacityMinimized\(srf\)/);
   assert.match(engine, /screenData\.overCapacity\.forEach\(\(win\) => win\.floatInPlace\(\)\)/);
 });
+
+test('ShowCurrentCapacity is wired as the RaiseSurfaceCapacity alter action', () => {
+  const types = fs.readFileSync(path.join(ROOT, 'src/_types.ts'), 'utf8');
+  const shortcuts = fs.readFileSync(
+    path.join(ROOT, 'src/driver/kwinshortcut.ts'),
+    'utf8',
+  );
+  const control = fs.readFileSync(
+    path.join(ROOT, 'src/engine/control.ts'),
+    'utf8',
+  );
+  const engine = fs.readFileSync(
+    path.join(ROOT, 'src/engine/engine.ts'),
+    'utf8',
+  );
+  const ui = fs.readFileSync(path.join(ROOT, 'res/config.ui'), 'utf8');
+
+  assert.match(types, /\bShowCurrentCapacity: "ShowCurrentCapacity"/);
+
+  const raiseShortcut = shortcuts.match(
+    /RaiseSurfaceCapacitySC:\s*\{[\s\S]*?\},/,
+  );
+  assert.ok(raiseShortcut, 'RaiseSurfaceCapacitySC entry missing');
+  assert.match(
+    raiseShortcut[0],
+    /defaultRegisterAction: KrohnkiteAction\.ShowCurrentCapacity/,
+  );
+
+  assert.match(control, /case KrohnkiteAction\.ShowCurrentCapacity:/);
+  assert.match(control, /getCurrentSurfaceCapacity\(ctx\)/);
+  assert.match(
+    engine,
+    /public getCurrentSurfaceCapacity\(ctx: IDriverContext\): number \| null/,
+  );
+
+  const actions = ui.match(
+    /<widget class="QComboBox" name="possibleActions">[\s\S]*?<\/widget>/,
+  );
+  assert.ok(actions, 'possibleActions combo missing');
+  assert.match(actions[0], /<string>ShowCurrentCapacity<\/string>/);
+});
