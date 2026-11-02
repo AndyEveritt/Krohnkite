@@ -190,6 +190,7 @@ class KWinConfig implements IConfig {
   public focusMoveScreensMeta: boolean;
   public focusMoveVDesktopsMeta: boolean;
   public movePointerOnFocus: boolean;
+  public movePointerOnFocusShortcutsOnly: boolean;
   public newWindowPosition: "last" | "first" | "second";
   /*
    * Rules
@@ -464,6 +465,10 @@ class KWinConfig implements IConfig {
       true,
     );
     this.movePointerOnFocus = KWIN.readConfig("movePointerOnFocus", false);
+    this.movePointerOnFocusShortcutsOnly = KWIN.readConfig(
+      "movePointerOnFocusShortcutsOnly",
+      false,
+    );
     this.newWindowPosition =
       (["last", "first", "second"] as const)[
         validateNumberWithDefault(

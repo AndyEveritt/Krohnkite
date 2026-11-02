@@ -1575,7 +1575,11 @@ class KWinDriver implements IDriverContext {
       const window = this.addWindow(client);
       if (client.active && window !== null) {
         this.control.onWindowFocused(this, window);
-        if (CONFIG.movePointerOnFocus) {
+        /* A new window takes focus without any Krohnkite shortcut. */
+        if (
+          CONFIG.movePointerOnFocus &&
+          !CONFIG.movePointerOnFocusShortcutsOnly
+        ) {
           DBUS.moveMouseToCenter(20);
         }
       }

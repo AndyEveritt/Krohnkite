@@ -74,6 +74,7 @@ interface IConfig {
   focusMoveScreensNormal: boolean;
   focusMoveVDesktopsNormal: boolean;
   movePointerOnFocus: boolean;
+  movePointerOnFocusShortcutsOnly: boolean;
   focusMetaCfg: WinTypes;
   focusMoveScreensMeta: boolean;
   focusMoveVDesktopsMeta: boolean;

@@ -369,6 +369,10 @@
       <label>Move mouse cursor to the center of a window/screen when it becomes focused</label>
       <default>false</default>
     </entry>
+    <entry name="movePointerOnFocusShortcutsOnly" type="Bool">
+      <label>Move the pointer on focus only when focus changes through a Krohnkite shortcut</label>
+      <default>false</default>
+    </entry>
 
     <entry name="newWindowPosition" type="Int">
         <label>The position every new window in the screen window array</label>

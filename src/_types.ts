@@ -143,6 +143,7 @@ const ConfigVariables = {
   focusMoveScreensMeta: "focusMoveScreensMeta",
   focusMoveVDesktopsMeta: "focusMoveVDesktopsMeta",
   movePointerOnFocus: "movePointerOnFocus",
+  movePointerOnFocusShortcutsOnly: "movePointerOnFocusShortcutsOnly",
   newWindowPosition: "newWindowPosition",
   /* Rules */
   ignoreClass: "ignoreClass",
