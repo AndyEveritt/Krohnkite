@@ -1361,6 +1361,18 @@ class TilingEngine {
   }
 
   /**
+   * Effective capacity of the current surface, combining the layout limit
+   * with the per-surface override.
+   */
+  public getCurrentSurfaceCapacity(ctx: IDriverContext): number | null {
+    const currentSurface = ctx.currentSurface;
+    return resolveSurfaceCapacity(
+      this.layouts.getCurrentLayout(currentSurface).capacity,
+      currentSurface.capacity,
+    );
+  }
+
+  /**
    * Toggle float mode of window.
    */
   public toggleFloat(window: WindowClass) {

@@ -309,6 +309,7 @@ const KrohnkiteAction = {
   RaiseSurfaceCapacity: "RaiseSurfaceCapacity",
   LowerSurfaceCapacity: "LowerSurfaceCapacity",
   ResetSurfaceCapacity: "ResetSurfaceCapacity",
+  ShowCurrentCapacity: "ShowCurrentCapacity",
 
   AlterRegister: "AlterRegister",
   ToggleRegister: "ToggleRegister",

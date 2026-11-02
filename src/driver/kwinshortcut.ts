@@ -111,7 +111,7 @@ const Shortcuts = {
   },
   RaiseSurfaceCapacitySC: {
     defaultAction: KrohnkiteAction.RaiseSurfaceCapacity,
-    defaultRegisterAction: null,
+    defaultRegisterAction: KrohnkiteAction.ShowCurrentCapacity,
   },
   LowerSurfaceCapacitySC: {
     defaultAction: KrohnkiteAction.LowerSurfaceCapacity,

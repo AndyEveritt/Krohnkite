@@ -563,6 +563,13 @@ class TilingController {
         );
         isArrangeNeeded = false;
         break;
+      case KrohnkiteAction.ShowCurrentCapacity:
+        currentCapacity = this.engine.getCurrentSurfaceCapacity(ctx);
+        ctx.showNotification(
+          `Surface capacity: ${currentCapacity !== null ? currentCapacity : "unlimited"}`,
+        );
+        isArrangeNeeded = false;
+        break;
     }
     if (isArrangeNeeded) {
       this.engine.arrange(ctx, reason, `${getMethodName()}:shortcut=${action}`);
