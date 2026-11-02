@@ -254,6 +254,8 @@ class KWinConfig implements IConfig {
   public optVKeyboardSupport: boolean;
   public keepTilingOnDrag: boolean;
   public dragPreview: boolean;
+  public moveFlash: boolean;
+  public moveFlashDuration: number;
   public preventMinimize: boolean;
   public preventProtrusion: boolean;
   public floatSkipPager: boolean;
@@ -308,6 +310,7 @@ class KWinConfig implements IConfig {
       [StairLayout, true],
       [BinaryTreeLayout, true],
       [CascadeLayout, true],
+      [ManualTilingLayout, true],
     ] as Array<[ILayoutClass, boolean]>;
     const sortedLayouts: ISortedLayouts[] =
       KWinConfig.getSortedLayouts(layoutsList);
@@ -665,6 +668,14 @@ class KWinConfig implements IConfig {
 
     this.keepTilingOnDrag = KWIN.readConfig("keepTilingOnDrag", true);
     this.dragPreview = KWIN.readConfig("dragPreview", true);
+    this.moveFlash = KWIN.readConfig("moveFlash", true);
+    this.moveFlashDuration = validateNumberWithDefault(
+      KWIN.readConfig("moveFlashDuration", 600),
+      600,
+      "moveFlashDuration",
+      100,
+      5000,
+    );
     this.preventMinimize = KWIN.readConfig("preventMinimize", false);
     if (this.preventMinimize && this.monocleMinimizeRest) {
       this.preventMinimize = false;
@@ -804,7 +815,7 @@ class KWinConfig implements IConfig {
       let validatedOrder = validateNumber(
         KWIN.readConfig(orderConfigKey, idx + 1),
         1,
-        12,
+        layoutsList.length,
       );
       if (validatedOrder instanceof Err) {
         validatedOrder = idx + 1;

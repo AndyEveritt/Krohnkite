@@ -136,6 +136,8 @@ interface IConfig {
   optVKeyboardSupport: boolean;
   keepTilingOnDrag: boolean;
   dragPreview: boolean;
+  moveFlash: boolean;
+  moveFlashDuration: number;
   preventMinimize: boolean;
   preventProtrusion: boolean;
   floatSkipPager: boolean;
@@ -289,6 +291,16 @@ interface IDriverContext {
   showLayoutShortcut(id: string): void;
   showDragPreview(area: Rect, rect: Rect): void;
   hideDragPreview(): void;
+  /** Replace everything the layouts draw over the tiles. */
+  drawOverlays(overlays: ILayoutOverlays): void;
+  /** Briefly highlight an area, for CONFIG.moveFlashDuration. */
+  flashArea(rect: Rect): void;
+  /**
+   * Send windows to a surface's output and virtual desktop, all to the same
+   * place: unlike the by-direction moves, the destination is not re-derived
+   * from each window's own position.
+   */
+  moveWindowsToSurface(windows: WindowClass[], srf: ISurface): void;
   shortcutSequencesArrange(): void;
 }
 
@@ -318,9 +330,49 @@ interface ILayout {
     gap: number,
   ): void;
   handleShortcut?(ctx: EngineContext, action: KrohnkiteAction): boolean;
+  /**
+   * Called on every step of a drag. A layout may re-tile under the cursor
+   * (setting `dragAction.result.isArrangeNeeded`), or only point
+   * `dragAction.previewRect` at where the window would land and do the work
+   * in `drop`.
+   */
   drag?(ctx: EngineContext, dragAction: DragAction): void;
+  /**
+   * Called once when a drag that reached `drag` ends, before the engine
+   * arranges. Not called when the drag is abandoned.
+   */
+  drop?(ctx: EngineContext, dragAction: DragAction): void;
+  /** A window has gained the focus, by any means. */
+  focusChanged?(windowId: string): void;
+  /**
+   * Where to flash after `window` has been moved or dropped, once the
+   * arrange has settled; null for nowhere. Without it, the window's own tile.
+   */
+  flashArea?(ctx: EngineContext, window: WindowClass): Rect | null;
+  /**
+   * What the layout draws over its tiles, as of its last `apply`. Must not
+   * change any state: the engine calls it after every arrange and on every
+   * focus change, and draws the result only while the surface is on screen
+   * and showing no fullscreen window.
+   */
+  overlays?(ctx: EngineContext): ILayoutOverlays;
 
   toString(): string;
+}
+
+/** One stacked pane's tab strip, in screen coordinates. */
+interface IStackBar {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  tabs: { id: string; title: string; active: boolean }[];
+}
+
+interface ILayoutOverlays {
+  stackBars: IStackBar[];
+  /** Outline around the group the layout's commands are aimed at. */
+  selection: Rect | null;
 }
 
 interface IGaps {

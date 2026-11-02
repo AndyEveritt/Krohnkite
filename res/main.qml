@@ -86,6 +86,59 @@ Item {
         }
     }
 
+    /* Manual tiling overlays. highlight.qml is loaded twice because both can
+     * be up at once: the outline around the selected group stays up, while
+     * the flash over the group a window was just moved into comes and goes. */
+    Loader {
+        id: selectionOutline
+        source: "highlight.qml"
+
+        onStatusChanged: {
+            if (status === Loader.Error)
+                console.warn("KROHNKITE: highlight.qml failed to load (selection outline)");
+        }
+
+        function showAt(x, y, width, height, duration, filled, frameColor, borderColor) {
+            if (this.item) this.item.showAt(x, y, width, height, duration, filled, frameColor, borderColor);
+        }
+
+        function hideOverlay() {
+            if (this.item) this.item.hideOverlay();
+        }
+    }
+
+    Loader {
+        id: flashIndicator
+        source: "highlight.qml"
+
+        onStatusChanged: {
+            if (status === Loader.Error)
+                console.warn("KROHNKITE: highlight.qml failed to load (move flash)");
+        }
+
+        function showAt(x, y, width, height, duration, filled, frameColor, borderColor) {
+            if (this.item) this.item.showAt(x, y, width, height, duration, filled, frameColor, borderColor);
+        }
+
+        function hideOverlay() {
+            if (this.item) this.item.hideOverlay();
+        }
+    }
+
+    Loader {
+        id: stackBars
+        source: "stackbars.qml"
+
+        onStatusChanged: {
+            if (status === Loader.Error)
+                console.warn("KROHNKITE: stackbars.qml failed to load");
+        }
+
+        function render(bars, onTabClicked, activeColor) {
+            if (this.item) this.item.render(bars, onTabClicked, activeColor);
+        }
+    }
+
     Component.onCompleted: {
         console.log("KROHNKITE: starting the script");
         const api = {

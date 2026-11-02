@@ -124,6 +124,15 @@ class LayoutStore {
     this.store = {};
   }
 
+  /**
+   * The current layout of every surface seen so far, on screen or not. For
+   * questions that cannot start from a window's surface because it has just
+   * changed - such as which layout a moved window's group belongs to.
+   */
+  public allCurrentLayouts(): ILayout[] {
+    return Object.keys(this.store).map((key) => this.store[key].currentLayout);
+  }
+
   public getCurrentLayout(srf: ISurface): ILayout {
     return srf.ignore
       ? FloatingLayout.instance

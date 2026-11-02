@@ -25,7 +25,18 @@ const LayoutShortcutIds: Partial<Record<KrohnkiteAction, string>> = {
   ["SetSpiralLayout"]: "SpiralLayout",
   ["SetBinaryTreeLayout"]: "BinaryTreeLayout",
   ["SetCascadeLayout"]: "CascadeLayout",
+  ["SetManualTilingLayout"]: "ManualTilingLayout",
 };
+
+/** Actions that move a tiled window; CONFIG.moveFlash shows where it lands. */
+const MOVE_ACTIONS: KrohnkiteAction[] = [
+  KrohnkiteAction.MoveLeft,
+  KrohnkiteAction.MoveRight,
+  KrohnkiteAction.MoveUp,
+  KrohnkiteAction.MoveDown,
+  KrohnkiteAction.SwapUp,
+  KrohnkiteAction.SwapDown,
+];
 
 interface DragAction {
   result: {
@@ -39,6 +50,9 @@ interface DragAction {
   tilesArea: Rect | null;
   window: WindowClass;
   dockTarget: DockPosition | null;
+  /* Where a layout that previews rather than re-tiles would put the window
+   * if it were dropped now; reset on every step. */
+  previewRect: Rect | null;
   mousePointer: QPoint;
   middlePointer: QPoint;
   /* Physically adjacent outputs per side. Decides whether a dock zone is
@@ -49,6 +63,8 @@ interface DragAction {
   neighborsSrfId: string | null;
   dockSnapshots: { [srfId: string]: DockDragSnapshot };
   initialState: ToggleableState;
+  /* The window's tile when the drag began, before any layout re-tiled. */
+  initialGeometry: Rect;
   isLayoutHasDragStep: boolean;
 }
 
@@ -178,12 +194,14 @@ class TilingController {
         tilesArea: null,
         window,
         dockTarget: null,
+        previewRect: null,
         mousePointer,
         middlePointer,
         neighbors: getNeighbors(srf),
         neighborsSrfId: srf.id,
         dockSnapshots: {},
         initialState,
+        initialGeometry: window.geometry.clone(),
         isLayoutHasDragStep: false,
       };
     };
@@ -215,6 +233,7 @@ class TilingController {
     }
     this.dragAction.result = { isProcessed: false, isArrangeNeeded: false };
     this.dragAction.dockTarget = null;
+    this.dragAction.previewRect = null;
     if (this.dragAction.neighborsSrfId !== srf.id) {
       this.dragAction.neighbors = getNeighbors(srf);
       this.dragAction.neighborsSrfId = srf.id;
@@ -242,12 +261,20 @@ class TilingController {
   }
 
   /**
-   * Draw (or clear) the dock-slot preview rectangle for the active drag. The
-   * dragged window's geometry has already been computed by the engine but is
-   * not committed while `isDragging` is set, so it is the exact drop target.
+   * Draw (or clear) the preview rectangle for the active drag: the slot a
+   * layout says the window would drop into, or else the dock slot. A docked
+   * window's geometry has already been computed by the engine but is not
+   * committed while `isDragging` is set, so it is the exact drop target.
    */
   private updateDragPreview(ctx: IDriverContext): void {
     const dragAction = this.dragAction;
+    if (dragAction !== null && dragAction.previewRect !== null) {
+      ctx.showDragPreview(
+        toRect(dragAction.srf.output.geometry),
+        dragAction.previewRect,
+      );
+      return;
+    }
     if (
       dragAction === null ||
       dragAction.dockTarget === null ||
@@ -269,8 +296,19 @@ class TilingController {
   ): void {
     /* swap window by dragging */
     window.isDragging = false;
+    const before =
+      this.dragAction !== null && this.dragAction.window === window
+        ? this.dragAction.initialGeometry
+        : window.geometry.clone();
     if (this.dragAction !== null && this.dragAction.window === window) {
       const isLayoutHasDragStep = this.dragAction.isLayoutHasDragStep;
+      if (isLayoutHasDragStep) {
+        const layout = this.engine.layouts.getCurrentLayout(
+          this.dragAction.srf,
+        );
+        if (layout.drop)
+          layout.drop(new EngineContext(ctx, this.engine), this.dragAction);
+      }
       this.finishDrag(ctx);
       if (isLayoutHasDragStep) {
         this.engine.arrange(
@@ -278,6 +316,7 @@ class TilingController {
           reason,
           `${getMethodName()}:windowState=${window.state}`,
         );
+        this.engine.flashMove(ctx, window, before);
         return;
       }
     }
@@ -298,6 +337,7 @@ class TilingController {
           reason,
           `${getMethodName()}:windowState=${window.state}`,
         );
+        this.engine.flashMove(ctx, window, before);
         return;
       }
     }
@@ -428,6 +468,17 @@ class TilingController {
     if (window) {
       // TODO: delete one string bellow if the future caresses you with its grace
       // if (comment === "unminimized") ctx.currentWindow = window;
+      /* KWin's own "window to next screen/desktop" lands here. When the window
+       * was in a selected group, the rest of the group follows it, and the
+       * surface it left has to be re-tiled too. */
+      if (
+        reason === "outputChangedCB" ||
+        reason === "windowDesktopsChangedCB"
+      ) {
+        const vacated = this.engine.followGroupMove(ctx, window);
+        if (vacated !== null)
+          extraSurfaces = (extraSurfaces ?? []).concat([vacated]);
+      }
       const workingArea = window.surface.workingArea;
       if (window.floatGeometry.width > workingArea.width) {
         window.floatGeometry.width = workingArea.width;
@@ -450,6 +501,12 @@ class TilingController {
 
   public onWindowFocused(ctx: IDriverContext, window: WindowClass) {
     window.focusTime = getTime();
+    this.engine.layoutsFocusChanged(window);
+    /* Focus decides which stack tab is on top and whether a group selection
+     * still stands. Nothing re-tiles on a bare focus change, so redraw the
+     * overlays on their own: an arrange would commit every window's geometry
+     * again, which is visible as a flicker even when nothing moves. */
+    this.engine.renderOverlays(ctx);
   }
 
   public onDesktopsChanged(ctx: IDriverContext, window: WindowClass) {
@@ -467,6 +524,11 @@ class TilingController {
     let isArrangeNeeded = true;
     let currentCapacity: number | null;
     const window = ctx.currentWindow;
+    /* Where a window about to be moved is now, to tell whether it moved. */
+    const before =
+      window !== null && MOVE_ACTIONS.indexOf(action) >= 0
+        ? window.geometry.clone()
+        : null;
 
     if (
       this.engine.handleDockWinShortcut(ctx, window, action, reason) ||
@@ -474,6 +536,8 @@ class TilingController {
       this.engine.handleLayoutShortcut(ctx, action, reason) ||
       this.engine.handleTiledWinShortcut(ctx, window, action, reason)
     ) {
+      if (window !== null && before !== null)
+        this.engine.flashMove(ctx, window, before);
       if (CONFIG.movePointerOnFocus) {
         window?.moveMouseToFocus();
       }
@@ -541,6 +605,7 @@ class TilingController {
       case KrohnkiteAction.SetSpiralLayout:
       case KrohnkiteAction.SetBinaryTreeLayout:
       case KrohnkiteAction.SetCascadeLayout:
+      case KrohnkiteAction.SetManualTilingLayout:
         this.engine.setLayout(ctx, LayoutShortcutIds[action]!);
         break;
 

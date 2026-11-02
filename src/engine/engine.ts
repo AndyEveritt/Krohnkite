@@ -353,6 +353,7 @@ class TilingEngine {
           `${getMethodName()}: arrange did not settle after ${TilingEngine.MAX_ARRANGE_PASSES} passes.`,
         );
       }
+      this._renderOverlays(ctx);
     } finally {
       this._arranging = false;
       this._arrangePending = false;
@@ -362,7 +363,8 @@ class TilingEngine {
 
   private _addPendingExtraSurfaces(extraSurfaces?: ISurface[]) {
     if (extraSurfaces === undefined) return;
-    for (const srf of extraSurfaces) this._pendingExtraSurfaces.set(srf.id, srf);
+    for (const srf of extraSurfaces)
+      this._pendingExtraSurfaces.set(srf.id, srf);
   }
 
   private _arrangeOnce(
@@ -1391,6 +1393,137 @@ class TilingEngine {
     }
     return true;
   }
+  /**
+   * Redraw what the layouts draw over the tiles, without re-tiling.
+   *
+   * Runs after every arrange; call it directly when only something the
+   * overlays depend on has changed, such as the focus. Skipped mid-arrange,
+   * when the layouts' last render may be half done - the arrange draws them
+   * once it settles.
+   */
+  public renderOverlays(ctx: IDriverContext): void {
+    if (this._arranging || this._batchDepth > 0) return;
+    this._renderOverlays(ctx);
+  }
+
+  private _renderOverlays(ctx: IDriverContext): void {
+    const overlays: ILayoutOverlays = { stackBars: [], selection: null };
+    ctx.currentSurfaces.forEach((srf) => {
+      const layout = this.layouts.getCurrentLayout(srf);
+      if (!layout.overlays) return;
+      /* Nothing tiled means the layout's last render is stale, and nothing
+       * may be drawn over a window covering the screen - the overlays stay
+       * on top, and the tab strips would take its clicks. */
+      const visibles = this.windows.getVisibleWindows(srf);
+      if (
+        !visibles.some((window) => window.state === WindowState.Tiled) ||
+        visibles.some(
+          (window) =>
+            window.state === WindowState.NativeFullscreen ||
+            window.state === WindowState.NativeMaximized ||
+            window.state === WindowState.Maximized,
+        )
+      )
+        return;
+      const drawn = layout.overlays(new EngineContext(ctx, this));
+      overlays.stackBars.push(...drawn.stackBars);
+      if (overlays.selection === null) overlays.selection = drawn.selection;
+    });
+    ctx.drawOverlays(overlays);
+  }
+
+  /**
+   * Flash where a window has just been moved or dropped, once the arrange
+   * has settled: what the layout's `flashArea` names - the group it landed
+   * in, for Manual Tiling - or else the window's own tile.
+   *
+   * @param before the window's tile before the move; nothing is shown if it
+   * has not changed, or if the window has left for a surface not on screen.
+   */
+  public flashMove(
+    ctx: IDriverContext,
+    window: WindowClass,
+    before: Rect,
+  ): void {
+    if (!CONFIG.moveFlash) return;
+    if (
+      !window.isAlive() ||
+      !window.isTiled ||
+      window.isSendingToOutput ||
+      window.isRelocationPending ||
+      window.geometry.equals(before)
+    )
+      return;
+    const srf = window.surface;
+    if (!ctx.currentSurfaces.some((current) => current.id === srf.id)) return;
+
+    const layout = this.layouts.getCurrentLayout(srf);
+    const area = layout.flashArea
+      ? layout.flashArea(new EngineContext(ctx, this), window)
+      : window.geometry;
+    if (area !== null) ctx.flashArea(area);
+  }
+
+  /** Tell every layout that a window has gained the focus. */
+  public layoutsFocusChanged(window: WindowClass): void {
+    this.layouts.allCurrentLayouts().forEach((layout) => {
+      if (layout.focusChanged) layout.focusChanged(window.id);
+    });
+  }
+
+  /**
+   * Send the rest of a group after one of its windows, which KWin has just
+   * moved to another screen or virtual desktop.
+   *
+   * This is what makes KWin's own "window to next screen/desktop" move a
+   * whole group when one is selected: the layout the window came from hands
+   * over the subtree, the other windows in it are sent after it, and the
+   * layout of the destination takes the subtree as it was arranged.
+   *
+   * @returns the surface the group left, which needs re-tiling, or null when
+   * nothing followed - a window not in a selected group moves on its own.
+   */
+  public followGroupMove(
+    ctx: IDriverContext,
+    window: WindowClass,
+  ): ISurface | null {
+    const target = window.surface;
+    for (const layout of this.layouts.allCurrentLayouts()) {
+      if (!(layout instanceof ManualTilingLayout)) continue;
+      const followerIds = layout.groupFollowerIds(window.id);
+      if (followerIds === null) continue;
+
+      const followers = followerIds
+        .map((id) => this.windows.getWindowById(id))
+        .filter((follower): follower is WindowClass => follower !== null);
+      if (followers.length === 0) continue;
+
+      /* A move can be announced before the window has left - moving to
+       * another screen reassigns its desktop too. Taking the group then would
+       * hand it straight back to the surface it is already on. */
+      const source = followers[0].surface;
+      if (source.id === target.id) continue;
+
+      const group = layout.takeGroup(window.id);
+      if (group === null) continue;
+      ctx.moveWindowsToSurface(followers, target);
+      const destination = this.layouts.getCurrentLayout(target);
+      if (destination instanceof ManualTilingLayout) destination.graft(group);
+
+      /* A window sent to another output is activated when it lands, so the
+       * last follower would end up with the focus. Hand it back to the
+       * window the user moved once the moves have had time to finish. Not
+       * for a desktop move: activating a window on another desktop makes
+       * KWin switch to it, or pull it back, depending on its policy. */
+      if (source.output.name !== target.output.name)
+        ctx.setTimeout(() => {
+          if (window.isAlive()) ctx.currentWindow = window;
+        }, TilingEngine.SENDING_WINDOWS_MAX_WAIT_TIME);
+      return source;
+    }
+    return null;
+  }
+
   /**
    * Let the current layout override shortcut.
    *

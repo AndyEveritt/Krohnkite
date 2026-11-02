@@ -199,7 +199,7 @@
              <number>1</number>
             </property>
             <property name="maximum">
-             <number>12</number>
+             <number>13</number>
             </property>
             <property name="value">
              <number>1</number>
@@ -474,7 +474,7 @@
              <number>1</number>
             </property>
             <property name="maximum">
-             <number>12</number>
+             <number>13</number>
             </property>
             <property name="value">
              <number>2</number>
@@ -719,7 +719,7 @@
              <number>1</number>
             </property>
             <property name="maximum">
-             <number>12</number>
+             <number>13</number>
             </property>
             <property name="value">
              <number>3</number>
@@ -879,7 +879,7 @@
              <number>1</number>
             </property>
             <property name="maximum">
-             <number>12</number>
+             <number>13</number>
             </property>
             <property name="value">
              <number>4</number>
@@ -1042,7 +1042,7 @@
              <number>1</number>
             </property>
             <property name="maximum">
-             <number>12</number>
+             <number>13</number>
             </property>
             <property name="value">
              <number>5</number>
@@ -1247,7 +1247,7 @@
              <number>1</number>
             </property>
             <property name="maximum">
-             <number>12</number>
+             <number>13</number>
             </property>
             <property name="value">
              <number>6</number>
@@ -1432,7 +1432,7 @@
              <number>1</number>
             </property>
             <property name="maximum">
-             <number>12</number>
+             <number>13</number>
             </property>
             <property name="value">
              <number>7</number>
@@ -1780,7 +1780,7 @@
              <number>1</number>
             </property>
             <property name="maximum">
-             <number>12</number>
+             <number>13</number>
             </property>
             <property name="value">
              <number>8</number>
@@ -2040,7 +2040,7 @@
              <number>1</number>
             </property>
             <property name="maximum">
-             <number>12</number>
+             <number>13</number>
             </property>
             <property name="value">
              <number>9</number>
@@ -2181,7 +2181,7 @@
              <number>1</number>
             </property>
             <property name="maximum">
-             <number>12</number>
+             <number>13</number>
             </property>
             <property name="value">
              <number>10</number>
@@ -2443,7 +2443,7 @@
              <number>1</number>
             </property>
             <property name="maximum">
-             <number>12</number>
+             <number>13</number>
             </property>
             <property name="value">
              <number>11</number>
@@ -2663,7 +2663,7 @@
              <number>1</number>
             </property>
             <property name="maximum">
-             <number>12</number>
+             <number>13</number>
             </property>
             <property name="value">
              <number>12</number>
@@ -2689,6 +2689,191 @@
             </property>
             <property name="buddy">
              <cstring>kcfg_cascadeLayoutEnabled</cstring>
+            </property>
+           </widget>
+          </item>
+          </layout>
+        </widget>
+       </item>
+       <item>
+        <widget class="QGroupBox" name="GB_d_manualTilingLayout">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
+         <property name="title">
+          <string/>
+         </property>
+         <property name="flat">
+          <bool>true</bool>
+         </property>
+         <layout class="QGridLayout" name="gridLayout_66">
+          <property name="leftMargin">
+           <number>0</number>
+          </property>
+          <property name="horizontalSpacing">
+           <number>4</number>
+          </property>
+          <item row="0" column="0">
+           <widget class="QCheckBox" name="kcfg_manualTilingLayoutEnabled">
+            <property name="accessibleName">
+             <string>Manual Tiling Layout</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="1">
+           <widget class="QToolButton" name="manualtilingLayoutPictogram">
+            <property name="icon">
+             <iconset theme="krohnkite-layout-manualtiling"/>
+            </property>
+            <property name="iconSize">
+             <size><width>48</width><height>32</height></size>
+            </property>
+            <property name="minimumSize">
+             <size><width>56</width><height>40</height></size>
+            </property>
+            <property name="maximumSize">
+             <size><width>56</width><height>40</height></size>
+            </property>
+            <property name="autoRaise"><bool>true</bool></property>
+            <property name="focusPolicy"><enum>Qt::FocusPolicy::NoFocus</enum></property>
+            <property name="accessibleName"><string>Manual Tiling Layout preview</string></property>
+            <property name="styleSheet">
+             <string notr="true">QToolButton { border: none; background: transparent; } QToolButton:hover { border: none; background: transparent; } QToolButton:pressed { border: none; background: transparent; }</string>
+            </property>
+           </widget>
+          </item>
+          <property name="topMargin">
+           <number>0</number>
+          </property>
+          <property name="rightMargin">
+           <number>6</number>
+          </property>
+          <property name="bottomMargin">
+           <number>0</number>
+          </property>
+          <property name="verticalSpacing">
+           <number>0</number>
+          </property>
+          <item row="0" column="5">
+           <widget class="QSpinBox" name="kcfg_manualTilingLayoutCapacity">
+            <property name="font">
+             <font>
+              <family>Noto Sans</family>
+              <pointsize>12</pointsize>
+              <italic>false</italic>
+              <bold>false</bold>
+              <underline>false</underline>
+             </font>
+            </property>
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;0 - to disable&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="maximum">
+             <number>99</number>
+            </property>
+            <property name="value">
+             <number>0</number>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="4">
+           <widget class="QLabel" name="label_115">
+            <property name="font">
+             <font>
+              <family>Noto Sans</family>
+              <pointsize>12</pointsize>
+              <italic>false</italic>
+              <bold>false</bold>
+              <underline>false</underline>
+             </font>
+            </property>
+            <property name="text">
+             <string>Capacity</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="3">
+           <spacer name="horizontalSpacer_61">
+            <property name="orientation">
+             <enum>Qt::Orientation::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item row="0" column="6">
+           <widget class="QLabel" name="label_116">
+            <property name="font">
+             <font>
+              <family>Noto Sans</family>
+              <pointsize>12</pointsize>
+              <italic>false</italic>
+              <bold>false</bold>
+              <underline>false</underline>
+             </font>
+            </property>
+            <property name="text">
+             <string>Order:</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="7">
+           <widget class="QSpinBox" name="kcfg_manualTilingLayoutOrder">
+            <property name="font">
+             <font>
+              <family>Noto Sans</family>
+              <pointsize>12</pointsize>
+              <italic>false</italic>
+              <bold>false</bold>
+              <underline>false</underline>
+             </font>
+            </property>
+            <property name="toolTip">
+             <string>Order in layout rotation</string>
+            </property>
+            <property name="minimum">
+             <number>1</number>
+            </property>
+            <property name="maximum">
+             <number>13</number>
+            </property>
+            <property name="value">
+             <number>13</number>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="2">
+           <widget class="QLabel" name="label_117">
+            <property name="font">
+             <font>
+              <family>Noto Sans</family>
+              <pointsize>12</pointsize>
+              <italic>false</italic>
+              <bold>false</bold>
+              <underline>true</underline>
+             </font>
+            </property>
+            <property name="text">
+             <string>Manual Tiling Layout</string>
+            </property>
+            <property name="toolTip">
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;A tree of splits you arrange by hand, modelled on COSMIC's tiling. New windows split the focused pane along its longer side. Rearrange with the Move keys, Increase/Decrease (split/unsplit) and Rotate; the stack, split and group keys are unbound by default.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+            </property>
+            <property name="margin">
+             <number>0</number>
+            </property>
+            <property name="buddy">
+             <cstring>kcfg_manualTilingLayoutEnabled</cstring>
             </property>
            </widget>
           </item>
@@ -3825,6 +4010,16 @@
             </item>
             <item>
              <property name="text">
+              <string>GroupGrow</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>GroupShrink</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
               <string>GrowHeight</string>
              </property>
             </item>
@@ -3896,6 +4091,11 @@
             <item>
              <property name="text">
               <string>SetFloatingLayout</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>SetManualTilingLayout</string>
              </property>
             </item>
             <item>
@@ -3975,6 +4175,36 @@
             </item>
             <item>
              <property name="text">
+              <string>SplitHorizontal</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>SplitVertical</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>StackMoveNext</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>StackMovePrev</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>StackNext</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>StackPrev</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
               <string>SwapDown</string>
              </property>
             </item>
@@ -4001,6 +4231,11 @@
             <item>
              <property name="text">
               <string>ToggleRegister</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>ToggleStack</string>
              </property>
             </item>
            </widget>
@@ -4058,6 +4293,16 @@
             <item>
              <property name="text">
               <string>FocusUpSC</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>GroupGrowSC</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>GroupShrinkSC</string>
              </property>
             </item>
             <item>
@@ -4128,6 +4373,11 @@
             <item>
              <property name="text">
               <string>SetFloatingLayoutSC</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>SetManualTilingLayoutSC</string>
              </property>
             </item>
             <item>
@@ -4207,6 +4457,36 @@
             </item>
             <item>
              <property name="text">
+              <string>SplitHorizontalSC</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>SplitVerticalSC</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>StackMoveNextSC</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>StackMovePrevSC</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>StackNextSC</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>StackPrevSC</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
               <string>ToggleDockSC</string>
              </property>
             </item>
@@ -4218,6 +4498,11 @@
             <item>
              <property name="text">
               <string>ToggleFloatAllSC</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>ToggleStackSC</string>
              </property>
             </item>
            </widget>
@@ -6194,7 +6479,7 @@
              </size>
             </property>
             <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Fill color of the rectangle shown while dragging a window over a dock slot. &lt;span style=&quot; font-weight:700; text-decoration: underline;&quot;&gt;Default value&lt;/span&gt;: Red:&lt;span style=&quot; font-weight:700;&quot;&gt;61&lt;/span&gt;, Green:&lt;span style=&quot; font-weight:700;&quot;&gt;135&lt;/span&gt;, Blue:&lt;span style=&quot; font-weight:700;&quot;&gt;240&lt;/span&gt;, Alpha:&lt;span style=&quot; font-weight:700;&quot;&gt;77&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Fill color of the rectangle shown while dragging a window over a dock slot, also used by the Manual Tiling layout's overlays. &lt;span style=&quot; font-weight:700; text-decoration: underline;&quot;&gt;Default value&lt;/span&gt;: Red:&lt;span style=&quot; font-weight:700;&quot;&gt;61&lt;/span&gt;, Green:&lt;span style=&quot; font-weight:700;&quot;&gt;135&lt;/span&gt;, Blue:&lt;span style=&quot; font-weight:700;&quot;&gt;240&lt;/span&gt;, Alpha:&lt;span style=&quot; font-weight:700;&quot;&gt;77&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="default">
              <bool>true</bool>
@@ -6364,7 +6649,7 @@
              </size>
             </property>
             <property name="toolTip">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Border color of the rectangle shown while dragging a window over a dock slot. &lt;span style=&quot; font-weight:700; text-decoration: underline;&quot;&gt;Default value&lt;/span&gt;: Red:&lt;span style=&quot; font-weight:700;&quot;&gt;61&lt;/span&gt;, Green:&lt;span style=&quot; font-weight:700;&quot;&gt;135&lt;/span&gt;, Blue:&lt;span style=&quot; font-weight:700;&quot;&gt;240&lt;/span&gt;, Alpha:&lt;span style=&quot; font-weight:700;&quot;&gt;230&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Border color of the rectangle shown while dragging a window over a dock slot, also used by the Manual Tiling layout's overlays and stack tabs. &lt;span style=&quot; font-weight:700; text-decoration: underline;&quot;&gt;Default value&lt;/span&gt;: Red:&lt;span style=&quot; font-weight:700;&quot;&gt;61&lt;/span&gt;, Green:&lt;span style=&quot; font-weight:700;&quot;&gt;135&lt;/span&gt;, Blue:&lt;span style=&quot; font-weight:700;&quot;&gt;240&lt;/span&gt;, Alpha:&lt;span style=&quot; font-weight:700;&quot;&gt;230&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="autoDefault">
              <bool>true</bool>
@@ -6745,15 +7030,77 @@
        <item>
         <widget class="QCheckBox" name="kcfg_dragPreview">
          <property name="toolTip">
-          <string>Draw a translucent rectangle at the dock slot a dragged window will occupy when the drag is over.</string>
+          <string>Draw a translucent rectangle where a dragged window will land when the drag is over: a dock slot, or a pane of the Manual Tiling layout.</string>
          </property>
          <property name="text">
-          <string>Show a preview rectangle when dragging a window over a dock slot</string>
+          <string>Show a preview rectangle when dragging a window over a dock slot or a Manual Tiling pane</string>
          </property>
          <property name="checked">
           <bool>true</bool>
          </property>
         </widget>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="moveFlashLayout">
+         <item>
+          <widget class="QCheckBox" name="kcfg_moveFlash">
+           <property name="toolTip">
+            <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;After a window is moved with the Move keys or dropped with the mouse, briefly highlight where it ended up. The Manual Tiling layout highlights the group of panes it landed in; every other layout highlights the window's own tile.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+           </property>
+           <property name="text">
+            <string>Flash where a moved window lands</string>
+           </property>
+           <property name="checked">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="label_119">
+           <property name="text">
+            <string>for</string>
+           </property>
+           <property name="buddy">
+            <cstring>kcfg_moveFlashDuration</cstring>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QSpinBox" name="kcfg_moveFlashDuration">
+           <property name="toolTip">
+            <string>How long the highlight stays up</string>
+           </property>
+           <property name="suffix">
+            <string> ms</string>
+           </property>
+           <property name="minimum">
+            <number>100</number>
+           </property>
+           <property name="maximum">
+            <number>5000</number>
+           </property>
+           <property name="singleStep">
+            <number>100</number>
+           </property>
+           <property name="value">
+            <number>600</number>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="horizontalSpacer_62">
+           <property name="orientation">
+            <enum>Qt::Orientation::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+        </layout>
        </item>
        <item>
         <widget class="QCheckBox" name="kcfg_preventMinimize">
@@ -7579,6 +7926,54 @@
    <sender>kcfg_cascadeLayoutEnabled</sender>
    <signal>toggled(bool)</signal>
    <receiver>kcfg_cascadeLayoutCapacity</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_manualTilingLayoutEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>kcfg_manualTilingLayoutOrder</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_manualTilingLayoutEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>manualtilingLayoutPictogram</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_manualTilingLayoutEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>label_117</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_manualTilingLayoutEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>label_116</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_manualTilingLayoutEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>label_115</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_manualTilingLayoutEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>kcfg_manualTilingLayoutCapacity</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_moveFlash</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>kcfg_moveFlashDuration</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_moveFlash</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>label_119</receiver>
    <slot>setEnabled(bool)</slot>
   </connection>
  </connections>

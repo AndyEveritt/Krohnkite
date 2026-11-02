@@ -292,6 +292,76 @@ Item {
         text: "Krohnkite: Select Layout - Cascade";
         sequence: "";
     }
+    ShortcutHandler {
+        id: manualTilingLayout;
+
+        name: "KrohnkiteManualTilingLayout";
+        text: "Krohnkite: Select Layout - Manual Tiling";
+        sequence: "";
+    }
+    ShortcutHandler {
+        id: splitHorizontal;
+
+        name: "KrohnkiteSplitHorizontal";
+        text: "Krohnkite: Manual Tiling - Split Side by Side";
+        sequence: "";
+    }
+    ShortcutHandler {
+        id: splitVertical;
+
+        name: "KrohnkiteSplitVertical";
+        text: "Krohnkite: Manual Tiling - Split One Above the Other";
+        sequence: "";
+    }
+    ShortcutHandler {
+        id: groupGrow;
+
+        name: "KrohnkiteGroupGrow";
+        text: "Krohnkite: Manual Tiling - Select More (Grow Group)";
+        sequence: "";
+    }
+    ShortcutHandler {
+        id: groupShrink;
+
+        name: "KrohnkiteGroupShrink";
+        text: "Krohnkite: Manual Tiling - Select Less (Shrink Group)";
+        sequence: "";
+    }
+    ShortcutHandler {
+        id: toggleStack;
+
+        name: "KrohnkiteToggleStack";
+        text: "Krohnkite: Manual Tiling - Toggle Stack";
+        sequence: "";
+    }
+    ShortcutHandler {
+        id: stackNext;
+
+        name: "KrohnkiteStackNext";
+        text: "Krohnkite: Manual Tiling - Next Tab";
+        sequence: "";
+    }
+    ShortcutHandler {
+        id: stackPrev;
+
+        name: "KrohnkiteStackPrev";
+        text: "Krohnkite: Manual Tiling - Previous Tab";
+        sequence: "";
+    }
+    ShortcutHandler {
+        id: stackMoveNext;
+
+        name: "KrohnkiteStackMoveNext";
+        text: "Krohnkite: Manual Tiling - Move Tab Right";
+        sequence: "";
+    }
+    ShortcutHandler {
+        id: stackMovePrev;
+
+        name: "KrohnkiteStackMovePrev";
+        text: "Krohnkite: Manual Tiling - Move Tab Left";
+        sequence: "";
+    }
 
     property var shortcutList: [
         { name: "FocusNextSC", hdl: focusNext },
@@ -333,7 +403,17 @@ Item {
         { name: "SetColumnsLayoutSC", hdl: columnsLayout },
         { name: "SetSpiralLayoutSC", hdl: spiralLayout },
         { name: "SetBinaryTreeLayoutSC", hdl: bTreeLayout },
-        { name: "SetCascadeLayoutSC", hdl: cascadeLayout }
+        { name: "SetCascadeLayoutSC", hdl: cascadeLayout },
+        { name: "SetManualTilingLayoutSC", hdl: manualTilingLayout },
+        { name: "SplitHorizontalSC", hdl: splitHorizontal },
+        { name: "SplitVerticalSC", hdl: splitVertical },
+        { name: "GroupGrowSC", hdl: groupGrow },
+        { name: "GroupShrinkSC", hdl: groupShrink },
+        { name: "ToggleStackSC", hdl: toggleStack },
+        { name: "StackNextSC", hdl: stackNext },
+        { name: "StackPrevSC", hdl: stackPrev },
+        { name: "StackMoveNextSC", hdl: stackMoveNext },
+        { name: "StackMovePrevSC", hdl: stackMovePrev }
     ];
 
 }

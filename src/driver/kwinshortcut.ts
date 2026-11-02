@@ -165,6 +165,48 @@ const Shortcuts = {
     defaultAction: KrohnkiteAction.SetCascadeLayout,
     defaultRegisterAction: null,
   },
+  SetManualTilingLayoutSC: {
+    defaultAction: KrohnkiteAction.SetManualTilingLayout,
+    defaultRegisterAction: null,
+  },
+  /* Manual tiling. Each pair doubles as the other's register action, so one
+   * key per pair is enough with the register. */
+  SplitHorizontalSC: {
+    defaultAction: KrohnkiteAction.SplitHorizontal,
+    defaultRegisterAction: KrohnkiteAction.SplitVertical,
+  },
+  SplitVerticalSC: {
+    defaultAction: KrohnkiteAction.SplitVertical,
+    defaultRegisterAction: KrohnkiteAction.SplitHorizontal,
+  },
+  GroupGrowSC: {
+    defaultAction: KrohnkiteAction.GroupGrow,
+    defaultRegisterAction: KrohnkiteAction.GroupShrink,
+  },
+  GroupShrinkSC: {
+    defaultAction: KrohnkiteAction.GroupShrink,
+    defaultRegisterAction: KrohnkiteAction.GroupGrow,
+  },
+  ToggleStackSC: {
+    defaultAction: KrohnkiteAction.ToggleStack,
+    defaultRegisterAction: null,
+  },
+  StackNextSC: {
+    defaultAction: KrohnkiteAction.StackNext,
+    defaultRegisterAction: KrohnkiteAction.StackMoveNext,
+  },
+  StackPrevSC: {
+    defaultAction: KrohnkiteAction.StackPrev,
+    defaultRegisterAction: KrohnkiteAction.StackMovePrev,
+  },
+  StackMoveNextSC: {
+    defaultAction: KrohnkiteAction.StackMoveNext,
+    defaultRegisterAction: null,
+  },
+  StackMovePrevSC: {
+    defaultAction: KrohnkiteAction.StackMovePrev,
+    defaultRegisterAction: null,
+  },
 } as const;
 type ShortcutName = keyof typeof Shortcuts;
 

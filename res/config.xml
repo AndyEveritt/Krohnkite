@@ -197,6 +197,19 @@
         <default>0</default>
     </entry>
 
+    <entry name="manualTilingLayoutEnabled" type="Bool">
+        <label>Enable Manual Tiling layout</label>
+        <default>true</default>
+    </entry>
+    <entry name="manualTilingLayoutOrder" type="Int">
+	    <label> Manual Tiling layout order</label>
+        <default>13</default>
+    </entry>
+    <entry name="manualTilingLayoutCapacity" type="Int">
+	    <label>How many tiles can a layout contain before windows start floating or moving to another screen</label>
+        <default>0</default>
+    </entry>
+
       <!-- ***************************** -->
       <!-- **********Surfaces*********** -->
       <!-- ***************************** -->
@@ -643,17 +656,27 @@
     </entry>
 
     <entry name="dragPreview" type="Bool">
-	    <label>Show a preview rectangle when dragging a window over a dock slot</label>
+	    <label>Show a preview rectangle when dragging a window over a dock slot or a Manual Tiling pane</label>
         <default>true</default>
     </entry>
 
+    <entry name="moveFlash" type="Bool">
+	    <label>Flash where a moved window lands</label>
+        <default>true</default>
+    </entry>
+
+    <entry name="moveFlashDuration" type="Int">
+	    <label>How long the flash after a move stays up, in milliseconds</label>
+        <default>600</default>
+    </entry>
+
     <entry name="dockFrameColor" type="Color">
-	    <label>Fill color of the drag preview rectangle</label>
+	    <label>Fill color of the drag preview rectangle and the Manual Tiling overlays</label>
         <default>61, 135, 240, 77</default>
     </entry>
 
     <entry name="dockBorderColor" type="Color">
-	    <label>Border color of the drag preview rectangle</label>
+	    <label>Border color of the drag preview rectangle and the Manual Tiling overlays</label>
         <default>61, 135, 240, 230</default>
     </entry>
 

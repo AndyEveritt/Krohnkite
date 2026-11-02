@@ -81,6 +81,7 @@ const ConfigVariables = {
   stairLayoutEnabled: "stairLayoutEnabled",
   binaryTreeLayoutEnabled: "binaryTreeLayoutEnabled",
   cascadeLayoutEnabled: "cascadeLayoutEnabled",
+  manualTilingLayoutEnabled: "manualTilingLayoutEnabled",
   /* Layout orders */
   tileLayoutOrder: "tileLayoutOrder",
   monocleLayoutOrder: "monocleLayoutOrder",
@@ -94,6 +95,7 @@ const ConfigVariables = {
   stairLayoutOrder: "stairLayoutOrder",
   binaryTreeLayoutOrder: "binaryTreeLayoutOrder",
   cascadeLayoutOrder: "cascadeLayoutOrder",
+  manualTilingLayoutOrder: "manualTilingLayoutOrder",
   /* Layout capacities */
   tileLayoutCapacity: "tileLayoutCapacity",
   threeColumnLayoutCapacity: "threeColumnLayoutCapacity",
@@ -104,6 +106,7 @@ const ConfigVariables = {
   stairLayoutCapacity: "stairLayoutCapacity",
   binaryTreeLayoutCapacity: "binaryTreeLayoutCapacity",
   cascadeLayoutCapacity: "cascadeLayoutCapacity",
+  manualTilingLayoutCapacity: "manualTilingLayoutCapacity",
   /* Surfaces */
   srfExceededToScreen: "srfExceededToScreen",
   srfToScreenOrderLeft: "srfToScreenOrderLeft",
@@ -209,6 +212,8 @@ const ConfigVariables = {
   optVKeyboardSupport: "optVKeyboardSupport",
   keepTilingOnDrag: "keepTilingOnDrag",
   dragPreview: "dragPreview",
+  moveFlash: "moveFlash",
+  moveFlashDuration: "moveFlashDuration",
   preventMinimize: "preventMinimize",
   preventProtrusion: "preventProtrusion",
   floatSkipPagerWindows: "floatSkipPagerWindows",
@@ -293,9 +298,23 @@ const KrohnkiteAction = {
   SetSpiralLayout: "SetSpiralLayout",
   SetBinaryTreeLayout: "SetBinaryTreeLayout",
   SetCascadeLayout: "SetCascadeLayout",
+  SetManualTilingLayout: "SetManualTilingLayout",
 
   Rotate: "Rotate",
   RotatePart: "RotatePart",
+
+  /* Manual tiling layout */
+  SplitHorizontal: "SplitHorizontal",
+  SplitVertical: "SplitVertical",
+  /* Widen / narrow the group the directional moves act on. */
+  GroupGrow: "GroupGrow",
+  GroupShrink: "GroupShrink",
+  ToggleStack: "ToggleStack",
+  StackNext: "StackNext",
+  StackPrev: "StackPrev",
+  /* Reorder the tab strip itself, rather than move through it. */
+  StackMoveNext: "StackMoveNext",
+  StackMovePrev: "StackMovePrev",
 
   ToggleDock: "ToggleDock",
 

@@ -63,6 +63,39 @@ interface DragPreview {
 }
 declare var dragPreview: DragPreview;
 
+/* Manual tiling overlays, declared in main.qml. */
+interface Highlight {
+  /**
+   * @param duration milliseconds to stay up; 0 until `hideOverlay`.
+   * @param filled false for a hollow outline.
+   */
+  showAt(
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    duration: number,
+    filled: boolean,
+    frameColor: string,
+    borderColor: string,
+  ): void;
+  hideOverlay(): void;
+}
+/** Outline around the manual tiling layout's selected group. */
+declare var selectionOutline: Highlight;
+/** Flashed over the group a window has just been moved into. */
+declare var flashIndicator: Highlight;
+
+interface StackBars {
+  /** Draw exactly these strips, reusing the ones already on screen. */
+  render(
+    bars: IStackBar[],
+    onTabClicked: (windowId: string) => void,
+    activeColor: string,
+  ): void;
+}
+declare var stackBars: StackBars;
+
 /* Common Javascript globals */
 declare let console: any;
 declare let setTimeout: any;

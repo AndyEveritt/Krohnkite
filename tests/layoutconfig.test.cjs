@@ -26,6 +26,7 @@ const LAYOUT_CLASSES = [
   'StairLayout',
   'BinaryTreeLayout',
   'CascadeLayout',
+  'ManualTilingLayout',
 ];
 
 function buildConfig(values = {}) {
@@ -95,8 +96,8 @@ function buildConfig(values = {}) {
 test('layoutOrder contains every enabled layout exactly once', () => {
   const config = buildConfig();
 
-  assert.equal(config.layoutOrder.length, 12);
-  assert.equal(new Set(config.layoutOrder).size, 12);
+  assert.equal(config.layoutOrder.length, 13);
+  assert.equal(new Set(config.layoutOrder).size, 13);
 });
 
 test('layoutOrder excludes layouts disabled by the enable flag', () => {
@@ -105,8 +106,8 @@ test('layoutOrder excludes layouts disabled by the enable flag', () => {
     monocleLayoutOrder: 12,
   });
 
-  assert.equal(config.layoutOrder.length, 11);
-  assert.equal(new Set(config.layoutOrder).size, 11);
+  assert.equal(config.layoutOrder.length, 12);
+  assert.equal(new Set(config.layoutOrder).size, 12);
   assert.equal(config.layoutOrder.includes('TileLayout'), false);
   assert.equal(config.layoutOrder[0], 'ThreeColumnLayout');
   assert.ok(
@@ -121,14 +122,14 @@ test('layoutOrder excludes layouts disabled even when an order is set', () => {
     tileLayoutOrder: 1,
   });
 
-  assert.equal(config.layoutOrder.length, 11);
+  assert.equal(config.layoutOrder.length, 12);
   assert.equal(config.layoutOrder.includes('TileLayout'), false);
 });
 
 test('layout order zero no longer disables a layout', () => {
   const config = buildConfig({ tileLayoutOrder: 0 });
 
-  assert.equal(config.layoutOrder.length, 12);
+  assert.equal(config.layoutOrder.length, 13);
   assert.equal(config.layoutOrder.includes('TileLayout'), true);
   assert.equal(config.layoutOrder[0], 'TileLayout');
 });
@@ -166,6 +167,7 @@ test('layoutOrder keeps the configured cycle order', () => {
       'FloatingLayout',
       'StairLayout',
       'BinaryTreeLayout',
+      'ManualTilingLayout',
     ],
   );
 });

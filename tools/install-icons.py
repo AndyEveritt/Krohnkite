@@ -13,7 +13,8 @@ import sys
 APP_ICON = "krohnkite"
 LAYOUT_PREFIX = "krohnkite-layout-"
 LAYOUTS = ("tile", "monocle", "threecolumn", "spiral", "quarter", "stacked",
-           "columns", "spread", "floating", "stair", "binarytree", "cascade")
+           "columns", "spread", "floating", "stair", "binarytree", "cascade",
+           "manualtiling")
 
 MARKER = ".krohnkite-icons.pending"
 # Markers written by earlier releases; removed once the new marker is used.

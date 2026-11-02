@@ -28,6 +28,7 @@ const LAYOUTS = {
   StairLayout: { name: 'Stair', icon: 'stair' },
   BinaryTreeLayout: { name: 'Binary Tree', icon: 'binarytree' },
   CascadeLayout: { name: 'Cascade', icon: 'cascade' },
+  ManualTilingLayout: { name: 'Manual Tiling', icon: 'manualtiling' },
 };
 
 function transpile(relativePath) {

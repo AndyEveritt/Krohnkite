@@ -19,6 +19,7 @@ const APP_ICON_SOURCE = path.join(ROOT, 'res/appicon', `${APP_ICON}.svg`);
 const LAYOUTS = [
   'tile', 'monocle', 'threecolumn', 'spiral', 'quarter', 'stacked',
   'columns', 'spread', 'floating', 'stair', 'binarytree', 'cascade',
+  'manualtiling',
 ];
 const LAYOUT_LABELS = {
   tile: 'Tile',
@@ -33,6 +34,7 @@ const LAYOUT_LABELS = {
   stair: 'Stair',
   binarytree: 'Binary Tree',
   cascade: 'Cascade',
+  manualtiling: 'Manual Tiling',
 };
 const MARKER = 'icons/hicolor/.krohnkite-icons.pending';
 const LEGACY_MARKER = 'icons/hicolor/.krohnkite-layout-icons.pending';
@@ -115,7 +117,7 @@ test('installs original SVG bytes under every theme name', () => {
       fs.readFileSync(path.join(appIconDirectory(dataHome), `${APP_ICON}.svg`)),
       fs.readFileSync(APP_ICON_SOURCE),
     );
-    assert.match(result.stdout, /13 updated/);
+    assert.match(result.stdout, new RegExp(`${LAYOUTS.length + 1} updated`));
     const refreshCalls = refreshes(refreshLog);
     assert.equal(refreshCalls.length, 1);
     assert.deepEqual(refreshCalls[0], REFRESH_ARGS);
@@ -212,7 +214,8 @@ test('uninstall removes only Krohnkite icons and is idempotent', () => {
     fs.writeFileSync(obsolete, 'obsolete icon');
     const removed = invoke('--uninstall');
     assert.equal(removed.status, 0, removed.stderr);
-    assert.equal(removed.stdout.trim(), 'Kröhnkite SVG theme icons: 14 removed');
+    // every layout icon, the app icon and the obsolete one
+    assert.equal(removed.stdout.trim(), `Kröhnkite SVG theme icons: ${LAYOUTS.length + 2} removed`);
     assert.equal(fs.readFileSync(unrelated, 'utf8'), 'keep icon');
     assert.equal(fs.readFileSync(unrelatedApp, 'utf8'), 'keep icon');
     assert.equal(fs.readFileSync(metadata, 'utf8'), 'keep theme metadata');
@@ -275,7 +278,7 @@ test('installs from the packaged contents/ui sources', () => {
       fs.readFileSync(path.join(appIconDirectory(dataHome), `${APP_ICON}.svg`)),
       fs.readFileSync(APP_ICON_SOURCE),
     );
-    assert.match(result.stdout, /13 updated/);
+    assert.match(result.stdout, new RegExp(`${LAYOUTS.length + 1} updated`));
     assert.equal(refreshes(refreshLog).length, 1);
     assert.equal(fs.existsSync(path.join(dataHome, MARKER)), false);
   });
@@ -389,6 +392,7 @@ layouts = [
     ("stair", "Stair Layout", "stairLayout", "GB_a_stairLayout", "GB_a_stairLayoutSettings", "label_109", "label_110", "label_56", True),
     ("binarytree", "Binary Tree Layout", "binaryTreeLayout", "GB_b_binaryTreeLayout", None, "label_111", "label_112", "label_57", True),
     ("cascade", "Cascade Layout", "cascadeLayout", "GB_c_cascadeLayout", None, "label_113", "label_114", "label_58", True),
+    ("manualtiling", "Manual Tiling Layout", "manualTilingLayout", "GB_d_manualTilingLayout", None, "label_117", "label_116", "label_115", True),
 ]
 for name, title, prefix, group_name, settings_group, title_label_name, order_label_name, capacity_label_name, has_capacity in layouts:
     button = form.findChild(QToolButton, name + "LayoutPictogram")

@@ -27,6 +27,7 @@ const LayoutOSDNames: { [id: string]: { name: string; icon: string } } = {
   StairLayout: { name: "Stair", icon: "stair" },
   BinaryTreeLayout: { name: "Binary Tree", icon: "binarytree" },
   CascadeLayout: { name: "Cascade", icon: "cascade" },
+  ManualTilingLayout: { name: "Manual Tiling", icon: "manualtiling" },
 };
 
 type RunningShortcutSeq = {
@@ -155,6 +156,8 @@ class KWinDriver implements IDriverContext {
   }>;
   private _started: boolean;
   private _disposed: boolean;
+  /* What drawOverlays last put on screen, to skip redrawing it unchanged. */
+  private _drawnOverlays: string;
 
   constructor(api: Api, config?: KWinConfig) {
     KWIN = api.kwin;
@@ -180,6 +183,7 @@ class KWinDriver implements IDriverContext {
     this._connections = [];
     this._started = false;
     this._disposed = false;
+    this._drawnOverlays = "";
     this._surfaceStore = new KWinSurfaceStore(this.workspace);
     this._isRegister = {
       state: false,
@@ -223,6 +227,7 @@ class KWinDriver implements IDriverContext {
     this.engine.windows.list = [];
     this.windowMap.clear();
     this.hideDragPreview();
+    this._hideOverlays();
     this._shortcutSequences.clear();
     this._shortcuts.clear();
     this._runningShortcutSequence = null;
@@ -648,6 +653,70 @@ class KWinDriver implements IDriverContext {
   public hideDragPreview() {
     dragPreview.hide();
   }
+  public drawOverlays(overlays: ILayoutOverlays): void {
+    /* Called after every arrange and focus change, mostly with nothing new
+     * to show; rebuilding the tab strips each time would flicker. */
+    const key = JSON.stringify(overlays);
+    if (key === this._drawnOverlays) return;
+    this._drawnOverlays = key;
+
+    stackBars.render(
+      overlays.stackBars,
+      (windowId: string) =>
+        this._runProtected(() => {
+          const window = this.engine.windows.getWindowById(windowId);
+          if (window !== null) this.currentWindow = window;
+        }),
+      CONFIG.dockBorderColor,
+    );
+    const outline = overlays.selection;
+    if (outline === null) selectionOutline.hideOverlay();
+    else
+      selectionOutline.showAt(
+        outline.x,
+        outline.y,
+        outline.width,
+        outline.height,
+        0,
+        false,
+        CONFIG.dockFrameColor,
+        CONFIG.dockBorderColor,
+      );
+  }
+  public flashArea(rect: Rect): void {
+    flashIndicator.showAt(
+      rect.x,
+      rect.y,
+      rect.width,
+      rect.height,
+      CONFIG.moveFlashDuration,
+      true,
+      CONFIG.dockFrameColor,
+      CONFIG.dockBorderColor,
+    );
+  }
+  private _hideOverlays(): void {
+    this._drawnOverlays = "";
+    stackBars.render([], () => {}, CONFIG.dockBorderColor);
+    selectionOutline.hideOverlay();
+    flashIndicator.hideOverlay();
+  }
+  public moveWindowsToSurface(windows: WindowClass[], srf: ISurface): void {
+    if (!outputIsAlive(srf.output)) return;
+    windows.forEach((window) => {
+      const client = (window.window as DriverWindow).window;
+      if (client.output.name !== srf.output.name) {
+        try {
+          this.workspace.sendClientToScreen(client, srf.output);
+        } catch (e) {
+          warning(`${getMethodName()}: sendClientToScreen() failed. ${e}`);
+        }
+      }
+      /* After the output: sending to another output also moves the window to
+       * that output's current desktop, which need not be the one wanted. */
+      this._moveWinToVDesktop(window, srf.vDesktop);
+    });
+  }
   public shortcutSequencesArrange() {}
   private _setRegisterTimeout(timeId: number, timeout?: number) {
     this.setTimeout(
@@ -788,7 +857,15 @@ class KWinDriver implements IDriverContext {
 
     window.isSendingToOutput = false;
     window.relocationTargetOutput = null;
+    /* A window Krohnkite sent across - a Move key at the edge of the screen -
+     * takes its selected group along, as a window KWin moves does through
+     * onWindowChanged. Relocation never reaches that handler. */
+    const vacated = this.engine.followGroupMove(this, window);
     this._sendingWindowsProcessCall("relocationCompletionCB");
+    if (vacated !== null)
+      this.engine.arrange(this, "relocationCompletionCB", "groupFollowed", [
+        vacated,
+      ]);
   }
   /**
    * Defer a surface-change arrange to the next event-loop turn.
