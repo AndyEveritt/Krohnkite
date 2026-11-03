@@ -463,6 +463,7 @@ class TilingController {
     reason: keyof typeof ArrangeReason,
   ) {
     if (action === null) return;
+    if (ctx.handleLayoutChooserShortcut(action)) return;
 
     let isArrangeNeeded = true;
     let currentCapacity: number | null;

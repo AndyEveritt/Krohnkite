@@ -300,6 +300,8 @@ interface IDriverContext {
   showNotification(text: string): void;
   showLayoutOSD(): void;
   showLayoutChooser(): void;
+  /* Consume focus shortcuts while the layout chooser is open. */
+  handleLayoutChooserShortcut(action: KrohnkiteAction): boolean;
   showLayoutShortcut(id: string): void;
   showDragPreview(area: Rect, rect: Rect): void;
   hideDragPreview(): void;

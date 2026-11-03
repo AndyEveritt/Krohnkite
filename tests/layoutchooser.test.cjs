@@ -47,6 +47,7 @@ test('LayoutChooser action opens the chooser and does not arrange', () => {
     const ctx = {
       currentWindow: null,
       showLayoutChooser: () => calls.push(['chooser']),
+      handleLayoutChooserShortcut: () => false,
     };
     controller.onShortcut(ctx, KrohnkiteAction.LayoutChooser, 'keyboard');
     return calls;
@@ -54,7 +55,40 @@ test('LayoutChooser action opens the chooser and does not arrange', () => {
   assert.deepEqual(JSON.parse(JSON.stringify(calls)), [['chooser']]);
 });
 
-test('chooser receives enabled layouts and the current layout without a timeout', () => {
+test('focus shortcuts consumed by the chooser neither move window focus nor arrange', () => {
+  const context = vm.createContext({
+    CONFIG: { movePointerOnFocus: false },
+    KrohnkiteAction: new Proxy({}, { get: (_target, action) => String(action) }),
+    getMethodName: () => 'test',
+  });
+  const source = `${transpile('src/engine/engine.ts')}\n${transpile('src/engine/control.ts')}`;
+  const calls = vm.runInContext(`${source}\n(() => {
+    const calls = [];
+    const engine = Object.create(TilingEngine.prototype);
+    engine.handleDockWinShortcut = () => false;
+    engine.handleFloatWinShortcut = () => false;
+    engine.handleLayoutShortcut = () => false;
+    engine.handleTiledWinShortcut = () => false;
+    engine.focusDir = (_ctx, direction) => { calls.push(['focusDir', direction]); return true; };
+    engine.arrange = () => calls.push(['arrange']);
+    const controller = Object.create(TilingController.prototype);
+    controller.engine = engine;
+    const ctx = {
+      currentWindow: null,
+      showLayoutChooser: () => calls.push(['chooser']),
+      handleLayoutChooserShortcut: (action) => action === 'FocusLeft',
+    };
+    controller.onShortcut(ctx, KrohnkiteAction.FocusLeft, 'keyboard');
+    controller.onShortcut(ctx, KrohnkiteAction.FocusRight, 'keyboard');
+    return calls;
+  })()`, context);
+  assert.deepEqual(JSON.parse(JSON.stringify(calls)), [
+    ['focusDir', 'right'],
+    ['arrange'],
+  ]);
+});
+
+test('chooser receives enabled layouts, the current layout and the hide delay', () => {
   const calls = [];
   const context = vm.createContext({
     CONFIG: {
@@ -62,6 +96,7 @@ test('chooser receives enabled layouts and the current layout without a timeout'
       layoutOrder: ['TileLayout', 'SpiralLayout'],
     },
     layoutChooserDialog: {
+      isOpen: () => false,
       showLayouts: (...args) => calls.push(args),
     },
     DBUS: {
@@ -70,7 +105,7 @@ test('chooser receives enabled layouts and the current layout without a timeout'
   });
   vm.runInContext(`${transpile('src/driver/kwindriver.ts')}\n(() => {
     const driver = Object.create(KWinDriver.prototype);
-    Object.defineProperty(driver, 'currentSurface', { value: {} });
+    Object.defineProperty(driver, 'currentSurface', { value: { id: 'srf-1' } });
     driver.engine = {
       layouts: { getCurrentLayout: () => ({ classID: 'SpiralLayout' }) },
     };
@@ -83,6 +118,7 @@ test('chooser receives enabled layouts and the current layout without a timeout'
         { id: 'SpiralLayout', name: 'Spiral', icon: 'spiral' },
       ],
       'SpiralLayout',
+      0,
     ],
   ]);
 });
@@ -95,6 +131,7 @@ test('opening the chooser centers the pointer on the screen after showing it', (
       layoutOrder: ['TileLayout'],
     },
     layoutChooserDialog: {
+      isOpen: () => false,
       showLayouts: () => events.push('showLayouts'),
     },
     DBUS: {
@@ -122,7 +159,10 @@ test('an empty layout list neither opens the chooser nor moves the pointer', () 
   const events = [];
   const context = vm.createContext({
     CONFIG: { notificationDuration: 0, layoutOrder: ['DisabledLayout'] },
-    layoutChooserDialog: { showLayouts: () => events.push('showLayouts') },
+    layoutChooserDialog: {
+      isOpen: () => false,
+      showLayouts: () => events.push('showLayouts'),
+    },
     DBUS: { moveMouseToScreenCenter: () => events.push('moveMouseToScreenCenter') },
   });
   vm.runInContext(`${transpile('src/driver/kwindriver.ts')}\n(() => {
@@ -132,6 +172,98 @@ test('an empty layout list neither opens the chooser nor moves the pointer', () 
     driver.showLayoutChooser();
   })()`, context);
   assert.deepEqual(events, []);
+});
+
+test('the chooser shortcut toggles the chooser off on the same surface', () => {
+  const events = [];
+  const context = vm.createContext({
+    CONFIG: { notificationDuration: 500, layoutOrder: ['TileLayout'] },
+    layoutChooserDialog: {
+      isOpen: () => true,
+      hide: () => events.push('hide'),
+      showLayouts: () => events.push('showLayouts'),
+    },
+    DBUS: {
+      moveMouseToScreenCenter: () => events.push('moveMouseToScreenCenter'),
+    },
+  });
+  vm.runInContext(`${transpile('src/driver/kwindriver.ts')}\n(() => {
+    const driver = Object.create(KWinDriver.prototype);
+    Object.defineProperty(driver, 'currentSurface', { value: { id: 'srf-1' } });
+    driver._layoutChooserSurfaceId = 'srf-1';
+    driver.engine = {
+      layouts: { getCurrentLayout: () => ({ classID: 'TileLayout' }) },
+    };
+    driver.showLayoutChooser();
+  })()`, context);
+  assert.deepEqual(events, ['hide']);
+});
+
+test('the chooser opens on another surface even when it is already open', () => {
+  const events = [];
+  const context = vm.createContext({
+    CONFIG: { notificationDuration: 500, layoutOrder: ['TileLayout'] },
+    layoutChooserDialog: {
+      isOpen: () => true,
+      hide: () => events.push('hide'),
+      showLayouts: () => events.push('showLayouts'),
+    },
+    DBUS: {
+      moveMouseToScreenCenter: () => events.push('moveMouseToScreenCenter'),
+    },
+  });
+  vm.runInContext(`${transpile('src/driver/kwindriver.ts')}\n(() => {
+    const driver = Object.create(KWinDriver.prototype);
+    Object.defineProperty(driver, 'currentSurface', { value: { id: 'srf-2' } });
+    driver._layoutChooserSurfaceId = 'srf-1';
+    driver.engine = {
+      layouts: { getCurrentLayout: () => ({ classID: 'TileLayout' }) },
+    };
+    driver.showLayoutChooser();
+  })()`, context);
+  assert.deepEqual(events, ['showLayouts', 'moveMouseToScreenCenter']);
+});
+
+test('focus shortcuts navigate the open chooser instead of the windows', () => {
+  const calls = [];
+  const context = vm.createContext({
+    KrohnkiteAction: new Proxy({}, { get: (_target, action) => String(action) }),
+    layoutChooserDialog: {
+      isOpen: () => true,
+      navigate: (dx, dy) => calls.push([dx, dy]),
+    },
+  });
+  const handled = vm.runInContext(`${transpile('src/driver/kwindriver.ts')}\n(() => {
+    const driver = Object.create(KWinDriver.prototype);
+    const actions = ['FocusLeft', 'FocusRight', 'FocusUp', 'FocusDown', 'DWMLeft', 'DWMRight'];
+    return actions.map(action => driver.handleLayoutChooserShortcut(action));
+  })()`, context);
+  assert.deepEqual(Array.from(handled), [true, true, true, true, true, true]);
+  assert.deepEqual(JSON.parse(JSON.stringify(calls)), [
+    [-1, 0],
+    [1, 0],
+    [0, -1],
+    [0, 1],
+    [-1, 0],
+    [1, 0],
+  ]);
+});
+
+test('focus shortcuts are left alone when the chooser is closed', () => {
+  const calls = [];
+  const context = vm.createContext({
+    KrohnkiteAction: new Proxy({}, { get: (_target, action) => String(action) }),
+    layoutChooserDialog: {
+      isOpen: () => false,
+      navigate: (dx, dy) => calls.push([dx, dy]),
+    },
+  });
+  const handled = vm.runInContext(`${transpile('src/driver/kwindriver.ts')}\n(() => {
+    const driver = Object.create(KWinDriver.prototype);
+    return driver.handleLayoutChooserShortcut('FocusLeft');
+  })()`, context);
+  assert.equal(handled, false);
+  assert.deepEqual(calls, []);
 });
 
 /* Minimal DBusCall stand-in: `call()` reports itself and then emits `finished`,
@@ -250,19 +382,35 @@ test('runtime refuses disabled layouts before forwarding the selection', () => {
   assert.deepEqual(Array.from(calls), ['SpiralLayout']);
 });
 
-test('chooser is an interactive dialog without an auto-hide timer', () => {
+test('chooser auto-hides only after keyboard navigation starts', () => {
   assert.match(chooser, /type: PlasmaCore\.Dialog\.Normal/);
   assert.match(chooser, /flags: Qt\.FramelessWindowHint \| Qt\.WindowStaysOnTopHint \| Qt\.Tool/);
   assert.match(chooser, /outputOnly: false/);
   assert.match(chooser, /signal layoutSelected\(string id\)/);
-  assert.match(chooser, /function showLayouts\(entries, selected, area\)/);
+  assert.match(chooser, /property int hideDelay: 0/);
+  assert.match(chooser, /function showLayouts\(entries, selected, area, duration\)/);
+  assert.match(chooser, /hideDelay = duration > 0 \? duration : 0;/);
+  assert.match(chooser, /hideTimer\.stop\(\);/);
   assert.match(chooser, /layouts = entries;/);
   assert.match(chooser, /selectedLayout = selected;/);
   assert.match(chooser, /model: chooserDialog\.layouts/);
   assert.match(chooser, /chooserDialog\.layoutSelected\(layoutCard\.modelData\.id\);/);
   assert.match(chooser, /chooserDialog\.visible = false;/);
-  assert.doesNotMatch(chooser, /Timer\s*\{/);
-  assert.doesNotMatch(chooser, /hideTimer/);
+  assert.match(chooser, /Timer\s*\{/);
+  assert.match(chooser, /id: hideTimer/);
+  assert.match(chooser, /onTriggered: chooserDialog\.visible = false/);
+  /* The timer is only armed by navigate(), never by showLayouts(). */
+  assert.match(chooser, /function navigate\(dx, dy\)/);
+  assert.match(chooser, /hideTimer\.restart\(\);/);
+  assert.match(chooser, /onVisibleChanged: \{[\s\S]{0,80}hideTimer\.stop\(\);/);
+});
+
+test('chooser navigation moves within rows and clamps at the edges', () => {
+  assert.match(chooser, /const rowStart = Math\.floor\(index \/ columns\) \* columns;/);
+  assert.match(chooser, /const rowEnd = Math\.min\(layouts\.length - 1, rowStart \+ columns - 1\);/);
+  assert.match(chooser, /next = Math\.min\(rowEnd, Math\.max\(rowStart, index \+ dx\)\);/);
+  assert.match(chooser, /next = Math\.min\(layouts\.length - 1, Math\.max\(0, index \+ dy \* columns\)\);/);
+  assert.match(chooser, /if \(next !== index\) \{[\s\S]{0,100}layoutSelected\(selectedLayout\);/);
 });
 
 test('hovering a card uses the active layout color for its border', () => {
@@ -280,9 +428,12 @@ test('hovering a card uses the active layout color for its border', () => {
   assert.match(chooser, /onClicked: \{[\s\S]*?layoutSelected\(layoutCard\.modelData\.id\)/);
 });
 
-test('main.qml wires chooser clicks to the runtime', () => {
+test('main.qml wires chooser clicks and keyboard navigation to the runtime', () => {
   assert.match(main, /id: layoutChooserDialog[\s\S]*?source: "layoutchooser\.qml"/);
-  assert.match(main, /function showLayouts\(entries, selected\) \{[\s\S]*?this\.item\.showLayouts\(entries, selected, area\);/);
+  assert.match(main, /function showLayouts\(entries, selected, duration\) \{[\s\S]*?this\.item\.showLayouts\(entries, selected, area, duration\);/);
+  assert.match(main, /function isOpen\(\) \{\s*return this\.item \? this\.item\.visible : false;/);
+  assert.match(main, /function hide\(\) \{\s*if \(this\.item\) this\.item\.visible = false;/);
+  assert.match(main, /function navigate\(dx, dy\) \{\s*if \(this\.item\) this\.item\.navigate\(dx, dy\);/);
   assert.match(main, /target: layoutChooserDialog\.item[\s\S]*?function onLayoutSelected\(id\) \{[\s\S]*?runtime\.selectLayout\(id\);/);
 });
 

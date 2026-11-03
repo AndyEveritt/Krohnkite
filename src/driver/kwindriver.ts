@@ -167,6 +167,8 @@ class KWinDriver implements IDriverContext {
    * current when it runs. */
   private _pointerCenterPending: boolean;
   private _layoutPassActive: boolean;
+  /* Surface the chooser was opened on; used to toggle it per surface. */
+  private _layoutChooserSurfaceId: string | null;
 
   constructor(api: Api, config?: KWinConfig) {
     KWIN = api.kwin;
@@ -196,6 +198,7 @@ class KWinDriver implements IDriverContext {
     this._pointerRequest = null;
     this._pointerCenterPending = false;
     this._layoutPassActive = false;
+    this._layoutChooserSurfaceId = null;
     this._surfaceStore = new KWinSurfaceStore(this.workspace);
     this._isRegister = {
       state: false,
@@ -618,6 +621,15 @@ class KWinDriver implements IDriverContext {
     );
   }
   public showLayoutChooser(): void {
+    const surface = this.currentSurface;
+    if (
+      layoutChooserDialog.isOpen() &&
+      this._layoutChooserSurfaceId === surface.id
+    ) {
+      layoutChooserDialog.hide();
+      this._layoutChooserSurfaceId = null;
+      return;
+    }
     const entries = CONFIG.layoutOrder
       .filter((id) => LayoutOSDNames[id] !== undefined)
       .map((id) => ({
@@ -626,15 +638,42 @@ class KWinDriver implements IDriverContext {
         icon: LayoutOSDNames[id].icon,
       }));
     if (entries.length === 0) return;
-    const selected = this.engine.layouts.getCurrentLayout(
-      this.currentSurface,
-    ).classID;
-    layoutChooserDialog.showLayouts(entries, selected);
+    const selected = this.engine.layouts.getCurrentLayout(surface).classID;
+    this._layoutChooserSurfaceId = surface.id;
+    layoutChooserDialog.showLayouts(
+      entries,
+      selected,
+      CONFIG.notificationDuration,
+    );
     /* The chooser is centered on the active screen, so put the pointer on the
      * same spot instead of leaving it wherever it was (possibly on another
      * output). MoveMouseToCenter is a KWin global shortcut; the delay lets the
      * dialog settle before the pointer lands on it. */
     DBUS.moveMouseToScreenCenter(KWinDriver.POINTER_CENTER_DELAY_MS);
+  }
+  /* While the chooser is open, the focus shortcuts drive its selection instead
+   * of moving focus between windows. Returns true when the action was consumed. */
+  public handleLayoutChooserShortcut(action: KrohnkiteAction): boolean {
+    if (!layoutChooserDialog.isOpen()) return false;
+
+    switch (action) {
+      case KrohnkiteAction.DWMLeft:
+      case KrohnkiteAction.FocusLeft:
+        layoutChooserDialog.navigate(-1, 0);
+        return true;
+      case KrohnkiteAction.DWMRight:
+      case KrohnkiteAction.FocusRight:
+        layoutChooserDialog.navigate(1, 0);
+        return true;
+      case KrohnkiteAction.FocusUp:
+        layoutChooserDialog.navigate(0, -1);
+        return true;
+      case KrohnkiteAction.FocusDown:
+        layoutChooserDialog.navigate(0, 1);
+        return true;
+      default:
+        return false;
+    }
   }
   public selectLayoutFromOSD(id: string): void {
     if (CONFIG.layoutOrder.indexOf(id) === -1) return;
