@@ -216,7 +216,7 @@
 
     <entry name="srfExceededToScreen" type="Bool">
 	    <label>Move windows to next screen if surface(or layout) capacity is exceeded</label>
-        <default>true</default>
+        <default>false</default>
     </entry>
     <entry name="srfToScreenOrderLeft" type="Int">
 	    <label>The order of the left screen to move exceeded windows</label>
@@ -237,7 +237,7 @@
 
     <entry name="srfExceededToVDesktop" type="Bool">
 	    <label>Move windows to next screen if surface(or layout) capacity is exceeded</label>
-        <default>true</default>
+        <default>false</default>
     </entry>
     <entry name="srfToVDesktopOrderLeft" type="Int">
 	    <label>The order of the left Virtual Desktop to move exceeded windows</label>
@@ -256,8 +256,18 @@
         <default>4</default>
     </entry>
 
-    <entry name="srfIsMoveOldestWindows" type="Bool">
-	    <label>Move the oldest windows</label>
+    <entry name="srfOvercapacityEviction" type="Int">
+	    <label>Which overcapacity windows to evict: 0 - last focused, 1 - oldest</label>
+        <default>1</default>
+    </entry>
+
+    <entry name="srfOvercapacityMode" type="Int">
+	    <label>How to handle overcapacity windows: 0 - float, 1 - minimize</label>
+        <default>1</default>
+    </entry>
+
+    <entry name="srfAllowShortcutMoveToFullSurface" type="Bool">
+	    <label>Allow shortcut moves to a full surface</label>
         <default>false</default>
     </entry>
 
@@ -380,6 +390,14 @@
     </entry>
     <entry name="movePointerOnFocus" type="Bool">
       <label>Move mouse cursor to the center of a window/screen when it becomes focused</label>
+      <default>false</default>
+    </entry>
+    <entry name="movePointerOnFocusShortcutsOnly" type="Bool">
+      <label>Move the pointer on focus only when focus changes through a Krohnkite shortcut</label>
+      <default>false</default>
+    </entry>
+    <entry name="movePointerOnResize" type="Bool">
+      <label>Move mouse cursor to the center of the focused window when it is resized</label>
       <default>false</default>
     </entry>
 

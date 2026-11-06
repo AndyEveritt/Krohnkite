@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-01 12:27+0300\n"
+"POT-Creation-Date: 2026-11-03 14:01+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -280,14 +280,58 @@ msgid "move overcapacity windows to Virtual Desktops"
 msgstr ""
 
 #: KrohnkiteConfigForm%2365
-msgid "move the oldest windows"
+msgid "Overcapacity windows handling"
 msgstr ""
 
 #: KrohnkiteConfigForm%2366
-msgid "Defining Surfaces"
+msgid ""
+"<html><head/><body><p>Float: overcapacity windows<br/>become floating "
+"windows.</p><p>Minimize (default): hide the selected<br/>window and restore "
+"it when a slot is free.</p><p>Relocation to other screens or<br/>desktops "
+"still runs first.</p></body></html>"
 msgstr ""
 
 #: KrohnkiteConfigForm%2367
+msgid "Float"
+msgstr ""
+
+#: KrohnkiteConfigForm%2368
+msgid "Minimize"
+msgstr ""
+
+#: KrohnkiteConfigForm%2369
+msgid "Evict windows by"
+msgstr ""
+
+#: KrohnkiteConfigForm%2370
+msgid ""
+"<html><head/><body><p>last focused: evict the window that<br/>received focus "
+"most recently.</p><p>oldest windows (default): evict the<br/>window that "
+"appeared on the surface first.</p><p>Used in both Float and Minimize modes.</"
+"p></body></html>"
+msgstr ""
+
+#: KrohnkiteConfigForm%2371
+msgid "last focused"
+msgstr ""
+
+#: KrohnkiteConfigForm%2372
+msgid "oldest windows"
+msgstr ""
+
+#: KrohnkiteConfigForm%2373
+msgid "The moved window stays; the overcapacity policy evicts another window."
+msgstr ""
+
+#: KrohnkiteConfigForm%2374
+msgid "allow shortcut moves to a full surface"
+msgstr ""
+
+#: KrohnkiteConfigForm%2375
+msgid "Defining Surfaces"
+msgstr ""
+
+#: KrohnkiteConfigForm%2376
 msgid ""
 "<html><head/><body><p><span style=\" font-size:12pt;\">Surface is "
 "combination of three parameters: Screen(Output) name and optional "
@@ -317,11 +361,11 @@ msgid ""
 "and you want the monitor to have this config. </span></p></body></html>"
 msgstr ""
 
-#: KrohnkiteConfigForm%2368
+#: KrohnkiteConfigForm%2377
 msgid "Surfaces Configuration"
 msgstr ""
 
-#: KrohnkiteConfigForm%2369
+#: KrohnkiteConfigForm%2378
 msgid ""
 "<html><head/><body><p><span style=\" font-size:12pt;\">Overriding default "
 "parameters for every surface. Format: </span><span style=\" font-size:12pt; "
@@ -337,27 +381,27 @@ msgid ""
 "disable overcapacity windows movement on them.</span></p></body></html>"
 msgstr ""
 
-#: KrohnkiteConfigForm%2370
+#: KrohnkiteConfigForm%2379
 msgid "Geometry"
 msgstr ""
 
-#: KrohnkiteConfigForm%2371
+#: KrohnkiteConfigForm%2380
 msgid "Default Gaps"
 msgstr ""
 
-#: KrohnkiteConfigForm%2372
+#: KrohnkiteConfigForm%2381
 msgid "px"
 msgstr ""
 
-#: KrohnkiteConfigForm%2373
+#: KrohnkiteConfigForm%2382
 msgid "Between tiles"
 msgstr ""
 
-#: KrohnkiteConfigForm%2374
+#: KrohnkiteConfigForm%2383
 msgid "Override default gaps for a screen"
 msgstr ""
 
-#: KrohnkiteConfigForm%2375
+#: KrohnkiteConfigForm%2384
 msgid ""
 "<html><head/><body><p><span style=\" font-size:12pt;\">Overriding default "
 "gaps parameters for defined SurfaceLabel(see Surfaces tab). Format:</span></"
@@ -376,37 +420,37 @@ msgid ""
 "</p></body></html>"
 msgstr ""
 
-#: KrohnkiteConfigForm%2376
+#: KrohnkiteConfigForm%2385
 msgid "SurfaceLabel:<left,right,top,bottom,between>=number,...<Enter>"
 msgstr ""
 
-#: KrohnkiteConfigForm%2377
+#: KrohnkiteConfigForm%2386
 msgid "Maximum Tile Width"
 msgstr ""
 
-#: KrohnkiteConfigForm%2378
+#: KrohnkiteConfigForm%2387
 msgid "Ratio of the max width to screen height "
 msgstr ""
 
-#: KrohnkiteConfigForm%2379
+#: KrohnkiteConfigForm%2388
 msgid ""
 "<html><head/><body><p>value 1.6 means the width of the tile can be 60% "
 "greater than  the height</p></body></html>"
 msgstr ""
 
-#: KrohnkiteConfigForm%2380
+#: KrohnkiteConfigForm%2389
 msgid "Limit the width of tiled windows"
 msgstr ""
 
-#: KrohnkiteConfigForm%2381
+#: KrohnkiteConfigForm%2390
 msgid "Shortcuts"
 msgstr ""
 
-#: KrohnkiteConfigForm%2382
+#: KrohnkiteConfigForm%2391
 msgid "Alter Register"
 msgstr ""
 
-#: KrohnkiteConfigForm%2383
+#: KrohnkiteConfigForm%2392
 msgid ""
 "<html><head/><body><p>Double push AlterRegisterSC to toggle on/off  the "
 "Register.</p><p>add shortcut sequence:</p><p><span style=\" font-"
@@ -415,408 +459,412 @@ msgid ""
 "p></body></html>"
 msgstr ""
 
-#: KrohnkiteConfigForm%2384
+#: KrohnkiteConfigForm%2393
 msgid "Duration: "
 msgstr ""
 
-#: KrohnkiteConfigForm%2385
+#: KrohnkiteConfigForm%2394
 msgid ""
 "<html><head/><body><p>Push twice AlterRegisterSC shortcut to toggle Register "
 "Mode</p></body></html>"
 msgstr ""
 
-#: KrohnkiteConfigForm%2386
+#: KrohnkiteConfigForm%2395
 msgid "Push twice  to toggle"
 msgstr ""
 
-#: KrohnkiteConfigForm%2387
+#: KrohnkiteConfigForm%2396
 msgid ""
 "<html><head/><body><p>After this time the register state will return to its "
 "original state. Any shortcut will refresh this timer.</p></body></html>"
 msgstr ""
 
-#: KrohnkiteConfigForm%2388
+#: KrohnkiteConfigForm%2397
 msgid "ms"
 msgstr ""
 
-#: KrohnkiteConfigForm%2389
+#: KrohnkiteConfigForm%2398
 msgid ""
 "<html><head/><body><p>Alter Register shortcut will toggle register. Switch "
 "on/off without timeout.</p></body></html>"
 msgstr ""
 
-#: KrohnkiteConfigForm%2390
+#: KrohnkiteConfigForm%2399
 msgid "Push to toggle"
 msgstr ""
 
-#: KrohnkiteConfigForm%2391
+#: KrohnkiteConfigForm%23100
 msgid "Possible shortcuts and actions (for information only)"
 msgstr ""
 
-#: KrohnkiteConfigForm%2392
+#: KrohnkiteConfigForm%23101
 msgid "AlterRegister"
 msgstr ""
 
-#: KrohnkiteConfigForm%2393
+#: KrohnkiteConfigForm%23102
 msgid "Decrease"
 msgstr ""
 
-#: KrohnkiteConfigForm%2394
+#: KrohnkiteConfigForm%23103
 msgid "DWMLeft"
 msgstr ""
 
-#: KrohnkiteConfigForm%2395
+#: KrohnkiteConfigForm%23104
 msgid "DWMRight"
 msgstr ""
 
-#: KrohnkiteConfigForm%2396
+#: KrohnkiteConfigForm%23105
 msgid "FocusDown"
 msgstr ""
 
-#: KrohnkiteConfigForm%2397
+#: KrohnkiteConfigForm%23106
 msgid "FocusLeft"
 msgstr ""
 
-#: KrohnkiteConfigForm%2398
+#: KrohnkiteConfigForm%23107
 msgid "FocusNext"
 msgstr ""
 
-#: KrohnkiteConfigForm%2399
+#: KrohnkiteConfigForm%23108
 msgid "FocusPrev"
 msgstr ""
 
-#: KrohnkiteConfigForm%23100
+#: KrohnkiteConfigForm%23109
 msgid "FocusRight"
 msgstr ""
 
-#: KrohnkiteConfigForm%23101
+#: KrohnkiteConfigForm%23110
 msgid "FocusUp"
 msgstr ""
 
-#: KrohnkiteConfigForm%23102
+#: KrohnkiteConfigForm%23111
 msgid "GrowHeight"
 msgstr ""
 
-#: KrohnkiteConfigForm%23103
+#: KrohnkiteConfigForm%23112
 msgid "GrowWidth"
 msgstr ""
 
-#: KrohnkiteConfigForm%23104
+#: KrohnkiteConfigForm%23113
 msgid "Increase"
 msgstr ""
 
-#: KrohnkiteConfigForm%23105
+#: KrohnkiteConfigForm%23114
 msgid "LayoutChooser"
 msgstr ""
 
-#: KrohnkiteConfigForm%23106
+#: KrohnkiteConfigForm%23115
 msgid "LowerSurfaceCapacity"
 msgstr ""
 
-#: KrohnkiteConfigForm%23107
+#: KrohnkiteConfigForm%23116
 msgid "NextLayout"
 msgstr ""
 
-#: KrohnkiteConfigForm%23108
+#: KrohnkiteConfigForm%23117
 msgid "PreviousLayout"
 msgstr ""
 
-#: KrohnkiteConfigForm%23109
+#: KrohnkiteConfigForm%23118
 msgid "RaiseSurfaceCapacity"
 msgstr ""
 
-#: KrohnkiteConfigForm%23110
+#: KrohnkiteConfigForm%23119
 msgid "ResetSurfaceCapacity"
 msgstr ""
 
-#: KrohnkiteConfigForm%23111
+#: KrohnkiteConfigForm%23120
 msgid "Rotate"
 msgstr ""
 
-#: KrohnkiteConfigForm%23112
+#: KrohnkiteConfigForm%23121
 msgid "RotatePart"
 msgstr ""
 
-#: KrohnkiteConfigForm%23113
+#: KrohnkiteConfigForm%23122
 msgid "SetBinaryTreeLayout"
 msgstr ""
 
-#: KrohnkiteConfigForm%23114
+#: KrohnkiteConfigForm%23123
 msgid "SetCascadeLayout"
 msgstr ""
 
-#: KrohnkiteConfigForm%23115
+#: KrohnkiteConfigForm%23124
 msgid "SetColumnsLayout"
 msgstr ""
 
-#: KrohnkiteConfigForm%23116
+#: KrohnkiteConfigForm%23125
 msgid "SetFloatingLayout"
 msgstr ""
 
-#: KrohnkiteConfigForm%23117
+#: KrohnkiteConfigForm%23126
 msgid "SetMaster"
 msgstr ""
 
-#: KrohnkiteConfigForm%23118
+#: KrohnkiteConfigForm%23127
 msgid "SetMonocleLayout"
 msgstr ""
 
-#: KrohnkiteConfigForm%23119
+#: KrohnkiteConfigForm%23128
 msgid "SetQuarterLayout"
 msgstr ""
 
-#: KrohnkiteConfigForm%23120
+#: KrohnkiteConfigForm%23129
 msgid "SetSpiralLayout"
 msgstr ""
 
-#: KrohnkiteConfigForm%23121
+#: KrohnkiteConfigForm%23130
 msgid "SetSpreadLayout"
 msgstr ""
 
-#: KrohnkiteConfigForm%23122
+#: KrohnkiteConfigForm%23131
 msgid "SetStackedLayout"
 msgstr ""
 
-#: KrohnkiteConfigForm%23123
+#: KrohnkiteConfigForm%23132
 msgid "SetStairLayout"
 msgstr ""
 
-#: KrohnkiteConfigForm%23124
+#: KrohnkiteConfigForm%23133
 msgid "SetThreeColumnLayout"
 msgstr ""
 
-#: KrohnkiteConfigForm%23125
+#: KrohnkiteConfigForm%23134
 msgid "SetTileLayout"
 msgstr ""
 
-#: KrohnkiteConfigForm%23126
-msgid "MoveDown"
-msgstr ""
-
-#: KrohnkiteConfigForm%23127
-msgid "MoveLeft"
-msgstr ""
-
-#: KrohnkiteConfigForm%23128
-msgid "MoveRight"
-msgstr ""
-
-#: KrohnkiteConfigForm%23129
-msgid "MoveUp"
-msgstr ""
-
-#: KrohnkiteConfigForm%23130
-msgid "ShrinkHeight"
-msgstr ""
-
-#: KrohnkiteConfigForm%23131
-msgid "ShrinkWidth"
-msgstr ""
-
-#: KrohnkiteConfigForm%23132
-msgid "SwapDown"
-msgstr ""
-
-#: KrohnkiteConfigForm%23133
-msgid "SwapUp"
-msgstr ""
-
-#: KrohnkiteConfigForm%23134
-msgid "ToggleDock"
-msgstr ""
-
 #: KrohnkiteConfigForm%23135
-msgid "ToggleFloat"
+msgid "ShowCurrentCapacity"
 msgstr ""
 
 #: KrohnkiteConfigForm%23136
-msgid "ToggleFloatAll"
+msgid "MoveDown"
 msgstr ""
 
 #: KrohnkiteConfigForm%23137
-msgid "ToggleRegister"
+msgid "MoveLeft"
 msgstr ""
 
 #: KrohnkiteConfigForm%23138
-msgid "AlterRegisterSC"
+msgid "MoveRight"
 msgstr ""
 
 #: KrohnkiteConfigForm%23139
-msgid "DecreaseSC"
+msgid "MoveUp"
 msgstr ""
 
 #: KrohnkiteConfigForm%23140
-msgid "FocusDownSC"
+msgid "ShrinkHeight"
 msgstr ""
 
 #: KrohnkiteConfigForm%23141
-msgid "FocusLeftSC"
+msgid "ShrinkWidth"
 msgstr ""
 
 #: KrohnkiteConfigForm%23142
-msgid "FocusNextSC"
+msgid "SwapDown"
 msgstr ""
 
 #: KrohnkiteConfigForm%23143
-msgid "FocusPrevSC"
+msgid "SwapUp"
 msgstr ""
 
 #: KrohnkiteConfigForm%23144
-msgid "FocusRightSC"
+msgid "ToggleDock"
 msgstr ""
 
 #: KrohnkiteConfigForm%23145
-msgid "FocusUpSC"
+msgid "ToggleFloat"
 msgstr ""
 
 #: KrohnkiteConfigForm%23146
-msgid "GrowHeightSC"
+msgid "ToggleFloatAll"
 msgstr ""
 
 #: KrohnkiteConfigForm%23147
-msgid "GrowWidthSC"
+msgid "ToggleRegister"
 msgstr ""
 
 #: KrohnkiteConfigForm%23148
-msgid "IncreaseSC"
+msgid "AlterRegisterSC"
 msgstr ""
 
 #: KrohnkiteConfigForm%23149
-msgid "LayoutChooserSC"
+msgid "DecreaseSC"
 msgstr ""
 
 #: KrohnkiteConfigForm%23150
-msgid "LowerSurfaceCapacitySC"
+msgid "FocusDownSC"
 msgstr ""
 
 #: KrohnkiteConfigForm%23151
-msgid "NextLayoutSC"
+msgid "FocusLeftSC"
 msgstr ""
 
 #: KrohnkiteConfigForm%23152
-msgid "PreviousLayoutSC"
+msgid "FocusNextSC"
 msgstr ""
 
 #: KrohnkiteConfigForm%23153
-msgid "RaiseSurfaceCapacitySC"
+msgid "FocusPrevSC"
 msgstr ""
 
 #: KrohnkiteConfigForm%23154
-msgid "RotateSC"
+msgid "FocusRightSC"
 msgstr ""
 
 #: KrohnkiteConfigForm%23155
-msgid "RotatePartSC"
+msgid "FocusUpSC"
 msgstr ""
 
 #: KrohnkiteConfigForm%23156
-msgid "SetBinaryTreeLayoutSC"
+msgid "GrowHeightSC"
 msgstr ""
 
 #: KrohnkiteConfigForm%23157
-msgid "SetCascadeLayoutSC"
+msgid "GrowWidthSC"
 msgstr ""
 
 #: KrohnkiteConfigForm%23158
-msgid "SetColumnsLayoutSC"
+msgid "IncreaseSC"
 msgstr ""
 
 #: KrohnkiteConfigForm%23159
-msgid "SetFloatingLayoutSC"
+msgid "LayoutChooserSC"
 msgstr ""
 
 #: KrohnkiteConfigForm%23160
-msgid "SetMasterSC"
+msgid "LowerSurfaceCapacitySC"
 msgstr ""
 
 #: KrohnkiteConfigForm%23161
-msgid "SetMonocleLayoutSC"
+msgid "NextLayoutSC"
 msgstr ""
 
 #: KrohnkiteConfigForm%23162
-msgid "SetQuarterLayoutSC"
+msgid "PreviousLayoutSC"
 msgstr ""
 
 #: KrohnkiteConfigForm%23163
-msgid "SetSpiralLayoutSC"
+msgid "RaiseSurfaceCapacitySC"
 msgstr ""
 
 #: KrohnkiteConfigForm%23164
-msgid "SetSpreadLayoutSC"
+msgid "RotateSC"
 msgstr ""
 
 #: KrohnkiteConfigForm%23165
-msgid "SetStackedLayoutSC"
+msgid "RotatePartSC"
 msgstr ""
 
 #: KrohnkiteConfigForm%23166
-msgid "SetStairLayoutSC"
+msgid "SetBinaryTreeLayoutSC"
 msgstr ""
 
 #: KrohnkiteConfigForm%23167
-msgid "SetThreeColumnLayoutSC"
+msgid "SetCascadeLayoutSC"
 msgstr ""
 
 #: KrohnkiteConfigForm%23168
-msgid "SetTileLayoutSC"
+msgid "SetColumnsLayoutSC"
 msgstr ""
 
 #: KrohnkiteConfigForm%23169
-msgid "MoveDownSC"
+msgid "SetFloatingLayoutSC"
 msgstr ""
 
 #: KrohnkiteConfigForm%23170
-msgid "MoveLeftSC"
+msgid "SetMasterSC"
 msgstr ""
 
 #: KrohnkiteConfigForm%23171
-msgid "MoveRightSC"
+msgid "SetMonocleLayoutSC"
 msgstr ""
 
 #: KrohnkiteConfigForm%23172
-msgid "MoveUpSC"
+msgid "SetQuarterLayoutSC"
 msgstr ""
 
 #: KrohnkiteConfigForm%23173
-msgid "ShrinkHeightSC"
+msgid "SetSpiralLayoutSC"
 msgstr ""
 
 #: KrohnkiteConfigForm%23174
-msgid "ShrinkWidthSC"
+msgid "SetSpreadLayoutSC"
 msgstr ""
 
 #: KrohnkiteConfigForm%23175
-msgid "ToggleDockSC"
+msgid "SetStackedLayoutSC"
 msgstr ""
 
 #: KrohnkiteConfigForm%23176
-msgid "ToggleFloatSC"
+msgid "SetStairLayoutSC"
 msgstr ""
 
 #: KrohnkiteConfigForm%23177
-msgid "ToggleFloatAllSC"
+msgid "SetThreeColumnLayoutSC"
 msgstr ""
 
 #: KrohnkiteConfigForm%23178
-msgid "Actions"
+msgid "SetTileLayoutSC"
 msgstr ""
 
 #: KrohnkiteConfigForm%23179
-msgid "Default shortcuts override"
+msgid "MoveDownSC"
 msgstr ""
 
 #: KrohnkiteConfigForm%23180
+msgid "MoveLeftSC"
+msgstr ""
+
+#: KrohnkiteConfigForm%23181
+msgid "MoveRightSC"
+msgstr ""
+
+#: KrohnkiteConfigForm%23182
+msgid "MoveUpSC"
+msgstr ""
+
+#: KrohnkiteConfigForm%23183
+msgid "ShrinkHeightSC"
+msgstr ""
+
+#: KrohnkiteConfigForm%23184
+msgid "ShrinkWidthSC"
+msgstr ""
+
+#: KrohnkiteConfigForm%23185
+msgid "ToggleDockSC"
+msgstr ""
+
+#: KrohnkiteConfigForm%23186
+msgid "ToggleFloatSC"
+msgstr ""
+
+#: KrohnkiteConfigForm%23187
+msgid "ToggleFloatAllSC"
+msgstr ""
+
+#: KrohnkiteConfigForm%23188
+msgid "Actions"
+msgstr ""
+
+#: KrohnkiteConfigForm%23189
+msgid "Default shortcuts override"
+msgstr ""
+
+#: KrohnkiteConfigForm%23190
 msgid ""
 "<html><head/><body><p>Max waiting time the sequence of shortcuts. By default "
 "no sequences configured, but you can configure them by yourself below text "
 "field.</p></body></html>"
 msgstr ""
 
-#: KrohnkiteConfigForm%23181
+#: KrohnkiteConfigForm%23191
 msgid "Sequence time"
 msgstr ""
 
-#: KrohnkiteConfigForm%23182
+#: KrohnkiteConfigForm%23192
 msgid ""
 "<html><head/><body><p><span style=\" font-size:10pt;\">One rule per line. "
 "Case insensitive. Format:</span></p><p><span style=\" font-size:10pt; font-"
@@ -851,59 +899,59 @@ msgid ""
 "body></html>"
 msgstr ""
 
-#: KrohnkiteConfigForm%23183
+#: KrohnkiteConfigForm%23193
 msgid "?"
 msgstr ""
 
-#: KrohnkiteConfigForm%23184
+#: KrohnkiteConfigForm%23194
 msgid "Behavior"
 msgstr ""
 
-#: KrohnkiteConfigForm%23185
+#: KrohnkiteConfigForm%23195
 msgid "Layout Adjustment"
 msgstr ""
 
-#: KrohnkiteConfigForm%23186
+#: KrohnkiteConfigForm%23196
 msgid ""
 "Resizing window will cause layout to be adjusted. The actual behaviour might "
 "differ based on layout in use."
 msgstr ""
 
-#: KrohnkiteConfigForm%23187
+#: KrohnkiteConfigForm%23197
 msgid "Adjust layout by resizing windows"
 msgstr ""
 
-#: KrohnkiteConfigForm%23188
+#: KrohnkiteConfigForm%23198
 msgid ""
 "If enabled, resizing window will immediately adjust layout. If disabled, "
 "layout will be adjusted *after* window resizing is over."
 msgstr ""
 
-#: KrohnkiteConfigForm%23189
+#: KrohnkiteConfigForm%23199
 msgid "Adjust layout in realtime as window is being resized"
 msgstr ""
 
-#: KrohnkiteConfigForm%23190
+#: KrohnkiteConfigForm%23200
 msgid "Focus/Move Keys"
 msgstr ""
 
-#: KrohnkiteConfigForm%23191
+#: KrohnkiteConfigForm%23201
 msgid "focusing/moving across Vdesktops"
 msgstr ""
 
-#: KrohnkiteConfigForm%23192
+#: KrohnkiteConfigForm%23202
 msgid "Register"
 msgstr ""
 
-#: KrohnkiteConfigForm%23193
+#: KrohnkiteConfigForm%23203
 msgid "focusing/moving across screens"
 msgstr ""
 
-#: KrohnkiteConfigForm%23194
+#: KrohnkiteConfigForm%23204
 msgid "Normal"
 msgstr ""
 
-#: KrohnkiteConfigForm%23195
+#: KrohnkiteConfigForm%23205
 msgid ""
 "<html><head/><body><p>What types of window can be focused/moved using "
 "Krohnkite's focus/move keys. </p><p><span style=\" font-weight:700;\">"
@@ -914,39 +962,35 @@ msgid ""
 "</html>"
 msgstr ""
 
-#: KrohnkiteConfigForm%23196
+#: KrohnkiteConfigForm%23206
 msgid "Tiled+Docked+Float"
 msgstr ""
 
-#: KrohnkiteConfigForm%23197
+#: KrohnkiteConfigForm%23207
 msgid "Tiled"
 msgstr ""
 
-#: KrohnkiteConfigForm%23198
-msgid "Float"
-msgstr ""
-
-#: KrohnkiteConfigForm%23199
+#: KrohnkiteConfigForm%23208
 msgid "Docked"
 msgstr ""
 
-#: KrohnkiteConfigForm%23200
+#: KrohnkiteConfigForm%23209
 msgid "Tiled+Float"
 msgstr ""
 
-#: KrohnkiteConfigForm%23201
+#: KrohnkiteConfigForm%23210
 msgid "Tiled+Docked"
 msgstr ""
 
-#: KrohnkiteConfigForm%23202
+#: KrohnkiteConfigForm%23211
 msgid "Float+Docked"
 msgstr ""
 
-#: KrohnkiteConfigForm%23203
+#: KrohnkiteConfigForm%23212
 msgid "Special"
 msgstr ""
 
-#: KrohnkiteConfigForm%23204
+#: KrohnkiteConfigForm%23213
 msgid ""
 "<html><head/><body><p>What types of window can be focused/moved using "
 "Krohnkite's focus/move keys in meta Mode. </p><p>Meta shortcuts: <span "
@@ -962,40 +1006,61 @@ msgid ""
 "Desktops.</p></body></html>"
 msgstr ""
 
-#: KrohnkiteConfigForm%23205
+#: KrohnkiteConfigForm%23214
 msgid ""
 "Move mouse cursor to the center of a window/screen when it becomes focused"
 msgstr ""
 
-#: KrohnkiteConfigForm%23206
+#: KrohnkiteConfigForm%23215
 msgid "Move pointer to window/screen center on focus"
 msgstr ""
 
-#: KrohnkiteConfigForm%23207
+#: KrohnkiteConfigForm%23216
+msgid ""
+"Move the pointer only when focus changes through a Krohnkite shortcut, never "
+"when a window gets focus some other way (mouse, newly opened window)"
+msgstr ""
+
+#: KrohnkiteConfigForm%23217
+msgid "Only on Krohnkite shortcuts"
+msgstr ""
+
+#: KrohnkiteConfigForm%23218
+msgid ""
+"Move mouse cursor to the center of the focused window whenever its size "
+"changes (tiling, shortcuts, new windows). Moving or resizing a window with "
+"the mouse never moves the pointer."
+msgstr ""
+
+#: KrohnkiteConfigForm%23219
+msgid "Move pointer to focused window center on resize"
+msgstr ""
+
+#: KrohnkiteConfigForm%23220
 msgid "Position of the New Window"
 msgstr ""
 
-#: KrohnkiteConfigForm%23208
+#: KrohnkiteConfigForm%23221
 msgid "Last"
 msgstr ""
 
-#: KrohnkiteConfigForm%23209
+#: KrohnkiteConfigForm%23222
 msgid "Rules"
 msgstr ""
 
-#: KrohnkiteConfigForm%23210
+#: KrohnkiteConfigForm%23223
 msgid "Ignore Windows"
 msgstr ""
 
-#: KrohnkiteConfigForm%23211
+#: KrohnkiteConfigForm%23224
 msgid "By Title"
 msgstr ""
 
-#: KrohnkiteConfigForm%23212
+#: KrohnkiteConfigForm%23225
 msgid "By Class"
 msgstr ""
 
-#: KrohnkiteConfigForm%23213
+#: KrohnkiteConfigForm%23226
 msgid ""
 "Comma-separated list of window classes. Matching windows will not be tiled. "
 "These classes are always ignored: krunner, yakuake, spectacle, kded5, "
@@ -1004,66 +1069,66 @@ msgid ""
 "kwin_wayland, ksmserver-logout-greeter, org.krohnkite.configurator"
 msgstr ""
 
-#: KrohnkiteConfigForm%23214
+#: KrohnkiteConfigForm%23227
 msgid ""
 "Comma-separated list of keywords(or substrings). Any windows with matching "
 "title will not be tiled."
 msgstr ""
 
-#: KrohnkiteConfigForm%23215
+#: KrohnkiteConfigForm%23228
 msgid "By Role"
 msgstr ""
 
-#: KrohnkiteConfigForm%23216
+#: KrohnkiteConfigForm%23229
 msgid "Disable Tiling"
 msgstr ""
 
-#: KrohnkiteConfigForm%23217
+#: KrohnkiteConfigForm%23230
 msgid ""
 "<html><head/><body><p>Comma-separated list of activity IDs. See Readme or "
 "Issue #125 to know IDs. Windows in corresponding activities will not be "
 "tiled.</p></body></html>"
 msgstr ""
 
-#: KrohnkiteConfigForm%23218
+#: KrohnkiteConfigForm%23231
 msgid "On Activity (activityId)"
 msgstr ""
 
-#: KrohnkiteConfigForm%23219
+#: KrohnkiteConfigForm%23232
 msgid "On Screen (name)"
 msgstr ""
 
-#: KrohnkiteConfigForm%23220
+#: KrohnkiteConfigForm%23233
 msgid ""
 "Comma-separated list of screen names. Windows in corresponding screens will "
 "not be tiled."
 msgstr ""
 
-#: KrohnkiteConfigForm%23221
+#: KrohnkiteConfigForm%23234
 msgid "On Virtual Desktop"
 msgstr ""
 
-#: KrohnkiteConfigForm%23222
+#: KrohnkiteConfigForm%23235
 msgid ""
 "Comma-separated list of Virtual Desktops names. Windows corresponding to "
 "these will not be tiled."
 msgstr ""
 
-#: KrohnkiteConfigForm%23223
+#: KrohnkiteConfigForm%23236
 msgid "Always, except by class"
 msgstr ""
 
-#: KrohnkiteConfigForm%23224
+#: KrohnkiteConfigForm%23237
 msgid ""
 "Comma-separated list of window classes. Matching windows will become tiled "
 "automatically."
 msgstr ""
 
-#: KrohnkiteConfigForm%23225
+#: KrohnkiteConfigForm%23238
 msgid "Screen default layout"
 msgstr ""
 
-#: KrohnkiteConfigForm%23226
+#: KrohnkiteConfigForm%23239
 msgid ""
 "<html><head/><body><p>Comma-separated list OutputName:LayoutName. 'Layout' "
 "word can be omit. </p><p>2 monitors example: HDMI-A-1:spread,DP-2:tile</p><p>"
@@ -1071,93 +1136,93 @@ msgid ""
 "p></body></html>"
 msgstr ""
 
-#: KrohnkiteConfigForm%23227
+#: KrohnkiteConfigForm%23240
 msgid "OutputName:LayoutName,..."
 msgstr ""
 
-#: KrohnkiteConfigForm%23228
+#: KrohnkiteConfigForm%23241
 msgid "Default floating windows settings"
 msgstr ""
 
-#: KrohnkiteConfigForm%23229
+#: KrohnkiteConfigForm%23242
 msgid "Height"
 msgstr ""
 
-#: KrohnkiteConfigForm%23230
+#: KrohnkiteConfigForm%23243
 msgid ""
 "<html><head/><body><p>Percentage of the range from the top of the screen to "
 "the window placed in the center of the screen.Determines the randomization "
 "spread.</p></body></html>"
 msgstr ""
 
-#: KrohnkiteConfigForm%23231
+#: KrohnkiteConfigForm%23244
 msgid "Width "
 msgstr ""
 
-#: KrohnkiteConfigForm%23232
+#: KrohnkiteConfigForm%23245
 msgid ""
 "<html><head/><body><p>The initial width of a floating window in percent of "
 "the screen width.</p></body></html>"
 msgstr ""
 
-#: KrohnkiteConfigForm%23233
+#: KrohnkiteConfigForm%23246
 msgid "Randomize initial position "
 msgstr ""
 
-#: KrohnkiteConfigForm%23234
+#: KrohnkiteConfigForm%23247
 msgid ""
 "<html><head/><body><p>The initial height of a floating window in percent of "
 "the screen height.</p></body></html>"
 msgstr ""
 
-#: KrohnkiteConfigForm%23235
+#: KrohnkiteConfigForm%23248
 msgid "Override native float size"
 msgstr ""
 
-#: KrohnkiteConfigForm%23236
+#: KrohnkiteConfigForm%23249
 msgid "Float window resize step"
 msgstr ""
 
-#: KrohnkiteConfigForm%23237
+#: KrohnkiteConfigForm%23250
 msgid ""
 "<html><head/><body><p>Percentage of the range from the left border of the "
 "screen to the window placed in the center of the screen.Determines the "
 "randomization spread.</p></body></html>"
 msgstr ""
 
-#: KrohnkiteConfigForm%23238
+#: KrohnkiteConfigForm%23251
 msgid ""
 "<html><head/><body><p>What percentage of the screen width will the floating "
 "window expand or contract by each time the keyboard shortcut is pressed?</p>"
 "</body></html>"
 msgstr ""
 
-#: KrohnkiteConfigForm%23239
+#: KrohnkiteConfigForm%23252
 msgid ""
 "<html><head/><body><p>What percentage of the screen height will the floating "
 "window expand or contract by each time the keyboard shortcut is pressed?</p>"
 "</body></html>"
 msgstr ""
 
-#: KrohnkiteConfigForm%23240
+#: KrohnkiteConfigForm%23253
 msgid ""
 "This is mainly for debugging purpose, but can also be used to meet some "
 "specific requirements."
 msgstr ""
 
-#: KrohnkiteConfigForm%23241
+#: KrohnkiteConfigForm%23254
 msgid "by default all new windows become floating"
 msgstr ""
 
-#: KrohnkiteConfigForm%23242
+#: KrohnkiteConfigForm%23255
 msgid "Float utility windows(applies to window type Dialog, Splash, Utility)"
 msgstr ""
 
-#: KrohnkiteConfigForm%23243
+#: KrohnkiteConfigForm%23256
 msgid "Override default floating window settings"
 msgstr ""
 
-#: KrohnkiteConfigForm%23244
+#: KrohnkiteConfigForm%23257
 msgid ""
 "<html><head/><body><p><span style=\" font-size:10pt;\">One rule per line. "
 "Format:</span></p><p><span style=\" font-size:10pt; font-weight:700;\">"
@@ -1202,167 +1267,167 @@ msgid ""
 "global)</span></p></body></html>"
 msgstr ""
 
-#: KrohnkiteConfigForm%23245
+#: KrohnkiteConfigForm%23258
 msgid "Dock"
 msgstr ""
 
-#: KrohnkiteConfigForm%23246
+#: KrohnkiteConfigForm%23259
 msgid "Order of docked windows"
 msgstr ""
 
-#: KrohnkiteConfigForm%23247
+#: KrohnkiteConfigForm%23260
 msgid "Surfaces configuration"
 msgstr ""
 
-#: KrohnkiteConfigForm%23248
+#: KrohnkiteConfigForm%23261
 msgid "Default settings for a docked window"
 msgstr ""
 
-#: KrohnkiteConfigForm%23249
+#: KrohnkiteConfigForm%23262
 msgid "Up/Bottom Dock"
 msgstr ""
 
-#: KrohnkiteConfigForm%23250
+#: KrohnkiteConfigForm%23263
 msgid "Horizontal Spacer 'horizontalSpacer_5', 40 x 20"
 msgstr ""
 
-#: KrohnkiteConfigForm%23251
+#: KrohnkiteConfigForm%23264
 msgid ""
 "<html><head/><body><p><span style=\" font-size:12pt;\">short name:</span>"
 "<span style=\" font-weight:700;\">hh</span></p></body></html>"
 msgstr ""
 
-#: KrohnkiteConfigForm%23252
+#: KrohnkiteConfigForm%23265
 msgid " %"
 msgstr ""
 
-#: KrohnkiteConfigForm%23253
+#: KrohnkiteConfigForm%23266
 msgid ""
 "<html><head/><body><p><span style=\" font-size:12pt;\">short name: </span>"
 "<span style=\" font-weight:700;\">hw</span></p></body></html>"
 msgstr ""
 
-#: KrohnkiteConfigForm%23254
+#: KrohnkiteConfigForm%23267
 msgid "<html><head/><body><p>vw - short name</p></body></html>"
 msgstr ""
 
-#: KrohnkiteConfigForm%23255
+#: KrohnkiteConfigForm%23268
 msgid "Wide"
 msgstr ""
 
-#: KrohnkiteConfigForm%23256
+#: KrohnkiteConfigForm%23269
 msgid "Gaps"
 msgstr ""
 
-#: KrohnkiteConfigForm%23257
-msgid "Horizontal "
-msgstr ""
-
-#: KrohnkiteConfigForm%23258
-msgid ""
-"<html><head/><body><p><span style=\" font-size:12pt;\">short name: </span>"
-"<span style=\" font-weight:700;\">hgv</span></p></body></html>"
-msgstr ""
-
-#: KrohnkiteConfigForm%23259
-msgid " px"
-msgstr ""
-
-#: KrohnkiteConfigForm%23260
-msgid ""
-"<html><head/><body><p><span style=\" font-size:12pt;\">short name:</span>"
-"<span style=\" font-weight:700;\">hgh</span></p></body></html>"
-msgstr ""
-
-#: KrohnkiteConfigForm%23261
-msgid "Vertical"
-msgstr ""
-
-#: KrohnkiteConfigForm%23262
-msgid "Alignment"
-msgstr ""
-
-#: KrohnkiteConfigForm%23263
-msgid "Horizontal"
-msgstr ""
-
-#: KrohnkiteConfigForm%23264
-msgid ""
-"<html><head/><body><p><span style=\" font-size:12pt;\">short name: </span>"
-"<span style=\" font-weight:700;\">he</span></p></body></html>"
-msgstr ""
-
-#: KrohnkiteConfigForm%23265
-msgid "Outside"
-msgstr ""
-
-#: KrohnkiteConfigForm%23266
-msgid "Middle"
-msgstr ""
-
-#: KrohnkiteConfigForm%23267
-msgid "Inside"
-msgstr ""
-
-#: KrohnkiteConfigForm%23268
-msgid ""
-"<html><head/><body><p><span style=\" font-size:12pt;\">short name:</span>"
-"<span style=\" font-weight:700;\">ha</span></p></body></html>"
-msgstr ""
-
-#: KrohnkiteConfigForm%23269
-msgid "Center"
-msgstr ""
-
 #: KrohnkiteConfigForm%23270
-msgid "Left/Right Dock"
+msgid "Horizontal "
 msgstr ""
 
 #: KrohnkiteConfigForm%23271
 msgid ""
 "<html><head/><body><p><span style=\" font-size:12pt;\">short name: </span>"
-"<span style=\" font-weight:700;\">vh</span></p></body></html>"
+"<span style=\" font-weight:700;\">hgv</span></p></body></html>"
 msgstr ""
 
 #: KrohnkiteConfigForm%23272
-msgid "Horizontal Spacer 'horizontalSpacer_4', 40 x 20"
+msgid " px"
 msgstr ""
 
 #: KrohnkiteConfigForm%23273
 msgid ""
-"<html><head/><body><p><span style=\" font-size:12pt;\">short name: </span>"
-"<span style=\" font-weight:700;\">vw</span></p></body></html>"
+"<html><head/><body><p><span style=\" font-size:12pt;\">short name:</span>"
+"<span style=\" font-weight:700;\">hgh</span></p></body></html>"
 msgstr ""
 
 #: KrohnkiteConfigForm%23274
-msgid ""
-"<html><head/><body><p><span style=\" font-size:12pt;\">short name:</span>"
-"<span style=\" font-weight:700;\">vgh</span></p></body></html>"
+msgid "Vertical"
 msgstr ""
 
 #: KrohnkiteConfigForm%23275
-msgid ""
-"<html><head/><body><p><span style=\" font-size:12pt;\">short name:</span>"
-"<span style=\" font-weight:700;\">vgv</span></p></body></html>"
+msgid "Alignment"
 msgstr ""
 
 #: KrohnkiteConfigForm%23276
-msgid ""
-"<html><head/><body><p><span style=\" font-size:12pt;\">short name: </span>"
-"<span style=\" font-weight:700;\">va</span></p></body></html>"
+msgid "Horizontal"
 msgstr ""
 
 #: KrohnkiteConfigForm%23277
 msgid ""
 "<html><head/><body><p><span style=\" font-size:12pt;\">short name: </span>"
-"<span style=\" font-weight:700;\">ve</span></p></body></html>"
+"<span style=\" font-weight:700;\">he</span></p></body></html>"
 msgstr ""
 
 #: KrohnkiteConfigForm%23278
-msgid "Window class configuration"
+msgid "Outside"
 msgstr ""
 
 #: KrohnkiteConfigForm%23279
+msgid "Middle"
+msgstr ""
+
+#: KrohnkiteConfigForm%23280
+msgid "Inside"
+msgstr ""
+
+#: KrohnkiteConfigForm%23281
+msgid ""
+"<html><head/><body><p><span style=\" font-size:12pt;\">short name:</span>"
+"<span style=\" font-weight:700;\">ha</span></p></body></html>"
+msgstr ""
+
+#: KrohnkiteConfigForm%23282
+msgid "Center"
+msgstr ""
+
+#: KrohnkiteConfigForm%23283
+msgid "Left/Right Dock"
+msgstr ""
+
+#: KrohnkiteConfigForm%23284
+msgid ""
+"<html><head/><body><p><span style=\" font-size:12pt;\">short name: </span>"
+"<span style=\" font-weight:700;\">vh</span></p></body></html>"
+msgstr ""
+
+#: KrohnkiteConfigForm%23285
+msgid "Horizontal Spacer 'horizontalSpacer_4', 40 x 20"
+msgstr ""
+
+#: KrohnkiteConfigForm%23286
+msgid ""
+"<html><head/><body><p><span style=\" font-size:12pt;\">short name: </span>"
+"<span style=\" font-weight:700;\">vw</span></p></body></html>"
+msgstr ""
+
+#: KrohnkiteConfigForm%23287
+msgid ""
+"<html><head/><body><p><span style=\" font-size:12pt;\">short name:</span>"
+"<span style=\" font-weight:700;\">vgh</span></p></body></html>"
+msgstr ""
+
+#: KrohnkiteConfigForm%23288
+msgid ""
+"<html><head/><body><p><span style=\" font-size:12pt;\">short name:</span>"
+"<span style=\" font-weight:700;\">vgv</span></p></body></html>"
+msgstr ""
+
+#: KrohnkiteConfigForm%23289
+msgid ""
+"<html><head/><body><p><span style=\" font-size:12pt;\">short name: </span>"
+"<span style=\" font-weight:700;\">va</span></p></body></html>"
+msgstr ""
+
+#: KrohnkiteConfigForm%23290
+msgid ""
+"<html><head/><body><p><span style=\" font-size:12pt;\">short name: </span>"
+"<span style=\" font-weight:700;\">ve</span></p></body></html>"
+msgstr ""
+
+#: KrohnkiteConfigForm%23291
+msgid "Window class configuration"
+msgstr ""
+
+#: KrohnkiteConfigForm%23292
 msgid ""
 "<html><head/><body><p>Overriding default parameters for the specified "
 "WindowClass. Format:</p><p><span style=\" font-weight:700;\">WindowClass</"
@@ -1401,7 +1466,7 @@ msgid ""
 "body></html>"
 msgstr ""
 
-#: KrohnkiteConfigForm%23280
+#: KrohnkiteConfigForm%23293
 msgid ""
 "<html><head/><body><p><span style=\" font-size:12pt;\">Overriding default "
 "parameters for every surface. Format: </span><span style=\" font-size:12pt; "
@@ -1419,15 +1484,15 @@ msgid ""
 "2a543f13fa54:Desktop 1:vg=5,va=2</span></p></body></html>"
 msgstr ""
 
-#: KrohnkiteConfigForm%23281
+#: KrohnkiteConfigForm%23294
 msgid "Dragging settings"
 msgstr ""
 
-#: KrohnkiteConfigForm%23282
+#: KrohnkiteConfigForm%23295
 msgid "Border"
 msgstr ""
 
-#: KrohnkiteConfigForm%23283
+#: KrohnkiteConfigForm%23296
 msgid ""
 "<html><head/><body><p>Fill color of the rectangle shown while dragging a "
 "window over a dock slot. <span style=\" font-weight:700; text-decoration: "
@@ -1437,43 +1502,43 @@ msgid ""
 "weight:700;\">77</span></p></body></html>"
 msgstr ""
 
-#: KrohnkiteConfigForm%23284
+#: KrohnkiteConfigForm%23297
 msgid ""
 "<html><head/><body><p>Thickness in pixels of the bottom screen edge that "
 "docks a dragged window. Set to 0 to disable docking to the bottom edge.</p></"
 "body></html>"
 msgstr ""
 
-#: KrohnkiteConfigForm%23285
+#: KrohnkiteConfigForm%23298
 msgid "Top "
 msgstr ""
 
-#: KrohnkiteConfigForm%23286
+#: KrohnkiteConfigForm%23299
 msgid ""
 "<html><head/><body><p>Thickness in pixels of the right screen edge that "
 "docks a dragged window. Set to 0 to disable docking to the right edge.</p></"
 "body></html>"
 msgstr ""
 
-#: KrohnkiteConfigForm%23287
+#: KrohnkiteConfigForm%23300
 msgid ""
 "<html><head/><body><p>Thickness in pixels of the top screen edge that docks "
 "a dragged window. Set to 0 to disable docking to the top edge.</p></body></"
 "html>"
 msgstr ""
 
-#: KrohnkiteConfigForm%23288
+#: KrohnkiteConfigForm%23301
 msgid ""
 "<html><head/><body><p>Thickness in pixels of the left screen edge that docks "
 "a dragged window. Set to 0 to disable docking to the left edge.</p></body></"
 "html>"
 msgstr ""
 
-#: KrohnkiteConfigForm%23289
+#: KrohnkiteConfigForm%23302
 msgid "Frame"
 msgstr ""
 
-#: KrohnkiteConfigForm%23290
+#: KrohnkiteConfigForm%23303
 msgid ""
 "<html><head/><body><p>Border color of the rectangle shown while dragging a "
 "window over a dock slot. <span style=\" font-weight:700; text-decoration: "
@@ -1483,39 +1548,39 @@ msgid ""
 "weight:700;\">230</span></p></body></html>"
 msgstr ""
 
-#: KrohnkiteConfigForm%23291
+#: KrohnkiteConfigForm%23304
 msgid "Options"
 msgstr ""
 
-#: KrohnkiteConfigForm%23292
+#: KrohnkiteConfigForm%23305
 msgid "Window Layer"
 msgstr ""
 
-#: KrohnkiteConfigForm%23293
+#: KrohnkiteConfigForm%23306
 msgid "Above"
 msgstr ""
 
-#: KrohnkiteConfigForm%23294
+#: KrohnkiteConfigForm%23307
 msgid "Float  "
 msgstr ""
 
-#: KrohnkiteConfigForm%23295
+#: KrohnkiteConfigForm%23308
 msgid "The Sole Window properties"
 msgstr ""
 
-#: KrohnkiteConfigForm%23296
+#: KrohnkiteConfigForm%23309
 msgid "No Borders"
 msgstr ""
 
-#: KrohnkiteConfigForm%23297
+#: KrohnkiteConfigForm%23310
 msgid "No Gaps"
 msgstr ""
 
-#: KrohnkiteConfigForm%23298
+#: KrohnkiteConfigForm%23311
 msgid "Output Override"
 msgstr ""
 
-#: KrohnkiteConfigForm%23299
+#: KrohnkiteConfigForm%23312
 msgid ""
 "<html><head/><body><p>Comma-separated list to override the default Sole "
 "Window properties parameters: OutputName:Width:Height:NoBorders:NoGaps. "
@@ -1529,152 +1594,152 @@ msgid ""
 "Borders nor Gaps, on DP-2: 80% Width and 70% Height</p></body></html>"
 msgstr ""
 
-#: KrohnkiteConfigForm%23300
+#: KrohnkiteConfigForm%23313
 msgid "OutputName:Width:Height,NoBorders,NoGaps,..."
 msgstr ""
 
-#: KrohnkiteConfigForm%23301
+#: KrohnkiteConfigForm%23314
 msgid "Unfitted Windows"
 msgstr ""
 
-#: KrohnkiteConfigForm%23302
+#: KrohnkiteConfigForm%23315
 msgid ""
 "If enable make all windows floating if the maximum size to small for tile"
 msgstr ""
 
-#: KrohnkiteConfigForm%23303
+#: KrohnkiteConfigForm%23316
 msgid "make floating if  max. size of window less than Tile size "
 msgstr ""
 
-#: KrohnkiteConfigForm%23304
+#: KrohnkiteConfigForm%23317
 msgid ""
 "If enable make all windows floating if they minimum size to large for tile"
 msgstr ""
 
-#: KrohnkiteConfigForm%23305
+#: KrohnkiteConfigForm%23318
 msgid ""
 "(Experimental)make floating if  min. size of window greater than Tile size "
 msgstr ""
 
-#: KrohnkiteConfigForm%23306
+#: KrohnkiteConfigForm%23319
 msgid "Notifications"
 msgstr ""
 
-#: KrohnkiteConfigForm%23307
+#: KrohnkiteConfigForm%23320
 msgid ""
 "<html><head/><body><p>Set the time (in milliseconds) for how long a pop-up "
 "notification will remain visible before it automatically disappears. A value "
 "of 0 will disable notifications.</p></body></html>"
 msgstr ""
 
-#: KrohnkiteConfigForm%23308
+#: KrohnkiteConfigForm%23321
 msgid " ms"
 msgstr ""
 
-#: KrohnkiteConfigForm%23309
+#: KrohnkiteConfigForm%23322
 msgid "Duration  "
 msgstr ""
 
-#: KrohnkiteConfigForm%23310
+#: KrohnkiteConfigForm%23323
 msgid ""
 "All tiled windows will have no borders. Borders will be added back if window "
 "become float."
 msgstr ""
 
-#: KrohnkiteConfigForm%23311
+#: KrohnkiteConfigForm%23324
 msgid "Use separate layouts and window split ratios for each Activity"
 msgstr ""
 
-#: KrohnkiteConfigForm%23312
+#: KrohnkiteConfigForm%23325
 msgid "Use separate layouts and window split ratios for each Desktop"
 msgstr ""
 
-#: KrohnkiteConfigForm%23313
+#: KrohnkiteConfigForm%23326
 msgid "Remove borders of tiled windows"
 msgstr ""
 
-#: KrohnkiteConfigForm%23314
+#: KrohnkiteConfigForm%23327
 msgid "Virtual Keyboard support"
 msgstr ""
 
-#: KrohnkiteConfigForm%23315
+#: KrohnkiteConfigForm%23328
 msgid "Always preserve the tiling status of a window upon dragging"
 msgstr ""
 
-#: KrohnkiteConfigForm%23316
+#: KrohnkiteConfigForm%23329
 msgid ""
 "Draw a translucent rectangle at the dock slot a dragged window will occupy "
 "when the drag is over."
 msgstr ""
 
-#: KrohnkiteConfigForm%23317
+#: KrohnkiteConfigForm%23330
 msgid "Show a preview rectangle when dragging a window over a dock slot"
 msgstr ""
 
-#: KrohnkiteConfigForm%23318
+#: KrohnkiteConfigForm%23331
 msgid "Prevent windows from minimizing (experimental)"
 msgstr ""
 
-#: KrohnkiteConfigForm%23319
+#: KrohnkiteConfigForm%23332
 msgid "Prevent window from protruding from its screen"
 msgstr ""
 
-#: KrohnkiteConfigForm%23320
+#: KrohnkiteConfigForm%23333
 msgid ""
 "<html><head/><body><p>If enabled, all windows with property skipPager=true "
 "become floating. You can create KDE Window Rule and force  skipPager=true.</"
 "p></body></html>"
 msgstr ""
 
-#: KrohnkiteConfigForm%23321
+#: KrohnkiteConfigForm%23334
 msgid "Make the window float if its property: skipPager=true (HACK)"
 msgstr ""
 
-#: KrohnkiteConfigForm%23322
+#: KrohnkiteConfigForm%23335
 msgid "Log"
 msgstr ""
 
-#: KrohnkiteConfigForm%23323
+#: KrohnkiteConfigForm%23336
 msgid "Use this option to debug the script or submit detailed bug report."
 msgstr ""
 
-#: KrohnkiteConfigForm%23324
+#: KrohnkiteConfigForm%23337
 msgid "Logging"
 msgstr ""
 
-#: KrohnkiteConfigForm%23325
+#: KrohnkiteConfigForm%23338
 msgid ""
 "<html><head/><body><p><span style=\" font-size:12pt;\">logs all windows that "
 "Krohnkite indexes and manages</span></p></body></html>"
 msgstr ""
 
-#: KrohnkiteConfigForm%23326
+#: KrohnkiteConfigForm%23339
 msgid "Added new windows"
 msgstr ""
 
-#: KrohnkiteConfigForm%23327
+#: KrohnkiteConfigForm%23340
 msgid ""
 "<html><head/><body><p><span style=\" font-size:12pt;\">logs all windows that "
 "Krohnkite does not manage for many reasons: service, dialog, etc.</span></p>"
 "</body></html>"
 msgstr ""
 
-#: KrohnkiteConfigForm%23328
+#: KrohnkiteConfigForm%23341
 msgid "Filtered new windows"
 msgstr ""
 
-#: KrohnkiteConfigForm%23329
+#: KrohnkiteConfigForm%23342
 msgid ""
 "<html><head/><body><p><span style=\" font-size:12pt;\">logs all windows that "
 "Krohkite could manage if not for the filters in the configuration</span></p>"
 "</body></html>"
 msgstr ""
 
-#: KrohnkiteConfigForm%23330
+#: KrohnkiteConfigForm%23343
 msgid "Unmanaged new windows"
 msgstr ""
 
-#: KrohnkiteConfigForm%23331
+#: KrohnkiteConfigForm%23344
 msgid ""
 "<html><head/><body><h4 style=\" margin-top:12px; margin-bottom:12px; margin-"
 "left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span "
@@ -1695,11 +1760,11 @@ msgid ""
 "</body></html>"
 msgstr ""
 
-#: KrohnkiteConfigForm%23332
+#: KrohnkiteConfigForm%23345
 msgid "filter log modules popup tooltip <<<hover me>>>"
 msgstr ""
 
-#: KrohnkiteConfigForm%23333
+#: KrohnkiteConfigForm%23346
 msgid ""
 "<html><head/><body><h5 style=\" margin-top:12px; margin-bottom:4px; margin-"
 "left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span "
@@ -1714,7 +1779,7 @@ msgid ""
 "8. surfaceChanged</span></p><p><br/></p></body></html>"
 msgstr ""
 
-#: KrohnkiteConfigForm%23334
+#: KrohnkiteConfigForm%23347
 msgid ""
 "<html><head/><body><p><span style=\" font-size:11pt; font-weight:700;\">All "
 "other log modules</span></p><p><span style=\" font-size:11pt;\">1. shortcut</"
@@ -1725,15 +1790,15 @@ msgid ""
 "dbus</span></p></body></html>"
 msgstr ""
 
-#: KrohnkiteConfigForm%23335
+#: KrohnkiteConfigForm%23348
 msgid "Workspace signals"
 msgstr ""
 
-#: KrohnkiteConfigForm%23336
+#: KrohnkiteConfigForm%23349
 msgid "Window signals     "
 msgstr ""
 
-#: KrohnkiteConfigForm%23337
+#: KrohnkiteConfigForm%23350
 msgid ""
 "<html><head/><body><h5 style=\" margin-top:12px; margin-bottom:4px; margin-"
 "left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span "
@@ -1750,11 +1815,11 @@ msgid ""
 "10. stackingOrderChanged</span></p></body></html>"
 msgstr ""
 
-#: KrohnkiteConfigForm%23338
+#: KrohnkiteConfigForm%23351
 msgid "Other                       "
 msgstr ""
 
-#: KrohnkiteConfigForm%23339
+#: KrohnkiteConfigForm%23352
 msgid ""
 "<html><head/><body><p><span style=\" font-size:11pt;\">Also, in addition to "
 "the fact that you can include only the modules you need, you can enable </"
@@ -1776,6 +1841,6 @@ msgid ""
 "html>"
 msgstr ""
 
-#: KrohnkiteConfigForm%23340
+#: KrohnkiteConfigForm%23353
 msgid "Filter"
 msgstr ""

@@ -2917,7 +2917,7 @@
                 <string>move overcapacity windows to Screens</string>
                </property>
                <property name="checked">
-                <bool>true</bool>
+                <bool>false</bool>
                </property>
               </widget>
              </item>
@@ -3134,7 +3134,7 @@
                 <string>move overcapacity windows to Virtual Desktops</string>
                </property>
                <property name="checked">
-                <bool>true</bool>
+                <bool>false</bool>
                </property>
               </widget>
              </item>
@@ -3367,9 +3367,66 @@
               <number>0</number>
              </property>
              <item>
-              <widget class="QCheckBox" name="kcfg_srfIsMoveOldestWindows">
+              <widget class="QLabel" name="label_overcapacityMode">
                <property name="text">
-                <string>move the oldest windows</string>
+                <string>Overcapacity windows handling</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QComboBox" name="kcfg_srfOvercapacityMode">
+               <property name="toolTip">
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Float: overcapacity windows&lt;br/&gt;become floating windows.&lt;/p&gt;&lt;p&gt;Minimize (default): hide the selected&lt;br/&gt;window and restore it when a slot is free.&lt;/p&gt;&lt;p&gt;Relocation to other screens or&lt;br/&gt;desktops still runs first.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
+               <property name="currentIndex">
+                <number>1</number>
+               </property>
+               <item>
+                <property name="text">
+                 <string>Float</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>Minimize</string>
+                </property>
+               </item>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="label_overcapacityEviction">
+               <property name="text">
+                <string>Evict windows by</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QComboBox" name="kcfg_srfOvercapacityEviction">
+               <property name="toolTip">
+                <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;last focused: evict the window that&lt;br/&gt;received focus most recently.&lt;/p&gt;&lt;p&gt;oldest windows (default): evict the&lt;br/&gt;window that appeared on the surface first.&lt;/p&gt;&lt;p&gt;Used in both Float and Minimize modes.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+               </property>
+               <property name="currentIndex">
+                <number>1</number>
+               </property>
+               <item>
+                <property name="text">
+                 <string>last focused</string>
+                </property>
+               </item>
+               <item>
+                <property name="text">
+                 <string>oldest windows</string>
+                </property>
+               </item>
+              </widget>
+             </item>
+             <item>
+              <widget class="QCheckBox" name="kcfg_srfAllowShortcutMoveToFullSurface">
+               <property name="toolTip">
+                <string>The moved window stays; the overcapacity policy evicts another window.</string>
+               </property>
+               <property name="text">
+                <string>allow shortcut moves to a full surface</string>
                </property>
               </widget>
              </item>
@@ -4141,6 +4198,11 @@
             <item>
              <property name="text">
               <string>SetTileLayout</string>
+             </property>
+            </item>
+            <item>
+             <property name="text">
+              <string>ShowCurrentCapacity</string>
              </property>
             </item>
             <item>
@@ -4923,6 +4985,36 @@
                </property>
                <property name="text">
                 <string>Move pointer to window/screen center on focus</string>
+               </property>
+              </widget>
+             </item>
+             <item row="2" column="0">
+              <layout class="QHBoxLayout" name="hLayout_movePointerOnFocusShortcutsOnly">
+               <property name="leftMargin">
+                <number>20</number>
+               </property>
+               <item>
+                <widget class="QCheckBox" name="kcfg_movePointerOnFocusShortcutsOnly">
+                 <property name="enabled">
+                  <bool>false</bool>
+                 </property>
+                 <property name="toolTip">
+                  <string>Move the pointer only when focus changes through a Krohnkite shortcut, never when a window gets focus some other way (mouse, newly opened window)</string>
+                 </property>
+                 <property name="text">
+                  <string>Only on Krohnkite shortcuts</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
+             </item>
+             <item row="3" column="0">
+              <widget class="QCheckBox" name="kcfg_movePointerOnResize">
+               <property name="toolTip">
+                <string>Move mouse cursor to the center of the focused window whenever its size changes (tiling, shortcuts, new windows). Moving or resizing a window with the mouse never moves the pointer.</string>
+               </property>
+               <property name="text">
+                <string>Move pointer to focused window center on resize</string>
                </property>
               </widget>
              </item>
@@ -7974,6 +8066,12 @@
    <sender>kcfg_moveFlash</sender>
    <signal>toggled(bool)</signal>
    <receiver>label_119</receiver>
+   <slot>setEnabled(bool)</slot>
+  </connection>
+  <connection>
+   <sender>kcfg_movePointerOnFocus</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>kcfg_movePointerOnFocusShortcutsOnly</receiver>
    <slot>setEnabled(bool)</slot>
   </connection>
  </connections>

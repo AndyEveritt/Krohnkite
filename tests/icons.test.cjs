@@ -460,6 +460,15 @@ for name, title, prefix, group_name, settings_group, title_label_name, order_lab
         assert settings.isEnabled(), name
     if prefix == "spreadLayout":
         assert space.isEnabled(), name
+pointer_on_focus = form.findChild(QCheckBox, "kcfg_movePointerOnFocus")
+shortcut_only = form.findChild(QCheckBox, "kcfg_movePointerOnFocusShortcutsOnly")
+assert pointer_on_focus is not None, "kcfg_movePointerOnFocus missing"
+assert shortcut_only is not None, "kcfg_movePointerOnFocusShortcutsOnly missing"
+assert not shortcut_only.isEnabled(), "dependent option must start disabled"
+pointer_on_focus.setChecked(True)
+assert shortcut_only.isEnabled(), "dependent option must follow its parent"
+pointer_on_focus.setChecked(False)
+assert not shortcut_only.isEnabled(), "dependent option must follow its parent"
 form.deleteLater()
 `;
     const result = spawnSync(PYTHON, ['-c', script, ROOT, dataHome], {

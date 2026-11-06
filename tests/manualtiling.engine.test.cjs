@@ -126,6 +126,8 @@ function scene(body) {
     moveWindowsToSurface: (windows, srf) =>
       calls.push(["moveTo", windows.map((w) => w.id), srf.id]),
     setTimeout: () => calls.push(["refocusLater"]),
+    handleLayoutChooserShortcut: () => false,
+    requestPointerOnFocus: () => {},
   };
 
   const tiled = (id) => ({

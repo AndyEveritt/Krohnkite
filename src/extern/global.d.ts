@@ -42,7 +42,14 @@ interface PopupDialog {
 declare var popupDialog: PopupDialog;
 
 interface LayoutChooserDialog {
-  showLayouts(entries: LayoutOSDEntry[], selected: string): void;
+  showLayouts(
+    entries: LayoutOSDEntry[],
+    selected: string,
+    duration: number,
+  ): void;
+  isOpen(): boolean;
+  hide(): void;
+  navigate(dx: number, dy: number): void;
 }
 declare var layoutChooserDialog: LayoutChooserDialog;
 

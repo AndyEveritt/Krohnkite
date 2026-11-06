@@ -158,6 +158,20 @@ class KWinDriver implements IDriverContext {
   private _disposed: boolean;
   /* What drawOverlays last put on screen, to skip redrawing it unchanged. */
   private _drawnOverlays: string;
+  /* Last time any window was moved/resized with the mouse; see
+   * onWindowSizeCommitted. */
+  private _lastInteractiveMoveResize: number;
+  /* Pending pointer move; see onLayoutSettled. */
+  private _pointerRequest: {
+    target: PointerTarget;
+    reason: "focus" | "resize";
+  } | null;
+  /* A pointer move is already scheduled and will use whatever request is
+   * current when it runs. */
+  private _pointerCenterPending: boolean;
+  private _layoutPassActive: boolean;
+  /* Surface the chooser was opened on; used to toggle it per surface. */
+  private _layoutChooserSurfaceId: string | null;
 
   constructor(api: Api, config?: KWinConfig) {
     KWIN = api.kwin;
@@ -184,6 +198,11 @@ class KWinDriver implements IDriverContext {
     this._started = false;
     this._disposed = false;
     this._drawnOverlays = "";
+    this._lastInteractiveMoveResize = 0;
+    this._pointerRequest = null;
+    this._pointerCenterPending = false;
+    this._layoutPassActive = false;
+    this._layoutChooserSurfaceId = null;
     this._surfaceStore = new KWinSurfaceStore(this.workspace);
     this._isRegister = {
       state: false,
@@ -252,6 +271,10 @@ class KWinDriver implements IDriverContext {
       client.width * client.height > 10
     ) {
       const window = this.windowMap.add(client);
+      /* Record focus before arranging: a new active window must be a valid
+       * "last focused" candidate for the overcapacity selection that runs
+       * inside onWindowAdded(), otherwise its focusTime is still 0. */
+      if (client.active) this.control.onWindowFocused(this, window);
       if (client.maximizeMode > 0) {
         (window.window as DriverWindow).maximized = true;
         // it can set maximized to false when window start already with maximized flag
@@ -376,9 +399,7 @@ class KWinDriver implements IDriverContext {
         }
         idx = idx < screens.length - 1 ? idx + 1 : 0;
         this._makeActiveScreen(screens[idx]);
-        if (CONFIG.movePointerOnFocus) {
-          DBUS.moveMouseToCenter();
-        }
+        this.requestPointerOnFocus("screen", true);
         return false;
       }
       case "down": {
@@ -393,17 +414,13 @@ class KWinDriver implements IDriverContext {
         let idx = windows.indexOf(window);
         if (idx < 0) {
           this.workspace.activeWindow = windows[0];
-          if (CONFIG.movePointerOnFocus) {
-            DBUS.moveMouseToFocus();
-          }
+          this.requestPointerOnFocus("window", true);
           return false;
         }
         if (windows.length === 1) return false;
         idx = idx < windows.length - 1 ? idx + 1 : 0;
         this.workspace.activeWindow = windows[idx];
-        if (CONFIG.movePointerOnFocus) {
-          DBUS.moveMouseToFocus();
-        }
+        this.requestPointerOnFocus("window", true);
         return false;
       }
       case "right":
@@ -455,9 +472,7 @@ class KWinDriver implements IDriverContext {
       direction,
       winTypes,
     );
-    if (CONFIG.movePointerOnFocus) {
-      DBUS.moveMouseToCenter();
-    }
+    this.requestPointerOnFocus("screen", true);
     return result;
   }
   public getNeighborOutput(
@@ -611,6 +626,15 @@ class KWinDriver implements IDriverContext {
     );
   }
   public showLayoutChooser(): void {
+    const surface = this.currentSurface;
+    if (
+      layoutChooserDialog.isOpen() &&
+      this._layoutChooserSurfaceId === surface.id
+    ) {
+      layoutChooserDialog.hide();
+      this._layoutChooserSurfaceId = null;
+      return;
+    }
     const entries = CONFIG.layoutOrder
       .filter((id) => LayoutOSDNames[id] !== undefined)
       .map((id) => ({
@@ -619,10 +643,42 @@ class KWinDriver implements IDriverContext {
         icon: LayoutOSDNames[id].icon,
       }));
     if (entries.length === 0) return;
-    const selected = this.engine.layouts.getCurrentLayout(
-      this.currentSurface,
-    ).classID;
-    layoutChooserDialog.showLayouts(entries, selected);
+    const selected = this.engine.layouts.getCurrentLayout(surface).classID;
+    this._layoutChooserSurfaceId = surface.id;
+    layoutChooserDialog.showLayouts(
+      entries,
+      selected,
+      CONFIG.notificationDuration,
+    );
+    /* The chooser is centered on the active screen, so put the pointer on the
+     * same spot instead of leaving it wherever it was (possibly on another
+     * output). MoveMouseToCenter is a KWin global shortcut; the delay lets the
+     * dialog settle before the pointer lands on it. */
+    DBUS.moveMouseToScreenCenter(KWinDriver.POINTER_CENTER_DELAY_MS);
+  }
+  /* While the chooser is open, the focus shortcuts drive its selection instead
+   * of moving focus between windows. Returns true when the action was consumed. */
+  public handleLayoutChooserShortcut(action: KrohnkiteAction): boolean {
+    if (!layoutChooserDialog.isOpen()) return false;
+
+    switch (action) {
+      case KrohnkiteAction.DWMLeft:
+      case KrohnkiteAction.FocusLeft:
+        layoutChooserDialog.navigate(-1, 0);
+        return true;
+      case KrohnkiteAction.DWMRight:
+      case KrohnkiteAction.FocusRight:
+        layoutChooserDialog.navigate(1, 0);
+        return true;
+      case KrohnkiteAction.FocusUp:
+        layoutChooserDialog.navigate(0, -1);
+        return true;
+      case KrohnkiteAction.FocusDown:
+        layoutChooserDialog.navigate(0, 1);
+        return true;
+      default:
+        return false;
+    }
   }
   public selectLayoutFromOSD(id: string): void {
     if (CONFIG.layoutOrder.indexOf(id) === -1) return;
@@ -1652,9 +1708,8 @@ class KWinDriver implements IDriverContext {
       const window = this.addWindow(client);
       if (client.active && window !== null) {
         this.control.onWindowFocused(this, window);
-        if (CONFIG.movePointerOnFocus) {
-          DBUS.moveMouseToCenter(20);
-        }
+        /* A new window takes focus without any Krohnkite shortcut. */
+        this.requestPointerOnFocus("screen", false);
       }
     });
 
@@ -1718,6 +1773,80 @@ class KWinDriver implements IDriverContext {
      * https://bugs.kde.org/show_bug.cgi?id=463292
      */
   }
+  /* Grace period after a mouse move/resize during which size changes are
+   * treated as its aftermath (drop re-tile, final snap), not a reason to warp
+   * the pointer away from where the user just released it. */
+  private static readonly INTERACTIVE_POINTER_GRACE_MS = 500;
+  /* Delay between the settled layout and the move. The move goes through DBus
+   * and runs after the layout pass has returned either way; the delay only
+   * covers the window server applying the new geometry. */
+  private static readonly POINTER_CENTER_DELAY_MS = 30;
+
+  public onLayoutStart(): void {
+    this._layoutPassActive = true;
+  }
+
+  public onLayoutSettled(): void {
+    this._layoutPassActive = false;
+    if (this._pointerRequest === null) return;
+    /* A move is already queued; it reads whatever request is current when it
+     * runs, so a request from a later pass needs no move of its own. */
+    if (this._pointerCenterPending) return;
+    this._pointerCenterPending = true;
+    this.setTimeout(() => {
+      this._pointerCenterPending = false;
+      const request = this._pointerRequest;
+      this._pointerRequest = null;
+      if (request === null) return;
+      if (request.reason === "focus" && !CONFIG.movePointerOnFocus) return;
+      if (request.reason === "resize" && !CONFIG.movePointerOnResize) return;
+      /* Only a resize is the aftermath of a mouse move/resize; a focus
+       * shortcut right after one still has to move the pointer. */
+      if (
+        request.reason === "resize" &&
+        getTime() - this._lastInteractiveMoveResize <
+          KWinDriver.INTERACTIVE_POINTER_GRACE_MS
+      )
+        return;
+      if (request.target === "screen") DBUS.moveMouseToCenter();
+      else DBUS.moveMouseToFocus();
+    }, KWinDriver.POINTER_CENTER_DELAY_MS);
+  }
+
+  /* Focus changes only state the intent; the move itself happens once per
+   * settled layout, next to the resize-driven one. A focus request keeps
+   * priority over a resize request from the same pass, because it knows
+   * whether the pointer belongs on a window or on a screen. */
+  public requestPointerOnFocus(
+    target: PointerTarget,
+    byShortcut: boolean,
+  ): void {
+    if (!CONFIG.movePointerOnFocus) return;
+    if (CONFIG.movePointerOnFocusShortcutsOnly && !byShortcut) return;
+    this._pointerRequest = { target, reason: "focus" };
+    /* Focus changes that do not rearrange (e.g. FocusNext) have no pass to
+     * settle them. */
+    if (!this._layoutPassActive) this.onLayoutSettled();
+  }
+
+  /* Called by the window wrapper right before it writes a new frame geometry,
+   * so the decision relies on the geometry this layout committed instead of
+   * waiting for KWin to report the applied size. */
+  public onWindowSizeCommitted(client: KwinWindow): void {
+    if (!CONFIG.movePointerOnResize) return;
+    if (!client.active || client.move || client.resize) return;
+    if (
+      getTime() - this._lastInteractiveMoveResize <
+      KWinDriver.INTERACTIVE_POINTER_GRACE_MS
+    )
+      return;
+    if (this._pointerRequest?.reason !== "focus")
+      this._pointerRequest = { target: "window", reason: "resize" };
+    /* Commits made outside a layout pass (e.g. a floating-window resize
+     * shortcut) have no arrange to settle them. */
+    if (!this._layoutPassActive) this.onLayoutSettled();
+  }
+
   private _bindWindowEvents(window: WindowClass, client: KwinWindow) {
     let moving = false;
     let resizing = false;
@@ -1813,6 +1942,7 @@ class KWinDriver implements IDriverContext {
         `window: caption:${client.caption} internalID:${client.internalId},interactiveMoveResizeStepped:${geometry}`,
         { winClass: [`${client.resourceClass}`] },
       );
+      this._lastInteractiveMoveResize = getTime();
       if (client.resize) return;
       this.control.onWindowDragging(
         this,
@@ -1869,6 +1999,7 @@ class KWinDriver implements IDriverContext {
         `Window: caption:${client.caption} internalId:${client.internalId}, moving:${moving}, resizing:${resizing}`,
         { winClass: [`${client.resourceClass}`] },
       );
+      this._lastInteractiveMoveResize = getTime();
       if (moving !== client.move) {
         moving = client.move;
         if (moving) {

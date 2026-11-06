@@ -16,12 +16,14 @@ interface IDBusQml {
   getDBusExists(): DBusCall;
   getDBusMoveMouseToFocus(): DBusCall;
   getDBusMoveMouseToCenter(): DBusCall;
+  getDBusMoveMouseToScreenCenter(): DBusCall;
   getDBusVirtualKeyboardVisible(): DBusCall;
 }
 
 interface IDBus {
   moveMouseToFocus(timeout?: number): void;
   moveMouseToCenter(timeout?: number): void;
+  moveMouseToScreenCenter(timeout?: number): void;
   checkVirtualKeyboardVisible(callback: (isVisible: boolean) => void): void;
   dispose(): void;
 }
@@ -47,7 +49,9 @@ interface IConfig {
   srfToScreenOrder: Direction[];
   srfExceededToVDesktop: boolean;
   srfToVDesktopOrder: Direction[];
-  srfIsMoveOldestWindows: boolean;
+  srfOvercapacityEviction: OvercapacityEvictionPolicy;
+  srfOvercapacityMode: OvercapacityMode;
+  srfAllowShortcutMoveToFullSurface: boolean;
   srfDefineCfg: string[];
   srfDefaultConfig: string[];
 
@@ -74,6 +78,8 @@ interface IConfig {
   focusMoveScreensNormal: boolean;
   focusMoveVDesktopsNormal: boolean;
   movePointerOnFocus: boolean;
+  movePointerOnFocusShortcutsOnly: boolean;
+  movePointerOnResize: boolean;
   focusMetaCfg: WinTypes;
   focusMoveScreensMeta: boolean;
   focusMoveVDesktopsMeta: boolean;
@@ -179,7 +185,6 @@ interface IDriverWindow {
     windowLayer?: WindowLayer,
   ): void;
   updateSrfTime(srfId: string): void;
-  moveMouseToFocus(): void;
   visible(srf: ISurface): boolean;
   dispose(): void;
   setMinimizedByScript(minimized: boolean): void;
@@ -218,7 +223,6 @@ interface IWindowClass {
   setDockTemplate(template: Dock): void;
   commit(ctx: IDriverContext, noBorders?: boolean): void;
   forceSetGeometry(ctx: IDriverContext, geometry: Rect): void;
-  moveMouseToFocus(): void;
   visible(srf: ISurface): boolean;
   isAlive(): boolean;
 }
@@ -284,10 +288,22 @@ interface IDriverContext {
     direction: Direction,
   ): boolean;
   relocateWindows(): boolean;
+  /* Layout pass bracketing, used to move the pointer once per settled
+   * layout instead of once per geometry change. */
+  onLayoutStart(): void;
+  onLayoutSettled(): void;
+  /* The driver wrote a new frame geometry for this window. */
+  onWindowSizeCommitted(client: KwinWindow): void;
+  /* Focus moved as part of a Krohnkite action; the move happens once the
+   * layout settles, and `byShortcut` tells a shortcut apart from focus KWin
+   * granted on its own (mouse, newly opened window). */
+  requestPointerOnFocus(target: PointerTarget, byShortcut: boolean): void;
   setTimeout(func: () => void, timeout: number): void;
   showNotification(text: string): void;
   showLayoutOSD(): void;
   showLayoutChooser(): void;
+  /* Consume focus shortcuts while the layout chooser is open. */
+  handleLayoutChooserShortcut(action: KrohnkiteAction): boolean;
   showLayoutShortcut(id: string): void;
   showDragPreview(area: Rect, rect: Rect): void;
   hideDragPreview(): void;

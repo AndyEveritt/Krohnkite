@@ -58,10 +58,22 @@ Item {
         id: layoutChooserDialog
         source: "layoutchooser.qml"
 
-        function showLayouts(entries, selected) {
+        function showLayouts(entries, selected, duration) {
             if (!this.item) return;
             var area = Workspace.clientArea(KWin.FullScreenArea, Workspace.activeScreen, Workspace.currentDesktop);
-            this.item.showLayouts(entries, selected, area);
+            this.item.showLayouts(entries, selected, area, duration);
+        }
+
+        function isOpen() {
+            return this.item ? this.item.visible : false;
+        }
+
+        function hide() {
+            if (this.item) this.item.visible = false;
+        }
+
+        function navigate(dx, dy) {
+            if (this.item) this.item.navigate(dx, dy);
         }
     }
 

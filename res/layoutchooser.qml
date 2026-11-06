@@ -26,6 +26,9 @@ PlasmaCore.Dialog {
     visible: false
     property var layouts: []
     property string selectedLayout: ""
+    /* Auto-hide delay used only after keyboard navigation has started. Zero
+     * keeps the chooser open until the user dismisses it explicitly. */
+    property int hideDelay: 0
     /* Fill color of the active layout card; kept in one place so it can be
      * made configurable later. */
     property color activeLayoutColor: Kirigami.Theme.highlightColor
@@ -36,11 +39,22 @@ PlasmaCore.Dialog {
 
     signal layoutSelected(string id)
 
+    onVisibleChanged: {
+        if (!visible) hideTimer.stop();
+    }
+
     mainItem: FocusScope {
         id: chooserItem
         width: layoutGrid.width + 24
         height: layoutGrid.height + 24
         focus: true
+
+        /* Only armed by navigate(); opening the chooser leaves it stopped. */
+        Timer {
+            id: hideTimer
+            repeat: false
+            onTriggered: chooserDialog.visible = false
+        }
 
         Keys.onEscapePressed: chooserDialog.visible = false
 
@@ -144,13 +158,53 @@ PlasmaCore.Dialog {
         });
     }
 
-    function showLayouts(entries, selected, area) {
+    function showLayouts(entries, selected, area, duration) {
         layouts = entries;
         selectedLayout = selected;
+        hideDelay = duration > 0 ? duration : 0;
         layoutColumns = layoutColumnsFor(entries.length, area);
 
+        hideTimer.stop();
         center(area);
         visible = true;
         chooserItem.forceActiveFocus();
+    }
+
+    /*
+     * Move the selection by one card in the given direction, apply the newly
+     * selected layout and re-arm the auto-hide timer. Left/right stay within
+     * the current row, up/down move by a whole row, and the edges clamp
+     * instead of wrapping.
+     */
+    function navigate(dx, dy) {
+        if (layouts.length === 0) return;
+
+        const columns = Math.max(1, layoutColumns);
+        let index = 0;
+        for (let i = 0; i < layouts.length; i++) {
+            if (layouts[i].id === selectedLayout) {
+                index = i;
+                break;
+            }
+        }
+
+        let next = index;
+        if (dx !== 0) {
+            const rowStart = Math.floor(index / columns) * columns;
+            const rowEnd = Math.min(layouts.length - 1, rowStart + columns - 1);
+            next = Math.min(rowEnd, Math.max(rowStart, index + dx));
+        } else if (dy !== 0) {
+            next = Math.min(layouts.length - 1, Math.max(0, index + dy * columns));
+        }
+
+        if (next !== index) {
+            selectedLayout = layouts[next].id;
+            layoutSelected(selectedLayout);
+        }
+
+        if (hideDelay > 0) {
+            hideTimer.interval = hideDelay;
+            hideTimer.restart();
+        }
     }
 }

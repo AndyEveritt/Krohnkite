@@ -10,6 +10,9 @@ type PartialWithRequired<T, K extends keyof T> = Partial<T> &
   Required<Pick<T, K>>;
 type percentType = number;
 type Direction = "up" | "down" | "left" | "right";
+/* Where the pointer should land when Krohnkite moves it: the center of the
+ * active window or the center of the active screen. */
+type PointerTarget = "window" | "screen";
 // TODO: DELETE Position type
 type Position = "left" | "middle" | "right" | "upper" | "bottom" | "single";
 function getOppositeDirection(direction: Direction): Direction {
@@ -118,7 +121,9 @@ const ConfigVariables = {
   srfToVDesktopOrderTop: "srfToVDesktopOrderTop",
   srfToVDesktopOrderRight: "srfToVDesktopOrderRight",
   srfToVDesktopOrderBottom: "srfToVDesktopOrderBottom",
-  srfIsMoveOldestWindows: "srfIsMoveOldestWindows",
+  srfOvercapacityEviction: "srfOvercapacityEviction",
+  srfOvercapacityMode: "srfOvercapacityMode",
+  srfAllowShortcutMoveToFullSurface: "srfAllowShortcutMoveToFullSurface",
   srfDefineCfg: "srfDefineCfg",
   srfDefaultConfig: "srfDefaultConfig",
   /* Geometry */
@@ -146,6 +151,8 @@ const ConfigVariables = {
   focusMoveScreensMeta: "focusMoveScreensMeta",
   focusMoveVDesktopsMeta: "focusMoveVDesktopsMeta",
   movePointerOnFocus: "movePointerOnFocus",
+  movePointerOnFocusShortcutsOnly: "movePointerOnFocusShortcutsOnly",
+  movePointerOnResize: "movePointerOnResize",
   newWindowPosition: "newWindowPosition",
   /* Rules */
   ignoreClass: "ignoreClass",
@@ -321,6 +328,7 @@ const KrohnkiteAction = {
   RaiseSurfaceCapacity: "RaiseSurfaceCapacity",
   LowerSurfaceCapacity: "LowerSurfaceCapacity",
   ResetSurfaceCapacity: "ResetSurfaceCapacity",
+  ShowCurrentCapacity: "ShowCurrentCapacity",
 
   AlterRegister: "AlterRegister",
   ToggleRegister: "ToggleRegister",

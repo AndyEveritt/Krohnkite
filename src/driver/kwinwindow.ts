@@ -149,7 +149,6 @@ class DriverWindow implements IDriverWindow {
   private readonly isIgnoredByConfig: boolean;
   private readonly _surfaceStore: KWinSurfaceStore;
   private _floatGeometry: Rect | null;
-  private _movePointerToCenter: { isMove: boolean; time: number };
   private _nativeFloatGeometry: Rect;
   /* A runtime reload replaces DriverWindow instances but keeps the native
    * KWin windows alive. Remember properties Krohnkite overrides so dispose()
@@ -170,10 +169,6 @@ class DriverWindow implements IDriverWindow {
     this.workspace = workspace;
     this._surfaceStore = surfaceStore;
     this._srfTime = { time: null, srfId: null };
-    this._movePointerToCenter = {
-      isMove: false,
-      time: 0,
-    };
     this.window = window;
     this.isCommittedEver = false;
     this._nativeFloatGeometry = toRect(window.frameGeometry);
@@ -206,11 +201,6 @@ class DriverWindow implements IDriverWindow {
     } catch (_) {
       return false;
     }
-  }
-  public moveMouseToFocus() {
-    const time = getTime();
-    this._movePointerToCenter.isMove = this.isActive;
-    this._movePointerToCenter.time = time;
   }
   public commit(
     ctx: IDriverContext,
@@ -308,15 +298,14 @@ class DriverWindow implements IDriverWindow {
         geometry = this.adjustGeometry(geometry);
       }
       if (this.window.deleted) return;
-      this.window.frameGeometry = toQRect(geometry);
-      if (this._movePointerToCenter.isMove) {
-        this._movePointerToCenter.isMove = false;
-        if (CONFIG.movePointerOnFocus) {
-          if (getTime() - this._movePointerToCenter.time < 100) {
-            DBUS.moveMouseToFocus(20);
-          }
-        }
-      }
+      const nextFrame = toQRect(geometry);
+      const currentFrame = this.window.frameGeometry;
+      if (
+        nextFrame.width !== currentFrame.width ||
+        nextFrame.height !== currentFrame.height
+      )
+        ctx.onWindowSizeCommitted(this.window);
+      this.window.frameGeometry = nextFrame;
     }
   }
   public toString(): string {
